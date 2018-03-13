@@ -1,0 +1,613 @@
+DIGEST 18b1d6a103a505f4a0bfbe9a9712baac
+FCertiOS.framework.models.state
+R15:20 CertiOS.framework.auxiliary.Coqlib <> <> lib
+R38:41 CertiOS.framework.auxiliary.Maps <> <> lib
+R60:67 CertiOS.framework.auxiliary.Integers <> <> lib
+def 183:186 <> Word
+R191:193 CertiOS.framework.auxiliary.Integers <> int syndef
+def 222:228 <> Address
+R233:235 CertiOS.framework.auxiliary.Integers <> int syndef
+ind 306:311 <> GenReg
+constr 327:328 <> r0
+constr 341:342 <> r1
+constr 355:356 <> r2
+constr 369:370 <> r3
+constr 383:384 <> r4
+constr 397:398 <> r5
+constr 411:412 <> r6
+constr 425:426 <> r7
+constr 440:441 <> r8
+constr 454:455 <> r9
+constr 468:470 <> r10
+constr 482:484 <> r11
+constr 496:498 <> r12
+constr 510:512 <> r13
+constr 524:526 <> r14
+constr 538:540 <> r15
+constr 554:556 <> r16
+constr 568:570 <> r17
+constr 582:584 <> r18
+constr 596:598 <> r19
+constr 610:612 <> r20
+constr 624:626 <> r21
+constr 638:640 <> r22
+constr 652:654 <> r23
+constr 668:670 <> r24
+constr 682:684 <> r25
+constr 696:698 <> r26
+constr 710:712 <> r27
+constr 724:726 <> r28
+constr 738:740 <> r29
+constr 752:754 <> r30
+constr 766:768 <> r31
+R331:336 CertiOS.framework.models.state <> GenReg ind
+R345:350 CertiOS.framework.models.state <> GenReg ind
+R359:364 CertiOS.framework.models.state <> GenReg ind
+R373:378 CertiOS.framework.models.state <> GenReg ind
+R387:392 CertiOS.framework.models.state <> GenReg ind
+R401:406 CertiOS.framework.models.state <> GenReg ind
+R415:420 CertiOS.framework.models.state <> GenReg ind
+R429:434 CertiOS.framework.models.state <> GenReg ind
+R444:449 CertiOS.framework.models.state <> GenReg ind
+R458:463 CertiOS.framework.models.state <> GenReg ind
+R473:478 CertiOS.framework.models.state <> GenReg ind
+R487:492 CertiOS.framework.models.state <> GenReg ind
+R501:506 CertiOS.framework.models.state <> GenReg ind
+R515:520 CertiOS.framework.models.state <> GenReg ind
+R529:534 CertiOS.framework.models.state <> GenReg ind
+R543:548 CertiOS.framework.models.state <> GenReg ind
+R559:564 CertiOS.framework.models.state <> GenReg ind
+R573:578 CertiOS.framework.models.state <> GenReg ind
+R587:592 CertiOS.framework.models.state <> GenReg ind
+R601:606 CertiOS.framework.models.state <> GenReg ind
+R615:620 CertiOS.framework.models.state <> GenReg ind
+R629:634 CertiOS.framework.models.state <> GenReg ind
+R643:648 CertiOS.framework.models.state <> GenReg ind
+R657:662 CertiOS.framework.models.state <> GenReg ind
+R673:678 CertiOS.framework.models.state <> GenReg ind
+R687:692 CertiOS.framework.models.state <> GenReg ind
+R701:706 CertiOS.framework.models.state <> GenReg ind
+R715:720 CertiOS.framework.models.state <> GenReg ind
+R729:734 CertiOS.framework.models.state <> GenReg ind
+R743:748 CertiOS.framework.models.state <> GenReg ind
+R757:762 CertiOS.framework.models.state <> GenReg ind
+R771:776 CertiOS.framework.models.state <> GenReg ind
+ind 816:820 <> AsReg
+constr 835:838 <> asr0
+constr 850:853 <> asr1
+constr 865:868 <> asr2
+constr 880:883 <> asr3
+constr 895:898 <> asr4
+constr 910:913 <> asr5
+constr 925:928 <> asr6
+constr 940:943 <> asr7
+constr 956:959 <> asr8
+constr 971:974 <> asr9
+constr 986:990 <> asr10
+constr 1001:1005 <> asr11
+constr 1016:1020 <> asr12
+constr 1031:1035 <> asr13
+constr 1046:1050 <> asr14
+constr 1061:1065 <> asr15
+constr 1078:1082 <> asr16
+constr 1093:1097 <> asr17
+constr 1108:1112 <> asr18
+constr 1123:1127 <> asr19
+constr 1138:1142 <> asr20
+constr 1153:1157 <> asr21
+constr 1168:1172 <> asr22
+constr 1183:1187 <> asr23
+constr 1200:1204 <> asr24
+constr 1215:1219 <> asr25
+constr 1230:1234 <> asr26
+constr 1245:1249 <> asr27
+constr 1260:1264 <> asr28
+constr 1275:1279 <> asr29
+constr 1290:1294 <> asr30
+constr 1305:1309 <> asr31
+R841:845 CertiOS.framework.models.state <> AsReg ind
+R856:860 CertiOS.framework.models.state <> AsReg ind
+R871:875 CertiOS.framework.models.state <> AsReg ind
+R886:890 CertiOS.framework.models.state <> AsReg ind
+R901:905 CertiOS.framework.models.state <> AsReg ind
+R916:920 CertiOS.framework.models.state <> AsReg ind
+R931:935 CertiOS.framework.models.state <> AsReg ind
+R946:950 CertiOS.framework.models.state <> AsReg ind
+R962:966 CertiOS.framework.models.state <> AsReg ind
+R977:981 CertiOS.framework.models.state <> AsReg ind
+R993:997 CertiOS.framework.models.state <> AsReg ind
+R1008:1012 CertiOS.framework.models.state <> AsReg ind
+R1023:1027 CertiOS.framework.models.state <> AsReg ind
+R1038:1042 CertiOS.framework.models.state <> AsReg ind
+R1053:1057 CertiOS.framework.models.state <> AsReg ind
+R1068:1072 CertiOS.framework.models.state <> AsReg ind
+R1085:1089 CertiOS.framework.models.state <> AsReg ind
+R1100:1104 CertiOS.framework.models.state <> AsReg ind
+R1115:1119 CertiOS.framework.models.state <> AsReg ind
+R1130:1134 CertiOS.framework.models.state <> AsReg ind
+R1145:1149 CertiOS.framework.models.state <> AsReg ind
+R1160:1164 CertiOS.framework.models.state <> AsReg ind
+R1175:1179 CertiOS.framework.models.state <> AsReg ind
+R1190:1194 CertiOS.framework.models.state <> AsReg ind
+R1207:1211 CertiOS.framework.models.state <> AsReg ind
+R1222:1226 CertiOS.framework.models.state <> AsReg ind
+R1237:1241 CertiOS.framework.models.state <> AsReg ind
+R1252:1256 CertiOS.framework.models.state <> AsReg ind
+R1267:1271 CertiOS.framework.models.state <> AsReg ind
+R1282:1286 CertiOS.framework.models.state <> AsReg ind
+R1297:1301 CertiOS.framework.models.state <> AsReg ind
+R1312:1316 CertiOS.framework.models.state <> AsReg ind
+ind 1340:1345 <> PsrReg
+constr 1358:1358 <> n
+constr 1371:1371 <> z
+constr 1384:1386 <> cwp
+R1362:1367 CertiOS.framework.models.state <> PsrReg ind
+R1375:1380 CertiOS.framework.models.state <> PsrReg ind
+R1390:1395 CertiOS.framework.models.state <> PsrReg ind
+ind 1433:1437 <> SpReg
+constr 1450:1453 <> Rwim
+constr 1465:1466 <> Ry
+constr 1478:1481 <> Rasr
+R1457:1461 CertiOS.framework.models.state <> SpReg ind
+R1470:1474 CertiOS.framework.models.state <> SpReg ind
+R1490:1493 Coq.Init.Logic <> :type_scope:x_'->'_x not
+R1494:1498 CertiOS.framework.models.state <> SpReg ind
+R1485:1489 CertiOS.framework.models.state <> AsReg ind
+R1510:1513 CertiOS.framework.models.state <> Rasr constr
+ind 1565:1571 <> RegName
+constr 1584:1585 <> Rr
+constr 1609:1612 <> Rpsr
+constr 1636:1638 <> Rsp
+R1595:1598 Coq.Init.Logic <> :type_scope:x_'->'_x not
+R1599:1605 CertiOS.framework.models.state <> RegName ind
+R1589:1594 CertiOS.framework.models.state <> GenReg ind
+R1622:1625 Coq.Init.Logic <> :type_scope:x_'->'_x not
+R1626:1632 CertiOS.framework.models.state <> RegName ind
+R1616:1621 CertiOS.framework.models.state <> PsrReg ind
+R1647:1650 Coq.Init.Logic <> :type_scope:x_'->'_x not
+R1651:1657 CertiOS.framework.models.state <> RegName ind
+R1642:1646 CertiOS.framework.models.state <> SpReg ind
+R1669:1670 CertiOS.framework.models.state <> Rr constr
+R1703:1706 CertiOS.framework.models.state <> Rpsr constr
+R1739:1741 CertiOS.framework.models.state <> Rsp constr
+prf 1771:1780 <> RegName_eq
+R1797:1803 CertiOS.framework.models.state <> RegName ind
+R1811:1811 Coq.Init.Specif <> :type_scope:'{'_x_'}'_'+'_'{'_x_'}' not
+R1817:1821 Coq.Init.Specif <> :type_scope:'{'_x_'}'_'+'_'{'_x_'}' not
+R1828:1828 Coq.Init.Specif <> :type_scope:'{'_x_'}'_'+'_'{'_x_'}' not
+R1813:1815 Coq.Init.Logic <> :type_scope:x_'='_x not
+R1812:1812 CertiOS.framework.models.state <> x var
+R1816:1816 CertiOS.framework.models.state <> y var
+R1823:1826 Coq.Init.Logic <> :type_scope:x_'<>'_x not
+R1822:1822 CertiOS.framework.models.state <> x var
+R1827:1827 CertiOS.framework.models.state <> y var
+mod 1877:1885 <> RegNameEq
+def 1901:1901 RegNameEq t
+R1906:1912 CertiOS.framework.models.state <> RegName ind
+def 1928:1929 RegNameEq eq
+R1934:1943 CertiOS.framework.models.state <> RegName_eq thm
+R1950:1958 CertiOS.framework.models.state RegNameEq <> mod
+R1979:1982 CertiOS.framework.auxiliary.Maps EMap <> modtype
+R1984:1992 CertiOS.framework.models.state RegNameEq <> modtype
+mod 1969:1974 <> RegMap
+def 2007:2013 <> RegFile
+R2018:2025 CertiOS.framework.models.state <> t def
+R2027:2033 CertiOS.framework.models.state <> Address def
+ind 2086:2090 <> Frame
+constr 2104:2109 <> consfm
+R2117:2120 Coq.Init.Logic <> :type_scope:x_'->'_x not
+R2125:2128 Coq.Init.Logic <> :type_scope:x_'->'_x not
+R2133:2136 Coq.Init.Logic <> :type_scope:x_'->'_x not
+R2141:2144 Coq.Init.Logic <> :type_scope:x_'->'_x not
+R2149:2152 Coq.Init.Logic <> :type_scope:x_'->'_x not
+R2157:2160 Coq.Init.Logic <> :type_scope:x_'->'_x not
+R2165:2168 Coq.Init.Logic <> :type_scope:x_'->'_x not
+R2173:2176 Coq.Init.Logic <> :type_scope:x_'->'_x not
+R2177:2181 CertiOS.framework.models.state <> Frame ind
+R2169:2172 CertiOS.framework.models.state <> Word def
+R2161:2164 CertiOS.framework.models.state <> Word def
+R2153:2156 CertiOS.framework.models.state <> Word def
+R2145:2148 CertiOS.framework.models.state <> Word def
+R2137:2140 CertiOS.framework.models.state <> Word def
+R2129:2132 CertiOS.framework.models.state <> Word def
+R2121:2124 CertiOS.framework.models.state <> Word def
+R2113:2116 CertiOS.framework.models.state <> Word def
+R2250:2255 CertiOS.framework.models.state <> consfm constr
+not 2193:2193 <> :code_scope:'[['_x_','_x_','_x_','_x_','_x_','_x_','_x_','_x_']]'
+def 2339:2347 <> FrameList
+R2359:2362 Coq.Init.Datatypes <> list ind
+R2364:2368 CertiOS.framework.models.state <> Frame ind
+def 2396:2401 <> RState
+R2420:2422 Coq.Init.Datatypes <> :type_scope:x_'*'_x not
+R2413:2419 CertiOS.framework.models.state <> RegFile def
+R2423:2431 CertiOS.framework.models.state <> FrameList def
+def 2483:2492 <> DelayCycle
+R2497:2499 Coq.Init.Datatypes <> nat ind
+def 2530:2538 <> DelayItem
+R2568:2570 Coq.Init.Datatypes <> :type_scope:x_'*'_x not
+R2560:2562 Coq.Init.Datatypes <> :type_scope:x_'*'_x not
+R2550:2559 CertiOS.framework.models.state <> DelayCycle def
+R2563:2567 CertiOS.framework.models.state <> SpReg ind
+R2571:2574 CertiOS.framework.models.state <> Word def
+def 2605:2613 <> DelayList
+R2625:2628 Coq.Init.Datatypes <> list ind
+R2630:2638 CertiOS.framework.models.state <> DelayItem def
+def 2669:2669 <> X
+def 2709:2717 <> set_delay
+R2726:2730 CertiOS.framework.models.state <> SpReg ind
+R2738:2741 CertiOS.framework.models.state <> Word def
+R2749:2757 CertiOS.framework.models.state <> DelayList def
+R2776:2779 Coq.Init.Datatypes <> :list_scope:x_'::'_x not
+R2765:2765 Coq.Init.Datatypes <> :core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R2767:2768 Coq.Init.Datatypes <> :core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R2772:2773 Coq.Init.Datatypes <> :core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R2775:2775 Coq.Init.Datatypes <> :core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R2766:2766 CertiOS.framework.models.state <> X def
+R2769:2771 CertiOS.framework.models.state <> rsp var
+R2774:2774 CertiOS.framework.models.state <> w var
+R2780:2780 CertiOS.framework.models.state <> D var
+def 2807:2813 <> getRegs
+R2820:2828 CertiOS.framework.models.state <> DelayList def
+R2842:2842 CertiOS.framework.models.state <> D var
+R2864:2867 Coq.Init.Datatypes <> :list_scope:x_'::'_x not
+R2853:2853 Coq.Init.Datatypes <> :core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R2855:2856 Coq.Init.Datatypes <> :core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R2860:2861 Coq.Init.Datatypes <> :core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R2863:2863 Coq.Init.Datatypes <> :core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R2877:2881 Coq.Init.Datatypes <> :list_scope:x_'::'_x not
+R2892:2892 Coq.Init.Datatypes <> :list_scope:x_'::'_x not
+R2882:2888 CertiOS.framework.models.state <> getRegs def
+R2903:2905 Coq.Init.Datatypes <> nil constr
+ind 2977:2981 <> OpExp
+constr 2995:2996 <> Or
+constr 3018:3019 <> Ow
+R3006:3009 Coq.Init.Logic <> :type_scope:x_'->'_x not
+R3010:3014 CertiOS.framework.models.state <> OpExp ind
+R3000:3005 CertiOS.framework.models.state <> GenReg ind
+R3027:3030 Coq.Init.Logic <> :type_scope:x_'->'_x not
+R3031:3035 CertiOS.framework.models.state <> OpExp ind
+R3023:3026 CertiOS.framework.models.state <> Word def
+ind 3074:3080 <> AddrExp
+constr 3094:3095 <> Ao
+constr 3118:3120 <> Aro
+R3104:3107 Coq.Init.Logic <> :type_scope:x_'->'_x not
+R3108:3114 CertiOS.framework.models.state <> AddrExp ind
+R3099:3103 CertiOS.framework.models.state <> OpExp ind
+R3130:3133 Coq.Init.Logic <> :type_scope:x_'->'_x not
+R3139:3142 Coq.Init.Logic <> :type_scope:x_'->'_x not
+R3143:3149 CertiOS.framework.models.state <> AddrExp ind
+R3134:3138 CertiOS.framework.models.state <> OpExp ind
+R3124:3129 CertiOS.framework.models.state <> GenReg ind
+mod 3173:3178 <> AddrEq
+def 3194:3194 AddrEq t
+R3199:3202 CertiOS.framework.models.state <> Word def
+def 3218:3219 AddrEq eq
+R3224:3233 CertiOS.framework.auxiliary.Integers Int eq_dec thm
+R3240:3245 CertiOS.framework.models.state AddrEq <> mod
+R3266:3269 CertiOS.framework.auxiliary.Maps EMap <> modtype
+R3271:3276 CertiOS.framework.models.state AddrEq <> modtype
+mod 3256:3261 <> MemMap
+def 3291:3296 <> Memory
+R3301:3308 CertiOS.framework.models.state <> t def
+R3311:3316 Coq.Init.Datatypes <> option ind
+R3318:3321 CertiOS.framework.models.state <> Word def
+def 3385:3392 <> disjoint
+R3400:3405 CertiOS.framework.models.state <> Memory def
+R3414:3419 CertiOS.framework.models.state <> Memory def
+R3446:3452 CertiOS.framework.models.state <> Address def
+R3472:3473 CertiOS.framework.models.state <> M2 var
+R3475:3475 CertiOS.framework.models.state <> x var
+R3466:3467 CertiOS.framework.models.state <> M1 var
+R3469:3469 CertiOS.framework.models.state <> x var
+R3488:3491 Coq.Init.Datatypes <> Some constr
+R3496:3499 Coq.Init.Datatypes <> Some constr
+R3506:3510 Coq.Init.Logic <> False ind
+R3518:3521 Coq.Init.Datatypes <> Some constr
+R3526:3529 Coq.Init.Datatypes <> None constr
+R3534:3537 Coq.Init.Logic <> True ind
+R3545:3548 Coq.Init.Datatypes <> None constr
+R3551:3554 Coq.Init.Datatypes <> Some constr
+R3561:3564 Coq.Init.Logic <> True ind
+R3572:3575 Coq.Init.Datatypes <> None constr
+R3578:3581 Coq.Init.Datatypes <> None constr
+R3586:3589 Coq.Init.Logic <> True ind
+R3627:3634 CertiOS.framework.models.state <> disjoint def
+not 3609:3609 <> :mem_scope:x_'⊥'_x
+def 3695:3699 <> indom
+R3706:3712 CertiOS.framework.models.state <> Address def
+R3720:3725 CertiOS.framework.models.state <> Memory def
+R3733:3739 Coq.Init.Logic <> :type_scope:'exists'_x_'..'_x_','_x not
+R3741:3742 Coq.Init.Logic <> :type_scope:'exists'_x_'..'_x_','_x not
+R3746:3748 Coq.Init.Logic <> :type_scope:x_'='_x not
+R3743:3743 CertiOS.framework.models.state <> M var
+R3745:3745 CertiOS.framework.models.state <> x var
+R3749:3752 Coq.Init.Datatypes <> Some constr
+R3754:3754 CertiOS.framework.models.state <> v var
+def 3785:3792 <> is_indom
+R3799:3805 CertiOS.framework.models.state <> Address def
+R3813:3818 CertiOS.framework.models.state <> Memory def
+R3832:3832 CertiOS.framework.models.state <> M var
+R3834:3834 CertiOS.framework.models.state <> x var
+R3845:3848 Coq.Init.Datatypes <> Some constr
+R3855:3858 Coq.Init.Datatypes <> true constr
+R3864:3867 Coq.Init.Datatypes <> None constr
+R3872:3876 Coq.Init.Datatypes <> false constr
+def 3909:3913 <> merge
+R3921:3926 CertiOS.framework.models.state <> Memory def
+R3935:3940 CertiOS.framework.models.state <> Memory def
+R3963:3964 CertiOS.framework.models.state <> M1 var
+R3966:3966 CertiOS.framework.models.state <> x var
+R3983:3986 Coq.Init.Datatypes <> None constr
+R3991:3992 CertiOS.framework.models.state <> M2 var
+R3994:3994 CertiOS.framework.models.state <> x var
+R4006:4009 Coq.Init.Datatypes <> Some constr
+R4016:4019 Coq.Init.Datatypes <> Some constr
+R4063:4067 CertiOS.framework.models.state <> merge def
+not 4045:4045 <> :mem_scope:x_'⊎'_x
+def 4132:4134 <> emp
+R4138:4143 CertiOS.framework.models.state <> Memory def
+R4157:4163 CertiOS.framework.models.state <> Address def
+R4169:4172 Coq.Init.Datatypes <> None constr
+def 4202:4206 <> Label
+R4217:4220 CertiOS.framework.models.state <> Word def
+def 4255:4259 <> State
+R4285:4287 Coq.Init.Datatypes <> :type_scope:x_'*'_x not
+R4276:4278 Coq.Init.Datatypes <> :type_scope:x_'*'_x not
+R4270:4275 CertiOS.framework.models.state <> Memory def
+R4279:4284 CertiOS.framework.models.state <> RState def
+R4288:4296 CertiOS.framework.models.state <> DelayList def
+R4348:4355 CertiOS.framework.auxiliary.Integers Int repr def
+not 4338:4338 <> :code_scope:'$'_x
+R4411:4417 CertiOS.framework.auxiliary.Integers Int shl def
+not 4395:4395 <> :code_scope:x_'<<ᵢ'_x
+R4475:4482 CertiOS.framework.auxiliary.Integers Int shru def
+not 4459:4459 <> :code_scope:x_'>>ᵢ'_x
+R4539:4545 CertiOS.framework.auxiliary.Integers Int and def
+not 4524:4524 <> :code_scope:x_'&ᵢ'_x
+R4602:4607 CertiOS.framework.auxiliary.Integers Int or def
+not 4587:4587 <> :code_scope:x_'|ᵢ'_x
+R4664:4670 CertiOS.framework.auxiliary.Integers Int add def
+not 4649:4649 <> :code_scope:x_'+ᵢ'_x
+R4727:4733 CertiOS.framework.auxiliary.Integers Int sub def
+not 4712:4712 <> :code_scope:x_'-ᵢ'_x
+R4790:4795 CertiOS.framework.auxiliary.Integers Int eq def
+not 4775:4775 <> :code_scope:x_'=ᵢ'_x
+R4852:4857 CertiOS.framework.auxiliary.Integers Int lt def
+not 4837:4837 <> :code_scope:x_'<ᵢ'_x
+R4914:4919 CertiOS.framework.auxiliary.Integers Int lt def
+not 4899:4899 <> :code_scope:x_'>ᵢ'_x
+R4977:4979 Coq.Init.Datatypes <> orb def
+R4993:4998 CertiOS.framework.auxiliary.Integers Int eq def
+R4981:4986 CertiOS.framework.auxiliary.Integers Int lt def
+not 4961:4961 <> :code_scope:x_'<=ᵢ'_x
+R5057:5059 Coq.Init.Datatypes <> orb def
+R5073:5078 CertiOS.framework.auxiliary.Integers Int eq def
+R5061:5066 CertiOS.framework.auxiliary.Integers Int lt def
+not 5041:5041 <> :code_scope:x_'>=ᵢ'_x
+R5137:5140 Coq.Init.Datatypes <> negb def
+R5142:5147 CertiOS.framework.auxiliary.Integers Int eq def
+not 5121:5121 <> :code_scope:x_'!=ᵢ'_x
+R5207:5214 CertiOS.framework.auxiliary.Integers Int modu def
+not 5190:5190 <> :code_scope:x_'modu'_x
+R5272:5278 CertiOS.framework.auxiliary.Integers Int xor def
+not 5256:5256 <> :code_scope:x_'xor'_x
+def 5347:5354 <> eval_reg
+R5361:5367 CertiOS.framework.models.state <> RegFile def
+R5375:5380 CertiOS.framework.models.state <> Memory def
+R5389:5395 CertiOS.framework.models.state <> RegName ind
+R5403:5403 CertiOS.framework.models.state <> M var
+R5406:5406 CertiOS.framework.models.state <> R var
+R5409:5410 CertiOS.framework.models.state <> rn var
+def 5427:5436 <> eval_opexp
+R5443:5449 CertiOS.framework.models.state <> RegFile def
+R5457:5462 CertiOS.framework.models.state <> Memory def
+R5470:5474 CertiOS.framework.models.state <> OpExp ind
+R5488:5488 CertiOS.framework.models.state <> a var
+R5499:5500 CertiOS.framework.models.state <> Or constr
+R5507:5514 CertiOS.framework.models.state <> eval_reg def
+R5518:5518 CertiOS.framework.models.state <> M var
+R5516:5516 CertiOS.framework.models.state <> R var
+R5526:5527 CertiOS.framework.models.state <> Ow constr
+R5541:5544 Coq.Init.Datatypes <> andb def
+R5567:5574 CertiOS.framework.models.state <> :code_scope:x_'<=ᵢ'_x not
+R5580:5580 CertiOS.framework.models.state <> :code_scope:x_'<=ᵢ'_x not
+R5575:5575 CertiOS.framework.models.state <> :code_scope:'$'_x not
+R5575:5575 CertiOS.framework.models.state <> :code_scope:'$'_x not
+R5547:5547 CertiOS.framework.models.state <> :code_scope:x_'<=ᵢ'_x not
+R5554:5561 CertiOS.framework.models.state <> :code_scope:x_'<=ᵢ'_x not
+R5548:5548 CertiOS.framework.models.state <> :code_scope:'$'_x not
+R5548:5548 CertiOS.framework.models.state <> :code_scope:'$'_x not
+R5616:5619 Coq.Init.Datatypes <> None constr
+R5594:5597 Coq.Init.Datatypes <> Some constr
+def 5640:5651 <> eval_addrexp
+R5658:5664 CertiOS.framework.models.state <> RegFile def
+R5672:5677 CertiOS.framework.models.state <> Memory def
+R5685:5691 CertiOS.framework.models.state <> AddrExp ind
+R5705:5705 CertiOS.framework.models.state <> b var
+R5716:5717 CertiOS.framework.models.state <> Ao constr
+R5724:5733 CertiOS.framework.models.state <> eval_opexp def
+R5737:5737 CertiOS.framework.models.state <> M var
+R5735:5735 CertiOS.framework.models.state <> R var
+R5745:5747 CertiOS.framework.models.state <> Aro constr
+R5767:5774 CertiOS.framework.models.state <> eval_reg def
+R5778:5778 CertiOS.framework.models.state <> M var
+R5776:5776 CertiOS.framework.models.state <> R var
+R5794:5797 Coq.Init.Datatypes <> Some constr
+R5818:5827 CertiOS.framework.models.state <> eval_opexp def
+R5831:5831 CertiOS.framework.models.state <> M var
+R5829:5829 CertiOS.framework.models.state <> R var
+R5849:5852 Coq.Init.Datatypes <> Some constr
+R5860:5863 Coq.Init.Datatypes <> Some constr
+R5868:5873 CertiOS.framework.models.state <> :code_scope:x_'+ᵢ'_x not
+R5886:5889 Coq.Init.Datatypes <> None constr
+R5894:5897 Coq.Init.Datatypes <> None constr
+R5916:5919 Coq.Init.Datatypes <> None constr
+R5924:5927 Coq.Init.Datatypes <> None constr
+def 5992:5996 <> set_R
+R6003:6009 CertiOS.framework.models.state <> RegFile def
+R6017:6022 CertiOS.framework.models.state <> Memory def
+R6031:6037 CertiOS.framework.models.state <> RegName ind
+R6045:6048 CertiOS.framework.models.state <> Word def
+R6059:6066 CertiOS.framework.models.state <> is_indom def
+R6075:6075 CertiOS.framework.models.state <> M var
+R6069:6069 CertiOS.framework.models.state <> R var
+R6071:6072 CertiOS.framework.models.state <> rn var
+R6126:6126 CertiOS.framework.models.state <> M var
+R6086:6095 CertiOS.framework.models.state <> set def
+R6113:6113 CertiOS.framework.models.state <> M var
+R6105:6108 Coq.Init.Datatypes <> Some constr
+R6110:6110 CertiOS.framework.models.state <> w var
+R6098:6098 CertiOS.framework.models.state <> R var
+R6100:6101 CertiOS.framework.models.state <> rn var
+def 6154:6164 <> fetch_frame
+R6171:6176 CertiOS.framework.models.state <> Memory def
+R6184:6190 CertiOS.framework.models.state <> RegFile def
+R6228:6233 CertiOS.framework.models.state <> GenReg ind
+R6240:6245 Coq.Init.Datatypes <> option ind
+R6247:6251 CertiOS.framework.models.state <> Frame ind
+R6405:6412 CertiOS.framework.models.state <> eval_reg def
+R6418:6420 CertiOS.framework.models.state <> rr7 var
+R6416:6416 CertiOS.framework.models.state <> M var
+R6414:6414 CertiOS.framework.models.state <> R var
+R6385:6392 CertiOS.framework.models.state <> eval_reg def
+R6398:6400 CertiOS.framework.models.state <> rr6 var
+R6396:6396 CertiOS.framework.models.state <> M var
+R6394:6394 CertiOS.framework.models.state <> R var
+R6365:6372 CertiOS.framework.models.state <> eval_reg def
+R6378:6380 CertiOS.framework.models.state <> rr5 var
+R6376:6376 CertiOS.framework.models.state <> M var
+R6374:6374 CertiOS.framework.models.state <> R var
+R6345:6352 CertiOS.framework.models.state <> eval_reg def
+R6358:6360 CertiOS.framework.models.state <> rr4 var
+R6356:6356 CertiOS.framework.models.state <> M var
+R6354:6354 CertiOS.framework.models.state <> R var
+R6325:6332 CertiOS.framework.models.state <> eval_reg def
+R6338:6340 CertiOS.framework.models.state <> rr3 var
+R6336:6336 CertiOS.framework.models.state <> M var
+R6334:6334 CertiOS.framework.models.state <> R var
+R6305:6312 CertiOS.framework.models.state <> eval_reg def
+R6318:6320 CertiOS.framework.models.state <> rr2 var
+R6316:6316 CertiOS.framework.models.state <> M var
+R6314:6314 CertiOS.framework.models.state <> R var
+R6285:6292 CertiOS.framework.models.state <> eval_reg def
+R6298:6300 CertiOS.framework.models.state <> rr1 var
+R6296:6296 CertiOS.framework.models.state <> M var
+R6294:6294 CertiOS.framework.models.state <> R var
+R6265:6272 CertiOS.framework.models.state <> eval_reg def
+R6278:6280 CertiOS.framework.models.state <> rr0 var
+R6276:6276 CertiOS.framework.models.state <> M var
+R6274:6274 CertiOS.framework.models.state <> R var
+R6432:6435 Coq.Init.Datatypes <> Some constr
+R6441:6444 Coq.Init.Datatypes <> Some constr
+R6450:6453 Coq.Init.Datatypes <> Some constr
+R6459:6462 Coq.Init.Datatypes <> Some constr
+R6468:6471 Coq.Init.Datatypes <> Some constr
+R6477:6480 Coq.Init.Datatypes <> Some constr
+R6486:6489 Coq.Init.Datatypes <> Some constr
+R6495:6498 Coq.Init.Datatypes <> Some constr
+R6510:6513 Coq.Init.Datatypes <> Some constr
+R6516:6517 CertiOS.framework.models.state <> :code_scope:'[['_x_','_x_','_x_','_x_','_x_','_x_','_x_','_x_']]' not
+R6520:6521 CertiOS.framework.models.state <> :code_scope:'[['_x_','_x_','_x_','_x_','_x_','_x_','_x_','_x_']]' not
+R6524:6525 CertiOS.framework.models.state <> :code_scope:'[['_x_','_x_','_x_','_x_','_x_','_x_','_x_','_x_']]' not
+R6528:6529 CertiOS.framework.models.state <> :code_scope:'[['_x_','_x_','_x_','_x_','_x_','_x_','_x_','_x_']]' not
+R6532:6533 CertiOS.framework.models.state <> :code_scope:'[['_x_','_x_','_x_','_x_','_x_','_x_','_x_','_x_']]' not
+R6536:6537 CertiOS.framework.models.state <> :code_scope:'[['_x_','_x_','_x_','_x_','_x_','_x_','_x_','_x_']]' not
+R6540:6541 CertiOS.framework.models.state <> :code_scope:'[['_x_','_x_','_x_','_x_','_x_','_x_','_x_','_x_']]' not
+R6544:6545 CertiOS.framework.models.state <> :code_scope:'[['_x_','_x_','_x_','_x_','_x_','_x_','_x_','_x_']]' not
+R6548:6549 CertiOS.framework.models.state <> :code_scope:'[['_x_','_x_','_x_','_x_','_x_','_x_','_x_','_x_']]' not
+R6582:6585 Coq.Init.Datatypes <> None constr
+def 6606:6610 <> fetch
+R6617:6622 CertiOS.framework.models.state <> Memory def
+R6630:6636 CertiOS.framework.models.state <> RegFile def
+R6767:6777 CertiOS.framework.models.state <> fetch_frame def
+R6811:6813 CertiOS.framework.models.state <> r31 constr
+R6807:6809 CertiOS.framework.models.state <> r30 constr
+R6803:6805 CertiOS.framework.models.state <> r29 constr
+R6799:6801 CertiOS.framework.models.state <> r28 constr
+R6795:6797 CertiOS.framework.models.state <> r27 constr
+R6791:6793 CertiOS.framework.models.state <> r26 constr
+R6787:6789 CertiOS.framework.models.state <> r25 constr
+R6783:6785 CertiOS.framework.models.state <> r24 constr
+R6781:6781 CertiOS.framework.models.state <> R var
+R6779:6779 CertiOS.framework.models.state <> M var
+R6708:6718 CertiOS.framework.models.state <> fetch_frame def
+R6752:6754 CertiOS.framework.models.state <> r23 constr
+R6748:6750 CertiOS.framework.models.state <> r22 constr
+R6744:6746 CertiOS.framework.models.state <> r21 constr
+R6740:6742 CertiOS.framework.models.state <> r20 constr
+R6736:6738 CertiOS.framework.models.state <> r19 constr
+R6732:6734 CertiOS.framework.models.state <> r18 constr
+R6728:6730 CertiOS.framework.models.state <> r17 constr
+R6724:6726 CertiOS.framework.models.state <> r16 constr
+R6722:6722 CertiOS.framework.models.state <> R var
+R6720:6720 CertiOS.framework.models.state <> M var
+R6651:6661 CertiOS.framework.models.state <> fetch_frame def
+R6693:6695 CertiOS.framework.models.state <> r15 constr
+R6689:6691 CertiOS.framework.models.state <> r14 constr
+R6685:6687 CertiOS.framework.models.state <> r13 constr
+R6681:6683 CertiOS.framework.models.state <> r12 constr
+R6677:6679 CertiOS.framework.models.state <> r11 constr
+R6673:6675 CertiOS.framework.models.state <> r10 constr
+R6670:6671 CertiOS.framework.models.state <> r9 constr
+R6667:6668 CertiOS.framework.models.state <> r8 constr
+R6665:6665 CertiOS.framework.models.state <> R var
+R6663:6663 CertiOS.framework.models.state <> M var
+R6825:6828 Coq.Init.Datatypes <> Some constr
+R6835:6838 Coq.Init.Datatypes <> Some constr
+R6845:6848 Coq.Init.Datatypes <> Some constr
+R6861:6864 Coq.Init.Datatypes <> Some constr
+R6870:6873 Coq.Init.Datatypes <> :list_scope:x_'::'_x not
+R6877:6880 Coq.Init.Datatypes <> :list_scope:x_'::'_x not
+R6884:6887 Coq.Init.Datatypes <> :list_scope:x_'::'_x not
+R6888:6890 Coq.Init.Datatypes <> nil constr
+R6908:6911 Coq.Init.Datatypes <> None constr
+def 6946:6954 <> exe_delay
+R6961:6966 CertiOS.framework.models.state <> Memory def
+R6974:6980 CertiOS.framework.models.state <> RegFile def
+R6988:6996 CertiOS.framework.models.state <> DelayList def
+R7007:7009 Coq.Init.Datatypes <> :type_scope:x_'*'_x not
+R7001:7006 CertiOS.framework.models.state <> Memory def
+R7010:7018 CertiOS.framework.models.state <> DelayList def
+R7031:7031 CertiOS.framework.models.state <> D var
+R7057:7060 Coq.Init.Datatypes <> :list_scope:x_'::'_x not
+R7042:7042 Coq.Init.Datatypes <> :core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R7048:7049 Coq.Init.Datatypes <> :core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R7053:7054 Coq.Init.Datatypes <> :core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R7056:7056 Coq.Init.Datatypes <> :core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R7086:7094 CertiOS.framework.models.state <> exe_delay def
+R7100:7100 CertiOS.framework.models.state <> D var
+R7098:7098 CertiOS.framework.models.state <> R var
+R7096:7096 CertiOS.framework.models.state <> M var
+R7109:7109 Coq.Init.Datatypes <> :core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R7126:7127 Coq.Init.Datatypes <> :core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R7130:7130 Coq.Init.Datatypes <> :core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R7110:7114 CertiOS.framework.models.state <> set_R def
+R7118:7119 CertiOS.framework.models.state <> M' var
+R7116:7116 CertiOS.framework.models.state <> R var
+R7128:7129 CertiOS.framework.models.state <> D' var
+R7149:7152 Coq.Init.Datatypes <> :list_scope:x_'::'_x not
+R7136:7136 Coq.Init.Datatypes <> :core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R7140:7141 Coq.Init.Datatypes <> :core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R7145:7146 Coq.Init.Datatypes <> :core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R7148:7148 Coq.Init.Datatypes <> :core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R7137:7137 Coq.Init.Datatypes <> S constr
+R7178:7186 CertiOS.framework.models.state <> exe_delay def
+R7192:7192 CertiOS.framework.models.state <> D var
+R7190:7190 CertiOS.framework.models.state <> R var
+R7188:7188 CertiOS.framework.models.state <> M var
+R7201:7201 Coq.Init.Datatypes <> :core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R7204:7205 Coq.Init.Datatypes <> :core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R7223:7223 Coq.Init.Datatypes <> :core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R7202:7203 CertiOS.framework.models.state <> M' var
+R7217:7220 Coq.Init.Datatypes <> :list_scope:x_'::'_x not
+R7206:7206 Coq.Init.Datatypes <> :core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R7208:7209 Coq.Init.Datatypes <> :core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R7213:7214 Coq.Init.Datatypes <> :core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R7216:7216 Coq.Init.Datatypes <> :core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R7221:7222 CertiOS.framework.models.state <> D' var
+R7229:7231 Coq.Init.Datatypes <> nil constr
+R7236:7236 Coq.Init.Datatypes <> :core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R7238:7239 Coq.Init.Datatypes <> :core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R7241:7241 Coq.Init.Datatypes <> :core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R7237:7237 CertiOS.framework.models.state <> M var
+R7240:7240 CertiOS.framework.models.state <> D var
