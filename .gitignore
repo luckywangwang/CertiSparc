@@ -1,0 +1,19 @@
+# auto-save
+*~
+\#*
+
+# html
+*.html
+
+# cscope file
+cscope.*
+
+# cop
+*.vo
+*.glob
+*.v.d
+*.aux
+.deps
+*.odt
+*.json
+*.#*.v
