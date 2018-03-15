@@ -34,7 +34,7 @@ Inductive asrt : Type :=
 | Aforall (ty : Type) (P : ty -> asrt)
 | Aexists (ty : Type) (P : ty -> asrt).
 
-Notation "'[|' P ']|'" := (Apure P) (at level 29, no associativity).
+Notation "'[|' P '|]'" := (Apure P) (at level 29, no associativity).
 Infix "**" := Astar (at level 30, right associativity).
 Infix "//\\" := Aconj (at level 31, right associativity).
 Infix "\\//" := Adisj (at level 32, right associativity).
@@ -137,7 +137,7 @@ Fixpoint sat (s : State) (p : asrt) {struct p} : Prop :=
   | Atrue => True
   | Afalse => False
   | Aconj p1 p2 => sat s p1 /\ sat s p2
-  | Adisj p1 p2 => sat s p2 \/ sat s p2
+  | Adisj p1 p2 => sat s p1 \/ sat s p2
   | Astar p1 p2 =>
     exists s1 s2, state_union s1 s2 s /\ sat s1 p1 /\ sat s2 p2
   | Aforall t p' => forall (x : t), sat s (p' x)
@@ -341,7 +341,47 @@ Inductive wf_seq : funspec -> asrt -> InsSeq -> asrt -> Prop :=
     ((r1 |=> f1 ** p1) ↓) ==> (aexp2 ==ₓ f2') -> ((r1 |=> f1 ** p1) ↓) ==> r2 |=> v2 ** p2 ->
     Spec (f1, f2) = Some (fp, fq) ->
     (r2 |=> f2 ** p2) ↓ ==> fp L ** r -> fq L ** r ==> q -> DlyFrameFree r ->
-    wf_seq Spec p (consJ2 f1 aexp1 r1 f2 aexp2 r2) q.
+    wf_seq Spec p (consJ2 f1 aexp1 r1 f2 aexp2 r2) q
+
+| Be_rule : forall p p' q r aexp f1 f2 f bv fp fq L i I Spec,
+    (p ↓) ==> (aexp ==ₓ f) -> Spec (f, f +ᵢ ($ 4)) = Some (fp, fq) ->
+    |- {{ p ↓ }} i {{ p' }} -> (p ↓) ==> z |=> bv ** Atrue ->
+    wf_seq Spec ( p' //\\ [| bv =ᵢ ($ 0) = true |] ) I q ->
+    ((bv =ᵢ ($ 0) = false) -> ((p' ==> fp L ** r) /\ (fq L ** r ==> q))) ->
+    wf_seq Spec p (f1 e> be aexp ;; f2 e> i ;; I) q
+
+| Bne_rule : forall p p' q r aexp f1 f2 f bv fp fq L i I Spec,
+    (p ↓) ==> (aexp ==ₓ f) -> Spec (f, f +ᵢ ($ 4)) = Some (fp, fq) ->
+    |- {{ p ↓ }} i {{ p' }} -> (p ↓) ==> z |=> bv ** Atrue ->
+    wf_seq Spec ( p' //\\ [| bv =ᵢ ($ 0) = false |] ) I q ->
+    ((bv =ᵢ ($ 0) = true) -> ((p' ==> fp L ** r) /\ (fq L ** r ==> q))) ->
+    wf_seq Spec p (f1 n> bne aexp ;; f2 n> i ;; I) q
+
+| Seq_conseq_ruel : forall p p1 q q1 I Spec,
+    p ==> p1 -> q1 ==> q ->
+    wf_seq Spec p1 I q1 ->
+    wf_seq Spec p I q
+
+| Ex_intro_rule : forall q I {tp:Type} p Spec,
+    (forall x', wf_seq Spec (p x') I q) ->
+    wf_seq Spec (EX x : tp, p x) I q.
+
+Notation " Spec '|-' '{{' p '}}' I '{{' q '}}' " :=
+  (wf_seq Spec p I q) (at level 55).
+
+
+(*+ Well-formed Code Heap +*)
+Inductive wf_cdhp : funspec -> CodeHeap -> funspec -> Prop :=
+| cdhp_rule : forall Spec Spec' C fp fq I,
+    (
+      forall f1 f2 L,
+        Spec' (f1, f2) = Some (fp, fq) ->
+        LookupC C f1 f2 I ->
+        wf_seq Spec (fp L) I (fq L)
+    ) ->
+    wf_cdhp Spec C Spec'.
+     
+
 
 
     
