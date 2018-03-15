@@ -315,37 +315,69 @@ Proof.
   eauto.
 Qed.
 
-Lemma disjoint_indom_setR_still :
+Lemma disjoint_setR_still :
   forall m1 m2 R rn v,
     disjoint m1 m2 ->
-    indom (R rn) m1 ->
     disjoint (set_R R m1 rn v) m2.
 Proof.
   intros.
   unfold set_R.
-  eapply indom_isindom in H0.
-  rewrite H0.
-  unfolds disjoint.
+  unfold is_indom.
+  destruct (m1 (R rn)) eqn:Heqe.
+  {
+    unfolds disjoint.
+    intros.
+    specialize (H x).
+    destruct (m1 x) eqn:Heqe1;
+      destruct (m2 x) eqn:Heqe2; tryfalse.
+    {
+      unfolds MemMap.set.
+      destruct (AddrEq.eq x (R rn)); eauto.
+      rewrite Heqe1; eauto.
+    }
+    {
+      unfolds MemMap.set.
+      destruct (AddrEq.eq x (R rn)); eauto.
+      subst.
+      rewrite Heqe1 in Heqe.
+      tryfalse.
+      rewrite Heqe1; eauto.
+    }
+    {
+      unfolds MemMap.set.
+      destruct (AddrEq.eq x (R rn)); eauto.
+      rewrite Heqe1; eauto.
+    }
+  }
+  {
+    unfolds disjoint.
+    intros.
+    specialize (H x).
+    destruct (m1 x) eqn:Heqe1;
+      destruct (m2 x) eqn:Heqe2; eauto; tryfalse.
+  }
+Qed.
+
+Lemma disjoint_setfrm_still :
+  forall M m R rr0 rr1 rr2 rr3 rr4 rr5 rr6 rr7 fm,
+    disjoint M m ->
+    disjoint (set_frame R M rr0 rr1 rr2 rr3 rr4 rr5 rr6 rr7 fm) m.
+Proof.
   intros.
-  specialize (H x).
-  destruct (m1 x) eqn:Heqe1;
-    destruct (m2 x) eqn:Heqe2; tryfalse.
-  -
-    unfolds MemMap.set.
-    destruct (AddrEq.eq x (R rn)).
-    eauto.
-    rewrite Heqe1; eauto.
-  -
-    unfolds MemMap.set.
-    destruct (AddrEq.eq x (R rn)).
-    subst.
-    unfolds is_indom.
-    destruct (m1 (R rn)); tryfalse.
-    rewrite Heqe1; eauto.
-  -
-    unfolds MemMap.set.
-    destruct (AddrEq.eq x (R rn)); eauto.
-    rewrite Heqe1; eauto.
+  unfold set_frame.
+  destruct fm.
+  simpl.
+  repeat (eapply disjoint_setR_still; eauto).
+Qed.
+
+Lemma disjoint_setwin_still :
+  forall M m R fm1 fm2 fm3,
+    disjoint M m ->
+    disjoint (set_window R M fm1 fm2 fm3) m.
+Proof.
+  intros.
+  unfold set_window.
+  repeat (eapply disjoint_setfrm_still; eauto).
 Qed.
 
 Lemma disjoint_indom_setM_still :
@@ -379,11 +411,53 @@ Proof.
     destruct v; eauto.
     rewrite Heqe1; eauto.
 Qed.
+
+Lemma indom_setR_still :
+  forall l rn R M v,
+    indom l M ->
+    indom l (set_R R M rn v).
+Proof.
+  intros.
+  unfolds indom.
+  simpljoin1.
+  unfolds set_R.
+  unfolds is_indom.
+  destruct (M (R rn)) eqn:Heqe.
+  {
+    unfolds MemMap.set.
+    destruct (AddrEq.eq l (R rn)) eqn:Heqe1; eauto.
+  }
+  {
+    eauto.
+  }
+Qed.
+
+Lemma indom_setfrm_still :
+  forall l M R fm rr0 rr1 rr2 rr3 rr4 rr5 rr6 rr7,
+    indom l M ->
+    indom l (set_frame R M rr0 rr1 rr2 rr3 rr4 rr5 rr6 rr7 fm).
+Proof.
+  intros.
+  unfold set_frame.
+  destruct fm; eauto.
+  simpl.
+  repeat (eapply indom_setR_still); eauto.
+Qed.
+  
+Lemma indom_setwin_still :
+  forall l M R fm1 fm2 fm3,
+    indom l M ->
+    indom l (set_window R M fm1 fm2 fm3).
+Proof.
+  intros.
+  unfold set_window.
+  repeat (eapply indom_setfrm_still; eauto).
+Qed.
   
 Lemma ins_frm_property :
   forall s1 s1' s2 s i,
     state_union s1 s2 s -> (Q__ s1 (cntrans i) s1') ->
-    exists s', state_union s1' s2 s'.
+    exists s' s2', state_union s1' s2' s' /\ getmem s2 = getmem s2' /\ getregs s2 = getregs s2'.
 Proof.
   intros.
   destruct i.
@@ -397,9 +471,10 @@ Proof.
     simpl in H.
     simpljoin1.
     exists (merge (set_R r M g v) m, (r, f), d).
+    exists (m, (r, f), d).
     simpl. 
     repeat (split; eauto).
-    eapply disjoint_indom_setR_still; eauto.
+    eapply disjoint_setR_still; eauto.
 
   - (* st *)
     inversion H0; subst.
@@ -410,6 +485,7 @@ Proof.
     simpl in H.
     simpljoin1.
     exists (merge (MemMap.set addr (Some v) M) m, (r, f), d).
+    exists (m, (r, f), d).
     simpl.
     repeat (split; eauto).
     eapply disjoint_indom_setM_still; eauto.
@@ -423,6 +499,7 @@ Proof.
     simpl in H.
     simpljoin1.
     exists (merge M' m, (r, f), d).
+    exists (m, (r, f), d).
     simpl.
     repeat (split; eauto).
 
@@ -435,6 +512,7 @@ Proof.
     simpl in H.
     simpljoin1.
     exists (merge (MemMap.set (r g0) (Some v1 +ᵢ v2) M) m, (r, f), d).
+    exists (m, (r, f), d).
     simpl.
     repeat (split; eauto).
     eapply disjoint_indom_setM_still; eauto.
@@ -448,12 +526,171 @@ Proof.
     simpl in H.
     simpljoin1.
     exists (merge (MemMap.set (r g0) (Some v1 -ᵢ v2) M) m, (r, f), d).
+    exists (m, (r, f), d).
     simpl.
     repeat (split; eauto).
     eapply disjoint_indom_setM_still; eauto.
 
   - (* subcc *)
-    
+    inversion H0; subst.
+    inversion H3; subst.
+    destruct s2.
+    destruct p.
+    destruct r.
+    simpl in H.
+    simpljoin1.
+    exists (merge (set_Rs r M [(Rr g0, v1 -ᵢ v2);
+                          (Rpsr n, get_range 31 31 v1 -ᵢ v2); (Rpsr z, iszero v1 -ᵢ v2)]) m,
+       (r, f), d).
+    exists (m, (r, f), d).
+    simpl. 
+    repeat (split; eauto).
+    repeat (eapply disjoint_setR_still; eauto).
+
+  - (* and *)
+    inversion H0; subst.
+    inversion H3; subst.
+    destruct s2.
+    destruct p.
+    destruct r.
+    simpl in H.
+    simpljoin1.
+    exists (merge (MemMap.set (r g0) (Some v1 &ᵢ v2) M) m, (r, f), d).
+    exists (m, (r, f), d).
+    simpl.
+    repeat (split; eauto).
+    eapply disjoint_indom_setM_still; eauto.
+
+  - (* andcc *)
+    inversion H0; subst.
+    inversion H3; subst.
+    destruct s2.
+    destruct p.
+    destruct r.
+    simpl in H.
+    simpljoin1.
+    exists (merge (set_Rs r M [(Rr g0, v1 &ᵢ v2);
+                          (Rpsr n, get_range 31 31 v1 &ᵢ v2); (Rpsr z, iszero v1 &ᵢ v2)]) m,
+       (r, f), d).
+    exists (m, (r, f), d).
+    simpl.
+    repeat (split; eauto).
+    repeat (eapply disjoint_setR_still; eauto).
+
+  - (* or *)
+    inversion H0; subst.
+    inversion H3; subst.
+    destruct s2.
+    destruct p.
+    destruct r.
+    simpl in H.
+    simpljoin1.
+    exists (merge (MemMap.set (r g0) (Some v1 |ᵢ v2) M) m, (r, f), d).
+    exists (m, (r, f), d).
+    simpl.
+    repeat (split; eauto).
+    eapply disjoint_indom_setM_still; eauto.
+
+  - (* save *)
+    inversion H0; subst.
+    inversion H3.
+    destruct s2.
+    destruct p.
+    destruct r.
+    simpl in H.
+    simpljoin1.
+    exists (merge (set_Rs r (set_window r M fm1 fm2 fmo) [(Rr g0, v1 +ᵢ v2); (Rpsr cwp, pre_cwp k)]) m,
+       (r, fml :: fmi :: F'), d).
+    exists (m, (r, fml :: fmi :: F'), d).
+    simpl.
+    repeat (split; eauto).
+    repeat (eapply disjoint_setR_still); eauto.
+    eapply disjoint_setwin_still; eauto.
+
+  - (* restore *)
+    inversion H0; subst.
+    inversion H3.
+    destruct s2.
+    destruct p.
+    destruct r.
+    simpl in H.
+    simpljoin1.
+    exists (merge (set_Rs r (set_window r M fmi fm1 fm2) [(Rr g0, v1 +ᵢ v2); (Rpsr cwp, post_cwp k)]) m,
+       (r, F' ++ fmo :: fml :: F'), d).
+    exists (m, (r, F' ++ fmo :: fml :: F'), d).
+    simpl.
+    repeat (split; eauto).
+    repeat (eapply disjoint_setR_still); eauto.
+    eapply disjoint_setwin_still; eauto.
+
+  - (* rd *)
+    inversion H0; subst.
+    inversion H3; subst.
+    destruct s2.
+    destruct p.
+    destruct r.
+    simpl in H.
+    simpljoin1.
+    exists (merge (set_R r M g v) m, (r, f), d).
+    exists (m, (r, f), d).
+    simpl.
+    repeat (split; eauto).
+    eapply disjoint_setR_still; eauto.
+
+  - (* wr *)
+    inversion H0; subst.
+    inversion H3.
+    destruct s2.
+    destruct p.
+    destruct r.
+    simpl in H.
+    simpljoin1.
+    exists (merge M m, (r, f), set_delay s0 v1 xor v2 d).
+    exists (m, (r, f), set_delay s0 v1 xor v2 d).
+    simpl.
+    repeat (split; eauto).
+Qed.
+
+Lemma eval_addrexp_merge_still :
+  forall M m R aexp l,
+    eval_addrexp R M aexp = Some l ->
+    disjoint M m ->
+    eval_addrexp R M aexp = Some l.
+Proof.
+  intros.
+  
+
+Lemma ins_safety_property :
+  forall s1 s1' s2 s i,
+    state_union s1 s2 s -> (Q__ s1 (cntrans i) s1') ->
+    exists s', Q__ s (cntrans i) s'.
+Proof.
+  intros.
+  lets Ht : H.
+  eapply ins_frm_property in Ht; eauto.
+  simpljoin1.
+  renames x0 to s2', x to s'.
+  
+  destruct i.
+ 
+  - (* ld *)
+    inversion H0; subst.
+    inversion H6; subst.
+    destruct s2.
+    destruct p.
+    destruct r.
+    simpl in H.
+    simpljoin1.
+    destruct s2'.
+    destruct p.
+    destruct r0.
+    simpl in H1.
+    simpljoin1.
+    simpls.
+    subst.
+    exists (merge (set_R r0 M g v) m0, (r0, f0), d0).
+    eapply NormalIns; eauto.
+    eapply Ld_step; eauto.
     
 Lemma conj_ins_sound : forall p1 p2 q1 q2 i,
     ins_sound p1 q1 i -> ins_sound p2 q2 i -> ins_sound (p1 //\\ p2) (q1 //\\ q2) i.
@@ -529,6 +766,12 @@ Proof.
   lets Hpp : Hp.
   eapply H in Hpp.
   destruct Hpp as [s1' [HQ Hq] ].
+  remember Hunion as Ht.
+  clear HeqHt.
+  eapply ins_frm_property in Ht; eauto.
+  simpljoin1.
+  rename x0 into s2'. rename x into s'.
+  exists s'.
   
   
 (*+ Lemmas about safety +*)
