@@ -250,7 +250,8 @@ Inductive Q__: State -> command -> State -> Prop :=
 | SSave :
     forall (M M' M'' : Memory) (R : RegFile) D F F' k k' oexp
            fmo fml fmi fm1 fm2 v1 v2 v (rs rd : GenReg),
-      M (R cwp) = Some k -> M (R Rwim) = Some v -> fetch M R = Some [fmo; fml; fmi] ->
+      M (R cwp) = Some k -> M (R Rwim) = Some v ->
+      fetch M R = Some [fmo; fml; fmi] -> indom (R rd) M -> 
       M (R rs) = Some v1 -> eval_opexp R M oexp = Some v2 -> F = F' ++ (fm1 :: fm2 :: nil) ->
       M' = set_window R M fm1 fm2 fmo -> k' = pre_cwp k -> win_masked k' v = false -> 
       M'' = set_Rs R M' ((Rr rd, v1 +ᵢ v2) :: (Rpsr cwp, k') :: nil) ->
@@ -259,7 +260,8 @@ Inductive Q__: State -> command -> State -> Prop :=
 | RRestore :
     forall (M M' M'' : Memory) (R : RegFile) D F F' k k' oexp
            fmo fml fmi fm1 fm2 v1 v2 v (rs rd : GenReg),
-      M (R cwp) = Some k -> M (R Rwim) = Some v -> fetch M R = Some [fmo; fml; fmi] ->
+      M (R cwp) = Some k -> M (R Rwim) = Some v ->
+      fetch M R = Some [fmo; fml; fmi] -> indom (R rd) M ->
       M (R rs) = Some v1 -> eval_opexp R M oexp = Some v2 -> F = fm1 :: fm2 :: F' ->
       M' = set_window R M fmi fm1 fm2 -> k' = post_cwp k -> win_masked k' v = false ->
       M'' = set_Rs R M' ((Rr rd, v1 +ᵢ v2) :: (Rpsr cwp, post_cwp k) :: nil) ->

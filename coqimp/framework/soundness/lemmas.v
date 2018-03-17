@@ -2,12 +2,12 @@ Require Import Coqlib.
 Require Import Maps. 
 
 Require Import Integers.
-Open Scope Z_scope.
+Open Scope Z_scope. 
 Import ListNotations.
 
 Set Asymmetric Patterns.
 
-Require Import state. 
+Require Import state.  
 Require Import language.
 
 Set Implicit Arguments.
@@ -16,6 +16,8 @@ Unset Strict Implicit.
 Require Import logic. 
 Require Import soundness.
 Require Import LibTactics.
+
+Require Import Coq.Logic.FunctionalExtensionality.
 
 Open Scope nat.
 Open Scope code_scope.
@@ -234,52 +236,52 @@ Proof.
     inversion H21; subst.
     eauto.
 
-  - (* save *)
+  - (* save *) 
     inversion H; inversion H0; subst.
     inversion H3.
-    inversion H3.
-    inversion H18.
-    inversion H26; subst.
-    rewrite H4 in H19.
-    inversion H19; subst.
-    rewrite H5 in H20.
+    inversion H3. 
+    inversion H19.
+    inversion H28; subst.
+    rewrite H4 in H20.
     inversion H20; subst.
-    rewrite H7 in H22.
-    inversion H22; subst.
-    rewrite H8 in H23.
-    inversion H23; subst.
+    rewrite H5 in H21.
+    inversion H21; subst.
+    rewrite H8 in H24.
+    inversion H24; subst.
+    rewrite H9 in H25.
+    inversion H25; subst.
 
     assert (F'0 = F' /\ fm0 = fm1 /\ fm3 = fm2).
-    {
-      clear - H9.
-      eapply ls_leneq_cons in H9; eauto.
-      destruct H9.
+    { 
+      clear - H10.
+      eapply ls_leneq_cons in H10; eauto.
+      destruct H10.
       inversion H0.
       eauto. 
     }
 
     destruct H1 as [HF [Hf1 Hf2] ].
     subst.
-    rewrite H6 in H21.
-    inversion H21.
+    rewrite H6 in H22.
+    inversion H22.
     subst; eauto.
 
   - (* restore *)
     inversion H; inversion H0; subst.
     inversion H3.
     inversion H3.
-    inversion H18.
-    inversion H26; subst.
-    rewrite H4 in H19.
-    inversion H19; subst.
-    rewrite H5 in H20; subst.
+    inversion H19.
+    inversion H28; subst.
+    rewrite H4 in H20.
     inversion H20; subst.
-    rewrite H7 in H22.
-    inversion H22; subst.
-    rewrite H8 in H23.
-    inversion H23; subst.
-    rewrite H6 in H21.
-    inversion H21.
+    rewrite H5 in H21; subst.
+    inversion H21; subst.
+    rewrite H8 in H24.
+    inversion H24; subst.
+    rewrite H9 in H25.
+    inversion H25; subst.
+    rewrite H6 in H22.
+    inversion H22.
     subst.
     eauto.
 
@@ -452,6 +454,19 @@ Proof.
   intros.
   unfold set_window.
   repeat (eapply indom_setfrm_still; eauto).
+Qed.
+
+Lemma indom_merge_still :
+  forall l M m,
+    indom l M ->
+    indom l (merge M m).
+Proof.
+  intros.
+  unfolds indom.
+  unfold merge.
+  simpljoin1.
+  exists x.
+  rewrite H; eauto.
 Qed.
   
 Lemma ins_frm_property :
@@ -654,16 +669,448 @@ Qed.
 Lemma eval_addrexp_merge_still :
   forall M m R aexp l,
     eval_addrexp R M aexp = Some l ->
-    disjoint M m ->
-    eval_addrexp R M aexp = Some l.
+    eval_addrexp R (merge M m) aexp = Some l.
 Proof.
   intros.
-  
+  destruct aexp.
+  -
+    simpl in H.
+    simpl.
+    destruct o.
+    +
+      simpls.
+      unfolds eval_reg.
+      unfold merge.
+      rewrite H; eauto.
+    +
+      simpls.
+      destruct (($ (-4096)) <=ᵢ w && w <=ᵢ ($ 4095)); eauto.
+  -
+    simpls.
+    unfolds eval_reg.
+    destruct (M (R g)) eqn:Heqe.
+    +
+      unfolds merge.
+      rewrite Heqe; eauto.
+      destruct o.
+      simpls.
+      unfolds eval_reg.
+      destruct (M (R g0)) eqn:Heqe1.
+      eauto.
+      tryfalse.
+      unfolds eval_opexp.
+      destruct (($ (-4096)) <=ᵢ w0 && w0 <=ᵢ ($ 4095)); eauto.
+    +
+      tryfalse.
+Qed.
 
+Lemma eval_opexp_merge_still :
+  forall M m R oexp l,
+    eval_opexp R M oexp = Some l ->
+    eval_opexp R (merge M m) oexp = Some l.
+Proof.
+  intros.
+  destruct oexp.
+  -
+    simpls.
+    unfolds eval_reg.
+    unfolds merge.
+    rewrite H; eauto.
+  -
+    simpls.
+    destruct (($ (-4096)) <=ᵢ w && w <=ᵢ ($ 4095)); eauto.
+Qed.
+
+Lemma get_vl_merge_still :
+  forall M m l v,
+    M l = Some v ->
+    merge M m l = Some v.
+Proof.
+  intros.
+  unfolds merge.
+  rewrite H; eauto.
+Qed.
+
+Lemma indom_setR_merge_eq :
+  forall R M rn m v,
+    indom (R rn) M ->
+    set_R R (merge M m) rn v = merge (set_R R M rn v) m.
+Proof.
+  intros.
+  unfolds set_R.
+  lets Ht : H.
+  eapply indom_merge_still with (m := m) in Ht; eauto.
+  eapply indom_isindom in H; eauto.
+  eapply indom_isindom in Ht; eauto.
+  rewrite Ht; eauto.
+  rewrite H; eauto.
+  unfolds MemMap.set, merge.
+  eapply functional_extensionality; eauto.
+  intro.
+  destruct (AddrEq.eq x (R rn)) eqn:Heqe1; eauto.
+Qed.
+
+Lemma indom_setM_merge_eq :
+  forall M m l v,
+    indom l M ->
+    MemMap.set l (Some v) (merge M m) = merge (MemMap.set l (Some v) M) m.
+Proof.
+  intros.
+  unfolds MemMap.set, merge.
+  eapply functional_extensionality.
+  intro.
+  unfolds indom.
+  simpljoin1. 
+  destruct (AddrEq.eq x l); eauto.
+Qed.
+
+Lemma fetch_frm_merge_still :
+  forall M m R fm rr0 rr1 rr2 rr3 rr4 rr5 rr6 rr7,
+    fetch_frame M R rr0 rr1 rr2 rr3 rr4 rr5 rr6 rr7 = Some fm ->
+    fetch_frame (merge M m) R rr0 rr1 rr2 rr3 rr4 rr5 rr6 rr7 = Some fm.
+Proof.
+  intros.
+  unfolds fetch_frame.
+  unfolds eval_reg.
+  
+  destruct (M (R rr0)) eqn:Heqe0; tryfalse.
+  eapply get_vl_merge_still in Heqe0; eauto.
+  rewrite Heqe0; eauto.
+
+  destruct (M (R rr1)) eqn:Heqe1; tryfalse.
+  eapply get_vl_merge_still in Heqe1; eauto.
+  rewrite Heqe1; eauto.
+
+  destruct (M (R rr2)) eqn:Heqe2; tryfalse.
+  eapply get_vl_merge_still in Heqe2; eauto.
+  rewrite Heqe2; eauto.
+ 
+  destruct (M (R rr3)) eqn:Heqe3; tryfalse.
+  eapply get_vl_merge_still in Heqe3; eauto.
+  rewrite Heqe3; eauto.
+
+  destruct (M (R rr4)) eqn:Heqe4; tryfalse.
+  eapply get_vl_merge_still in Heqe4; eauto.
+  rewrite Heqe4; eauto.
+
+  destruct (M (R rr5)) eqn:Heqe5; tryfalse.
+  eapply get_vl_merge_still in Heqe5; eauto.
+  rewrite Heqe5; eauto.
+
+  destruct (M (R rr6)) eqn:Heqe6; tryfalse.
+  eapply get_vl_merge_still in Heqe6; eauto.
+  rewrite Heqe6; eauto.
+
+  destruct (M (R rr7)) eqn:Heqe7; tryfalse.
+  eapply get_vl_merge_still in Heqe7; eauto.
+  rewrite Heqe7; eauto.
+Qed.
+
+Lemma fetch_merge_still :
+  forall M m R fms,
+    fetch M R = Some fms ->
+    fetch (merge M m) R = Some fms.
+Proof.
+  intros.
+  unfolds fetch.
+
+  destruct (fetch_frame M R r8 r9 r10 r11 r12 r13 r14 r15) eqn:Heqe1; tryfalse.
+  eapply fetch_frm_merge_still in Heqe1.
+  rewrite Heqe1; eauto.
+
+  destruct (fetch_frame M R r16 r17 r18 r19 r20 r21 r22 r23) eqn:Heqe2; tryfalse.
+  eapply fetch_frm_merge_still in Heqe2.
+  rewrite Heqe2; eauto.
+
+  destruct (fetch_frame M R r24 r25 r26 r27 r28 r29 r30 r31) eqn:Heqe3; tryfalse.
+  eapply fetch_frm_merge_still in Heqe3.
+  rewrite Heqe3; eauto.
+Qed.
+
+Fixpoint indoms (ls : list Address) M :=
+  match ls with
+  | nil => True
+  | l :: ls' => indom l M /\ indoms ls' M
+  end.
+
+Fixpoint getRs_addr (vl : list (RegName * Word)) (R : RegFile) :=
+  match vl with
+  | nil => nil
+  | (rn, w) :: vl' => (R rn) :: getRs_addr vl' R
+  end.
+
+Fixpoint getRs (vl : list (RegName * Word)) :=
+  match vl with
+  | nil => nil
+  | (rn, w) :: vl' => rn :: getRs vl'
+  end.
+
+Lemma indoms_setR_still :
+  forall vl R M rn w, 
+    indoms (getRs_addr vl R) M ->
+    indoms (getRs_addr vl R) (set_R R M rn w).
+Proof.
+  intro vl.
+  induction vl; intros.
+  -
+    simpls.
+    eauto.
+  -
+    destruct a.
+    simpls.
+    simpljoin1.
+    split.
+    eapply indom_setR_still; eauto.
+    eauto.
+Qed.
+
+Lemma indoms_setRs_merge_eq :
+  forall vl M m R,
+    indoms (getRs_addr vl R) M ->
+    set_Rs R (merge M m) vl = merge (set_Rs R M vl) m.
+Proof.
+  intros vl.
+  induction vl; intros.
+  -
+    simpls.
+    eauto.
+  -
+    destruct a.
+    simpl in H.
+    simpl.
+    simpljoin1.
+    rewrite indom_setR_merge_eq; eauto.
+    eapply IHvl.
+    eapply indoms_setR_still; eauto.
+Qed.
+
+Lemma setRs_notin_eq :
+  forall vl rr M R,
+    ~ In rr (getRs vl) ->
+    set_Rs R M vl (R rr) = M (R rr).
+Proof.
+  intro vl.
+  induction vl; intros.
+  -
+    simpl.
+    eauto.
+  -
+    destruct a.
+    simpl.
+    erewrite IHvl; eauto.
+    unfold set_R.
+    unfold is_indom.
+    destruct (M (R r)) eqn:Heqe; eauto.
+    unfolds MemMap.set.
+    destruct (AddrEq.eq).
+Abort.
+
+Lemma fetch_frm_indoms :
+  forall M R rr0 rr1 rr2 rr3 rr4 rr5 rr6 rr7 fm,
+    fetch_frame M R rr0 rr1 rr2 rr3 rr4 rr5 rr6 rr7 = Some fm ->
+    indoms [R rr0; R rr1; R rr2; R rr3; R rr4; R rr5; R rr6; R rr7] M.
+Proof. 
+  intros.   
+  unfolds fetch_frame, eval_reg. 
+  do 8
+    match goal with
+    | H : context [M (R ?v)] |- _ =>
+      let Heqe := fresh in
+      (destruct (M (R v)) eqn:Heqe; tryfalse)
+    end.
+  simpl.
+  unfold indom.
+  repeat (split; eauto).
+Qed.
+
+Lemma fetch_some_set_frm_merge_eq :
+  forall M m (R : RegFile) fm (rr0 rr1 rr2 rr3 rr4 rr5 rr6 rr7 : GenReg),
+    indoms [R rr0; R rr1; R rr2; R rr3; R rr4; R rr5; R rr6; R rr7] M ->
+    set_frame R (merge M m) rr0 rr1 rr2 rr3 rr4 rr5 rr6 rr7 fm =
+    merge (set_frame R M rr0 rr1 rr2 rr3 rr4 rr5 rr6 rr7 fm) m.
+Proof.
+  intros.
+  unfolds set_frame.
+  destruct fm.
+  eapply indoms_setRs_merge_eq; eauto.
+Qed.
+
+Lemma indoms_set_frm_still :
+  forall vl M (R : RegFile) fm (rr0 rr1 rr2 rr3 rr4 rr5 rr6 rr7 : GenReg),
+    indoms vl M ->
+    indoms vl (set_frame R M rr0 rr1 rr2 rr3 rr4 rr5 rr6 rr7 fm).
+Proof.
+  intro vl.
+  induction vl; intros.
+  -
+    simpls. eauto.
+  -
+    simpls.
+    simpljoin1.
+    split.
+    eapply indom_setfrm_still; eauto.
+    eauto.
+Qed.
+  
+Lemma fetch_some_set_win_merge_eq :
+  forall M m R fm1 fm1' fm2 fm2' fm3 fm3',
+    fetch M R = Some [fm1 ; fm2 ; fm3] ->
+    set_window R (merge M m) fm1' fm2' fm3' =
+    merge (set_window R M fm1' fm2' fm3') m.
+Proof. 
+  intros.
+  unfolds set_window.
+  unfolds fetch.
+   
+  destruct (fetch_frame M R r8 r9 r10 r11 r12 r13 r14 r15) eqn:Heqe1; tryfalse.
+  erewrite fetch_some_set_frm_merge_eq; eauto. 
+  destruct (fetch_frame M R r16 r17 r18 r19 r20 r21 r22 r23) eqn:Heqe2; tryfalse.
+  erewrite fetch_some_set_frm_merge_eq; eauto.
+  destruct (fetch_frame M R r24 r25 r26 r27 r28 r29 r30 r31) eqn:Heqe3; tryfalse.
+  inversion H; subst.
+  erewrite fetch_some_set_frm_merge_eq; eauto.
+
+  {
+    clear - Heqe3.
+    eapply fetch_frm_indoms in Heqe3; eauto.
+    repeat (eapply indoms_set_frm_still; eauto).
+  }
+
+  {
+    clear - Heqe2. 
+    eapply fetch_frm_indoms in Heqe2; eauto.
+    eapply indoms_set_frm_still; eauto.
+  }
+
+  {
+    eapply fetch_frm_indoms in Heqe1; eauto.
+  }
+Qed.
+
+Lemma dlyfrmfree_changeFrm_stable :
+  forall p M R F F' D,
+    DlyFrameFree p ->
+    (M, (R, F), D) |= p ->
+    (M, (R, F'), D) |= p.
+Proof.
+  intro p.
+  induction p; intros; simpls; eauto; tryfalse.
+
+  simpljoin1. 
+  eapply IHp1 in H0; eauto.
+
+  simpljoin1.
+  destruct H0.
+  eapply IHp1 in H0; eauto.
+  eapply IHp2 in H0; eauto.
+
+  simpljoin1.
+  destruct x, x0.
+  destruct p, p0.
+  destruct r, r0.
+  simpls.
+  simpljoin1.
+  exists (m, (r0, F'), d0) (m0, (r0, F'), d0).
+  simpl.
+  repeat (split; eauto).
+
+  simpljoin1.
+  exists x.
+  specialize (H0 x).
+  eauto.
+Qed.
+
+Lemma dlyfrmfree_notin_changeDly_still :
+  forall p M R F D (rsp : SpReg) v,
+    (M, (R, F), D) |= p -> DlyFrameFree p ->
+    ~ indom (R rsp) M ->
+    (M, (R, F), set_delay rsp v D) |= p.
+Proof.
+  intro p.
+  induction p; intros; simpls; eauto; tryfalse.
+
+  -
+    unfolds regSt.
+    simpljoin1.
+    simpls.
+    split; eauto.
+    unfolds regInDlyBuff.
+    destruct r; tryfalse.
+    intro; tryfalse.
+    intro; tryfalse.
+    intro.
+    unfolds set_delay.
+    simpls.
+    destruct H0; subst.
+    eapply H1.
+    unfold indom.
+    unfold MemMap.set.
+    destruct (AddrEq.eq (R s) (R s)); tryfalse.
+    eauto.
+    tryfalse.
+
+  -
+    simpljoin1.
+    eapply IHp1 in H; eauto.
+
+  -
+    simpljoin1.
+    destruct H.
+    eapply IHp1 in H; eauto.
+    eapply IHp2 in H; eauto.
+
+  -
+    simpljoin1.
+    destruct x, x0.
+    destruct p, p0.
+    destruct r, r0.
+    simpls.
+    simpljoin1.
+    eapply IHp1 in H3; eauto.
+    eapply IHp2 in H4; eauto.
+
+    exists (m, (r0, f0), set_delay rsp v d0) (m0, (r0, f0), set_delay rsp v d0).
+    simpl.
+    repeat (split; eauto).
+    intro.
+    eapply H1.
+
+    clear - H5.
+    unfolds indom.
+    simpljoin1.
+    unfold merge.
+    destruct (m (r0 rsp)); eauto.
+
+    intro.
+    eapply H1.
+    eapply indom_merge_still; eauto.
+
+  -
+    simpljoin1.
+    specialize (H1 x).
+    exists x.
+    eauto.
+Qed.
+
+Lemma indom_m1_disj_notin_m2 :
+  forall m1 m2 l,
+    indom l m1 -> disjoint m1 m2 ->
+    ~ indom l m2.
+Proof.
+  intros.
+  intro.
+  unfolds disjoint.
+  specialize (H0 l).
+  unfolds indom.
+  simpljoin1.
+  rewrite H in H0.
+  rewrite H1 in H0; tryfalse.
+Qed.
+      
 Lemma ins_safety_property :
-  forall s1 s1' s2 s i,
-    state_union s1 s2 s -> (Q__ s1 (cntrans i) s1') ->
-    exists s', Q__ s (cntrans i) s'.
+  forall s1 s1' s2 s i r,
+    state_union s1 s2 s -> (Q__ s1 (cntrans i) s1') -> s2 |= r -> DlyFrameFree r ->
+    exists s' s2', Q__ s (cntrans i) s' /\ state_union s1' s2' s' /\ s2' |= r.
 Proof.
   intros.
   lets Ht : H.
@@ -672,26 +1119,299 @@ Proof.
   renames x0 to s2', x to s'.
   
   destruct i.
- 
-  - (* ld *)
+  
+  - (* ld *) 
     inversion H0; subst.
-    inversion H6; subst.
-    destruct s2.
-    destruct p.
-    destruct r.
+    inversion H8; subst. 
+    destruct s2, p, r0.
     simpl in H.
     simpljoin1.
-    destruct s2'.
-    destruct p.
-    destruct r0.
-    simpl in H1.
+    destruct s2', p, r1.
+    simpl in H3.
     simpljoin1.
     simpls.
     subst.
-    exists (merge (set_R r0 M g v) m0, (r0, f0), d0).
+    exists (merge (set_R r1 M g v) m0, (r1, f0), d0).
+    exists (m0, (r1, f0), d0). 
+    repeat (split; simpl; eauto).
     eapply NormalIns; eauto.
     eapply Ld_step; eauto.
-    
+    eapply eval_addrexp_merge_still; eauto.
+    eapply get_vl_merge_still; eauto.
+    eapply indom_merge_still; eauto.
+    eapply indom_setR_merge_eq; eauto.
+
+  - (* st *)
+    inversion H0; subst.
+    inversion H8; subst.
+    destruct s2, p, r0.
+    simpl in H.
+    simpljoin1.
+    destruct s2', p, r1.
+    simpl in H3. 
+    simpljoin1.
+    simpls.
+    subst.
+    exists (merge (MemMap.set addr (Some v) M) m0, (r1, f0), d0).
+    exists (m0, (r1, f0), d0).
+    repeat (split; simpl; eauto).
+    eapply NormalIns; eauto.
+    eapply ST_step; eauto.
+    eapply eval_addrexp_merge_still; eauto.
+    eapply get_vl_merge_still; eauto.
+    eapply indom_merge_still; eauto.
+    eapply indom_setM_merge_eq; eauto.
+
+  - (* nop *)
+    inversion H0; subst.
+    inversion H8; subst.
+    destruct s2, p, r0.
+    simpl in H.
+    simpljoin1.
+    destruct s2', p, r1.
+    simpl in H3. 
+    simpljoin1.
+    simpls.
+    subst.
+    exists (merge M' m0, (r1, f0), d0).
+    exists (m0, (r1, f0), d0).
+    repeat (split; simpl; eauto).
+    eapply NormalIns; eauto.
+    eapply Nop_step; eauto.
+ 
+  - (* add *)
+    inversion H0; subst.
+    inversion H8; subst.
+    destruct s2, p, r0.
+    simpl in H.
+    simpljoin1.
+    destruct s2', p, r1.
+    simpl in H3. 
+    simpljoin1.
+    simpls.
+    subst.
+    exists (merge (MemMap.set (r1 g0) (Some v1 +ᵢ v2) M) m0, (r1, f0), d0).
+    exists (m0, (r1, f0), d0).
+    repeat (split; simpl; eauto).
+    eapply NormalIns; eauto.
+    eapply Add_step; eauto.
+    eapply get_vl_merge_still; eauto.
+    eapply eval_opexp_merge_still; eauto.
+    eapply indom_merge_still; eauto.
+    eapply indom_setM_merge_eq; eauto.
+
+  - (* sub *)
+    inversion H0; subst.
+    inversion H8; subst.
+    destruct s2, p, r0.
+    simpl in H.
+    simpljoin1.
+    destruct s2', p, r1.
+    simpl in H3. 
+    simpljoin1.
+    simpls.
+    subst.
+    exists (merge (MemMap.set (r1 g0) (Some v1 -ᵢ v2) M) m0, (r1, f0), d0).
+    exists (m0, (r1, f0), d0).
+    repeat (split; simpl; eauto).
+    eapply NormalIns; eauto.
+    eapply Sub_step; eauto.
+    eapply get_vl_merge_still; eauto.
+    eapply eval_opexp_merge_still; eauto.
+    eapply indom_merge_still; eauto.
+    eapply indom_setM_merge_eq; eauto.
+
+  - (* subcc *)
+    inversion H0; subst.
+    inversion H8; subst.
+    destruct s2, p, r0.
+    simpl in H.
+    simpljoin1.
+    destruct s2', p, r1.
+    simpl in H3. 
+    simpljoin1.
+    simpls.
+    subst.
+    exists (merge (set_R r1 (set_R r1 (set_R r1 M g0 v1 -ᵢ v2) n (get_range 31 31 v1 -ᵢ v2)) z
+                    (iszero v1 -ᵢ v2)) m0, (r1, f0), d0).
+    exists (m0, (r1, f0), d0).
+    repeat (split; simpl; eauto).
+    eapply NormalIns; eauto.
+    eapply Subcc_step; try eapply indom_merge_still; eauto.
+    eapply get_vl_merge_still; eauto.
+    eapply eval_opexp_merge_still; eauto.
+    simpl.
+    erewrite indom_setR_merge_eq; eauto.
+    erewrite indom_setR_merge_eq; repeat (eapply indom_setR_still; eauto).
+    erewrite indom_setR_merge_eq; repeat (eapply indom_setR_still; eauto).
+    eauto.
+
+  - (* and *)
+    inversion H0; subst.
+    inversion H8; subst.
+    destruct s2, p, r0.
+    simpl in H.
+    simpljoin1.
+    destruct s2', p, r1.
+    simpl in H3. 
+    simpljoin1.
+    simpls.
+    subst.
+    exists (merge (MemMap.set (r1 g0) (Some v1 &ᵢ v2) M) m0, (r1, f0), d0).
+    exists (m0, (r1, f0), d0).
+    repeat (split; simpl; eauto).
+    eapply NormalIns; eauto.
+    eapply And_step; eauto.
+    eapply get_vl_merge_still; eauto.
+    eapply eval_opexp_merge_still; eauto.
+    eapply indom_merge_still; eauto.
+    eapply indom_setM_merge_eq; eauto.
+
+  - (* andcc *)
+    inversion H0; subst.
+    inversion H8; subst.
+    destruct s2, p, r0.
+    simpl in H.
+    simpljoin1.
+    destruct s2', p, r1.
+    simpl in H3. 
+    simpljoin1.
+    simpls.
+    subst.
+    exists (merge (set_R r1 (set_R r1 (set_R r1 M g0 v1 &ᵢ v2) n (get_range 31 31 v1 &ᵢ v2)) z
+                    (iszero v1 &ᵢ v2)) m0, (r1, f0), d0).
+    exists (m0, (r1, f0), d0).
+    repeat (split; simpl; eauto).
+    eapply NormalIns; eauto.
+    eapply Andcc_step; try eapply indom_merge_still; eauto.
+    eapply get_vl_merge_still; eauto.
+    eapply eval_opexp_merge_still; eauto.
+    simpl.
+    erewrite indom_setR_merge_eq; eauto.
+    erewrite indom_setR_merge_eq; repeat (eapply indom_setR_still; eauto).
+    erewrite indom_setR_merge_eq; repeat (eapply indom_setR_still; eauto).
+    eauto.
+
+  - (* or *)
+    inversion H0; subst.
+    inversion H8; subst.
+    destruct s2, p, r0.
+    simpl in H.
+    simpljoin1.
+    destruct s2', p, r1.
+    simpl in H3. 
+    simpljoin1.
+    simpls.
+    subst.
+    exists (merge (MemMap.set (r1 g0) (Some v1 |ᵢ v2) M) m0, (r1, f0), d0).
+    exists (m0, (r1, f0), d0).
+    repeat (split; simpl; eauto).
+    eapply NormalIns; eauto.
+    eapply Or_step; eauto.
+    eapply get_vl_merge_still; eauto.
+    eapply eval_opexp_merge_still; eauto.
+    eapply indom_merge_still; eauto.
+    eapply indom_setM_merge_eq; eauto.
+
+  - (* Save *)
+    inversion H0; subst.
+    inversion H8; subst.
+    destruct s2, p, r0.
+    simpl in H.
+    simpljoin1.
+    destruct s2', p, r1.
+    simpl in H3. 
+    simpljoin1.
+    simpls.
+    subst.
+    exists (merge (set_R r1 (set_R r1 (set_window r1 M fm1 fm2 fmo) g0 v1 +ᵢ v2) cwp (pre_cwp k)) m0,
+       (r1, fml :: fmi :: F'), d0). 
+    exists (m0, (r1, fml :: fmi :: F'), d0).  
+    repeat (split; simpl; eauto).
+    eapply SSave; try eapply get_vl_merge_still; eauto.
+    eapply fetch_merge_still; eauto.
+    eapply indom_merge_still; eauto.
+    eapply eval_opexp_merge_still; eauto.
+    simpl.
+    rewrite <- indom_setR_merge_eq; eauto.
+    rewrite <- indom_setR_merge_eq; eauto.
+    erewrite fetch_some_set_win_merge_eq; eauto.
+    eapply indom_setwin_still; eauto.
+    eapply indom_setR_still; eauto.
+    eapply indom_setwin_still; eauto.
+    unfold indom.
+    eauto.
+    eapply dlyfrmfree_changeFrm_stable; eauto.
+
+  - (* Restore *)
+    inversion H0; subst.
+    inversion H8; subst.
+    destruct s2, p, r0.
+    simpl in H.
+    simpljoin1.
+    destruct s2', p, r1.
+    simpl in H3. 
+    simpljoin1.
+    simpls. 
+    subst.
+    exists (merge (set_Rs r1 (set_window r1 M fmi fm1 fm2)
+                     [(Rr g0, v1 +ᵢ v2); (Rpsr cwp, post_cwp k)]) m0,
+       (r1, F' ++ fmo :: fml :: F'), d0). 
+    exists (m0, (r1, F' ++ fmo :: fml :: F'), d0).
+    repeat (split; simpl; eauto).
+    eapply RRestore; try eapply get_vl_merge_still; eauto.
+    eapply fetch_merge_still; eauto.
+    eapply indom_merge_still; eauto.
+    eapply eval_opexp_merge_still; eauto.
+    simpl.
+    rewrite <- indom_setR_merge_eq; eauto.
+    rewrite <- indom_setR_merge_eq; eauto.
+    erewrite fetch_some_set_win_merge_eq; eauto.
+    eapply indom_setwin_still; eauto.
+    eapply indom_setR_still; eauto.
+    eapply indom_setwin_still; eauto.
+    unfold indom.
+    eauto.
+    eapply dlyfrmfree_changeFrm_stable; eauto.
+
+  - (* rd *)
+    inversion H0; subst.
+    inversion H8; subst.
+    destruct s2, p, r0.
+    simpl in H.
+    simpljoin1.
+    destruct s2', p, r1.
+    simpl in H3.
+    simpljoin1.
+    simpls.
+    subst.
+    exists (merge (set_R r1 M g v) m0, (r1, f0), d0).
+    exists (m0, (r1, f0), d0).
+    repeat (split; simpl; eauto).
+    eapply NormalIns.
+    eapply Rd_step; eauto.
+    eapply get_vl_merge_still; eauto.
+    eapply indom_merge_still; eauto.
+    eapply indom_setR_merge_eq; eauto.
+
+  - (* wr *)
+    inversion H0; subst.
+    inversion H8.
+    destruct s2, p, r0.
+    destruct s2', p, r1.
+    simpls.
+    simpljoin1.
+    exists (merge M m0, (r1, f), set_delay s0 v1 xor v2 d).
+    exists (m0, (r1, f), set_delay s0 v1 xor v2 d).
+    repeat (split; simpl; eauto).
+    eapply Wr; eauto.
+    eapply get_vl_merge_still; eauto.
+    eapply eval_opexp_merge_still; eauto.
+    eapply indom_merge_still; eauto.
+    eapply dlyfrmfree_notin_changeDly_still; eauto.
+    eapply indom_m1_disj_notin_m2; eauto.
+Qed.
+  
 Lemma conj_ins_sound : forall p1 p2 q1 q2 i,
     ins_sound p1 q1 i -> ins_sound p2 q2 i -> ins_sound (p1 //\\ p2) (q1 //\\ q2) i.
 Proof.
@@ -754,25 +1474,29 @@ Proof.
 Qed.
 
 Lemma frame_ins_sound : forall p q r i,
-    ins_sound p q i ->
+    ins_sound p q i -> DlyFrameFree r ->
     ins_sound (p ** r) (q ** r) i.
 Proof.
   unfold ins_sound.
-  intros.
-  simpl in H0.
-  destruct H0 as [s1 H0].
-  destruct H0 as [s2 H0].
-  destruct H0 as [Hunion [Hp Hr] ].
-  lets Hpp : Hp.
+  intros. 
+  simpl in H1.
+  destruct H1 as [s1 H1].
+  destruct H1 as [s2 H1].
+  destruct H1 as [Hunion [Hp Hr] ].
+  lets Hpp : Hp. 
   eapply H in Hpp.
   destruct Hpp as [s1' [HQ Hq] ].
   remember Hunion as Ht.
   clear HeqHt.
-  eapply ins_frm_property in Ht; eauto.
+  eapply ins_safety_property in Ht; eauto.
   simpljoin1.
-  rename x0 into s2'. rename x into s'.
+  renames x0 to s2', x to s'.
   exists s'.
-  
+  split; eauto.
+  simpl.
+  exists s1' s2'.
+  repeat (split; eauto).
+Qed.  
   
 (*+ Lemmas about safety +*)
 Lemma safety_post_weak :

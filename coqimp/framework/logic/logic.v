@@ -183,7 +183,7 @@ Inductive wf_ins : asrt -> ins -> asrt -> Prop :=
 | ld_rule : forall p q aexp l v v' (rd : GenReg),
     p ==> aexp ==ₓ l ->
     p ==> l |-> v ** rd |=> v' ** q ->
-    wf_ins p (ld aexp rd) q
+    wf_ins p (ld aexp rd) (l |-> v ** rd |=> v ** q)
 
 | st_rule : forall p aexp l v v1 (rs : GenReg),
     l |-> v ** rs |=> v1 ** p ==> aexp ==ₓ l ->
@@ -214,13 +214,13 @@ Inductive wf_ins : asrt -> ins -> asrt -> Prop :=
 | andcc_rule : forall p q oexp (r1 r2 : GenReg) v1 v2 v vr vn vz,
     p ==> ((Or r1) ==ₑ v1 //\\ oexp ==ₑ v2) -> v = v1 &ᵢ v2 -> 
     p ==> r2 |=> vr ** n |=> vn ** z |=> vz ** q ->
-    wf_ins p (subcc r1 oexp r2)
+    wf_ins p (andcc r1 oexp r2)
            (r2 |=> v ** n |=> (get_range 31 31 v) ** z |=> (iszero v) ** q)
 
 | or_rule : forall p q oexp (rs rd : GenReg) v1 v2 v,
     p ==> ((Or rs) ==ₑ v1 //\\ oexp ==ₑ v2) ->
     p ==> rd |=> v ** q ->
-    wf_ins p (and rs oexp rd) (rd |=> (v1 |ᵢ v2) ** q)
+    wf_ins p (or rs oexp rd) (rd |=> (v1 |ᵢ v2) ** q)
 
 | nop_rule : forall p q,
     p ==> q ->
