@@ -22,96 +22,57 @@ Require Import lemmas.
 Open Scope nat.
 Open Scope code_scope.
 
+Ltac destruct_state s :=
+  destruct s as [ [ ?m [?r ?f] ] ?d ].
+
 (*+ Some tactic for Sep Proof +*)
-Fixpoint asrt_to_lst (a : asrt) : list asrt :=
-  match a with
-  | p ** q => p :: asrt_to_lst q
-  | _ => a :: nil
-  end.
-
-Fixpoint lst_to_asrt (ls : list asrt) : asrt :=
-  match ls with
-  | a :: nil => a
-  | a :: ls' => a ** lst_to_asrt ls'
-  | nil => Aemp
-  end.
-
-Fixpoint lift_n' {A : Type} (ls : list A) (n : nat) (prels : list A) :=
+Fixpoint get_nth_asrt (a : asrt) (n : nat) : option asrt :=
   match n with
-  | S n' =>
-    match ls with
-    | a :: ls' => lift_n' ls' n' (prels ++ (a :: nil))
-    | nil => prels ++ ls
-    end
-  | O =>
-    match ls with
-    | a :: ls' => a :: prels ++ ls'
-    | nil => prels
-    end
+  | O => match a with
+        | p ** q => Some p
+        | _ => Some a
+        end
+  | S n' => match a with
+           | p ** q => get_nth_asrt q n'
+           | _ => None
+           end
   end.
 
-Definition lift_n {A : Type} (ls : list A) (n : nat) :=
-  lift_n' ls n nil.
+Fixpoint remove_nth_asrt (a : asrt) (n : nat) : asrt :=
+  match n with
+  | O => match a with
+        | p ** q => q
+        | _ => Aemp
+        end
+  | S n' => match a with
+           | p ** q => p ** remove_nth_asrt q n'
+           | _ => a
+           end
+  end.
 
-Lemma asrt_to_lst_nil_false :
-  forall p,
-    asrt_to_lst p = nil -> False.
+Definition lift_nth_asrt (a : asrt) (n : nat) : asrt :=
+  match get_nth_asrt a n with
+  | Some p =>
+    match remove_nth_asrt a n with
+    | Aemp => p
+    | q => p ** q
+    end
+  | _ => a
+  end.
+
+(* test *)
+
+
+Theorem lift_assert_stable :
+  forall p s n,
+    s |= p -> s |= lift_nth_asrt p n.
 Proof.
   intro p.
-  induction p; intros;
-    simpls; tryfalse.
-Qed.
-  
-Lemma sep_lift_stable :
-  forall p s ls n,
-    s |= p -> asrt_to_lst p = ls ->
-    s |= lst_to_asrt (lift_n ls n).
-Proof.
-  intro p.
-  induction p; intros;
-    try solve
-      [
-        simpls; subst; destruct n; simpl; eauto;
-        unfold lift_n; simpl; destruct n; eauto
-      ].
+  induction p; intros.
 
-  -
-    subst.
-    destruct n0; simpl; eauto.
-    unfold lift_n.
-    simpl.
-    destruct n0; eauto.
-
-  -
-    simpl in H0.
-    destruct ls; tryfalse.
-    inversion H0.
-    subst.
-    clear H0.
-    simpl in H.
-    simpljoin1.
-    renames x to s1, x0 to s2.
-    unfold lift_n.  
-    simpl lift_n'.
+  - (* Aemp *)
     destruct n.
-    { 
-      simpl lst_to_asrt.
-      destruct (asrt_to_lst p2) eqn:Heqe.
-      {
-        eapply asrt_to_lst_nil_false in Heqe; tryfalse.
-      }
-      {
-        simpl sat.
-        exists s1 s2.
-        repeat (split; eauto).
-        destruct l.
-        eapply IHp2 with (ls := [a0]) (n := 0) in H1; eauto.
-        eapply IHp2 with (ls := a0 :: a1 :: l) (n := 0) in H1; eauto.
-      }
-    }
-    {
-      
-    }
+    simpl.
+    exists 
+    
   
-
-
