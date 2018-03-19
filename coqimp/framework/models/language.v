@@ -254,7 +254,7 @@ Inductive Q__: State -> command -> State -> Prop :=
       fetch M R = Some [fmo; fml; fmi] -> indom (R rd) M -> 
       M (R rs) = Some v1 -> eval_opexp R M oexp = Some v2 -> F = F' ++ (fm1 :: fm2 :: nil) ->
       M' = set_window R M fm1 fm2 fmo -> k' = pre_cwp k -> win_masked k' v = false -> 
-      M'' = set_Rs R M' ((Rr rd, v1 +ᵢ v2) :: (Rpsr cwp, k') :: nil) ->
+      M'' = set_Rs R M' ((Rpsr cwp, k') :: (Rr rd, v1 +ᵢ v2) :: nil) ->
       Q__ (M, (R, F), D) (cntrans (save rs oexp rd)) (M'', (R, fml :: fmi :: F'), D)
 
 | RRestore :
@@ -264,8 +264,8 @@ Inductive Q__: State -> command -> State -> Prop :=
       fetch M R = Some [fmo; fml; fmi] -> indom (R rd) M ->
       M (R rs) = Some v1 -> eval_opexp R M oexp = Some v2 -> F = fm1 :: fm2 :: F' ->
       M' = set_window R M fmi fm1 fm2 -> k' = post_cwp k -> win_masked k' v = false ->
-      M'' = set_Rs R M' ((Rr rd, v1 +ᵢ v2) :: (Rpsr cwp, post_cwp k) :: nil) ->
-      Q__ (M, (R, F), D) (cntrans (restore rs oexp rd)) (M'', (R, F' ++ (fmo :: fml :: F')), D)
+      M'' = set_Rs R M' ((Rpsr cwp, post_cwp k) :: (Rr rd, v1 +ᵢ v2) :: nil) ->
+      Q__ (M, (R, F), D) (cntrans (restore rs oexp rd)) (M'', (R, F' ++ (fmo :: fml :: nil)), D)
 
 | Wr :
     forall M (R : RegFile) F D D' (rs : GenReg) (rsp : SpReg) oexp v1 v2 v,

@@ -75,4 +75,4 @@ Definition cdhp_subst (Spec Spec' : funspec) :=
 Definition cdhp_sound C Spec Spec' :=
   forall f1 f2 fp fq L S,
     Spec' (f1, f2) = Some (fp, fq) -> S |= (fp L) -> cdhp_subst Spec Spec' ->
-    safety C S f1 f1 (fq L) 0.
+    safety C S f1 f2 (fq L) 0.

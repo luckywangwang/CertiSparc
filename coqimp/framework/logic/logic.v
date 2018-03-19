@@ -178,6 +178,18 @@ Definition InRegs (fm : Frame) : asrt :=
 Definition Regs (fm1 fm2 fm3 : Frame) : asrt :=
   OutRegs fm1 ** LocalRegs fm2 ** InRegs fm3.
 
+Fixpoint DlyFrameFree (a : asrt) :=
+  match a with
+  | t @ rn |==> v => False
+  | {| id, F |} => False
+  | p //\\ q => DlyFrameFree p /\ DlyFrameFree q
+  | p \\// q => DlyFrameFree p /\ DlyFrameFree q
+  | p ** q => DlyFrameFree p /\ DlyFrameFree q
+  | Aforall t p => forall x : t, DlyFrameFree (p x)
+  | Aexists t p => forall x : t, DlyFrameFree (p x)
+  | _ => True
+  end.
+
 (*+ Well-formed Instruction +*)
 Inductive wf_ins : asrt -> ins -> asrt -> Prop :=
 | ld_rule : forall p q aexp l v v' (rd : GenReg),
@@ -261,7 +273,7 @@ Inductive wf_ins : asrt -> ins -> asrt -> Prop :=
     wf_ins p i q
 
 | ins_frame_rule : forall p q r i,
-    wf_ins p i q ->
+    wf_ins p i q -> DlyFrameFree r ->
     wf_ins (p ** r) i (q ** r).
 
 Notation " '|-' '{{' p '}}' i '{{' q '}}' " := (wf_ins p i q) (at level 50).
@@ -280,7 +292,7 @@ Definition fpost := list logicvar -> asrt.
 Definition fspec : Type := fpre * fpost.
 Definition funspec := Word * Word -> option fspec.
 
-(* Delay Time Reduce *) Print asrt.
+(* Delay Time Reduce *)
 Fixpoint TimReduce (a : asrt) : asrt :=
   match a with
   | p //\\ q => (TimReduce p) //\\ (TimReduce q)
@@ -296,18 +308,6 @@ Fixpoint TimReduce (a : asrt) : asrt :=
   | _ => a
   end.
 Notation "p ↓" := (TimReduce p) (at level 40).
-
-Fixpoint DlyFrameFree (a : asrt) :=
-  match a with
-  | t @ rn |==> v => False
-  | {| id, F |} => False
-  | p //\\ q => DlyFrameFree p /\ DlyFrameFree q
-  | p \\// q => DlyFrameFree p /\ DlyFrameFree q
-  | p ** q => DlyFrameFree p /\ DlyFrameFree q
-  | Aforall t p => forall x : t, DlyFrameFree (p x)
-  | Aexists t p => forall x : t, DlyFrameFree (p x)
-  | _ => True
-  end.
 
 Definition fretSta (p1 p2 : asrt) :=
   forall s s', s |= p1 -> s' |= p2 ->
@@ -357,10 +357,9 @@ Inductive wf_seq : funspec -> asrt -> InsSeq -> asrt -> Prop :=
     ((bv =ᵢ ($ 0) = true) -> ((p' ==> fp L ** r) /\ (fq L ** r ==> q))) ->
     wf_seq Spec p (f1 n> bne aexp ;; f2 n> i ;; I) q
 
-| Seq_conseq_ruel : forall p p1 q q1 I Spec,
-    p ==> p1 -> q1 ==> q ->
-    wf_seq Spec p1 I q1 ->
-    wf_seq Spec p I q
+| Seq_frame_rule : forall p q I Spec r,
+    wf_seq Spec p I q -> DlyFrameFree r ->
+    wf_seq Spec (p ** r) I (q ** r )
 
 | Ex_intro_rule : forall q I {tp:Type} p Spec,
     (forall x', wf_seq Spec (p x') I q) ->
@@ -369,18 +368,11 @@ Inductive wf_seq : funspec -> asrt -> InsSeq -> asrt -> Prop :=
 Notation " Spec '|-' '{{' p '}}' I '{{' q '}}' " :=
   (wf_seq Spec p I q) (at level 55).
 
-
 (*+ Well-formed Code Heap +*)
-Inductive wf_cdhp : funspec -> CodeHeap -> funspec -> Prop :=
-| cdhp_rule : forall Spec Spec' C fp fq I,
-    (
-      forall f1 f2 L,
-        Spec' (f1, f2) = Some (fp, fq) ->
-        LookupC C f1 f2 I ->
-        wf_seq Spec (fp L) I (fq L)
-    ) ->
-    wf_cdhp Spec C Spec'.
-     
+Definition wf_cdhp (Spec : funspec) (C : CodeHeap) (Spec' : funspec) :=
+  forall f1 f2 L fp fq,
+    Spec' (f1, f2) = Some (fp, fq) ->
+    exists I, LookupC C f1 f2 I /\ wf_seq Spec (fp L) I (fq L).     
 
 
 
