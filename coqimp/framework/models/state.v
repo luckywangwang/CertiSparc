@@ -63,8 +63,8 @@ Module RegNameEq.
 End RegNameEq.
 
 Module RegMap := EMap(RegNameEq).
-Definition RegFile := RegMap.t Address.
- 
+Definition RegFile := RegMap.t (option Word).
+
 (*** Window Register  **)
 (* Frame *)
 Inductive Frame : Type :=
@@ -124,8 +124,8 @@ Definition Memory := MemMap.t (option Word).
 
 (* Some Operations for memory *)
 (* disjoint *)
-Definition disjoint (M1 : Memory) (M2 : Memory) : Prop :=
-  forall (x : Address),
+Definition disjoint {tp : Type} (M1 : tp -> option Word) (M2 : tp -> option Word) : Prop :=
+  forall (x : tp),
     match M1 x, M2 x with
     | Some _, Some _ => False
     | Some _, None => True
@@ -135,18 +135,18 @@ Definition disjoint (M1 : Memory) (M2 : Memory) : Prop :=
 Notation "M1 '⊥' M2" := (disjoint M1 M2) (at level 39) : mem_scope.
 
 (* in dom *)
-Definition indom (x : Address) (M : Memory) :=
+Definition indom {tp : Type} (x : tp) (M : tp -> option Word) :=
   exists v, M x = Some v.
 
 (* is in dom *)
-Definition is_indom (x : Address) (M : Memory) :=
+Definition is_indom {tp : Type} (x : tp) (M : tp -> option Word) :=
   match M x with
   | Some _ => true
   | None => false
   end.
-
+ 
 (* merge *)
-Definition merge (M1 : Memory) (M2 : Memory) :=
+Definition merge {tp : Type} (M1 : tp -> option Word) (M2 : tp -> option Word) :=
   fun x => match M1 x with
         | None => M2 x
         | Some b => Some b
@@ -154,7 +154,9 @@ Definition merge (M1 : Memory) (M2 : Memory) :=
 Notation "M1 '⊎' M2" := (merge M1 M2) (at level 39) : mem_scope.
 
 (* emp memory *)
-Definition emp : Memory := fun (x : Address) => None. 
+Definition empM : Memory := fun (x : Address) => None. 
+(* emp register *)
+Definition empR : RegFile := fun (rn : RegName) => None.
 
 (* Label f *)
 Definition Label: Type := Word.
@@ -181,12 +183,9 @@ Notation "a 'xor' b" := (Int.xor a b)(at level 1) : code_scope.
 
 Open Scope code_scope.
 
-Definition eval_reg (R : RegFile) (M : Memory) (rn : RegName) :=
-  M (R (rn)).
-
-Definition eval_opexp (R : RegFile) (M : Memory) (a : OpExp) :=
+Definition eval_opexp (R : RegFile) (a : OpExp) :=
   match a with
-  | Or r => eval_reg R M r
+  | Or r => R r
   | Ow w =>
     if andb (($-4096) <=ᵢ w) (w <=ᵢ ($4095)) then
       Some w
@@ -194,13 +193,13 @@ Definition eval_opexp (R : RegFile) (M : Memory) (a : OpExp) :=
       None
   end.
 
-Definition eval_addrexp (R : RegFile) (M : Memory) (b : AddrExp) :=
+Definition eval_addrexp (R : RegFile) (b : AddrExp) :=
   match b with
-  | Ao a => eval_opexp R M a
+  | Ao a => eval_opexp R a
   | Aro r a =>
-    match (eval_reg R M r) with
+    match R r with
     | Some w1 =>
-      match (eval_opexp R M a) with
+      match (eval_opexp R a) with
       | Some w2 => Some (w1 +ᵢ w2)
       | None => None
       end 
@@ -209,42 +208,38 @@ Definition eval_addrexp (R : RegFile) (M : Memory) (b : AddrExp) :=
   end.
 
 (* set_R set a value in Register *)
-Definition set_R (R : RegFile) (M : Memory) (rn : RegName) (w : Word) :=
-  if is_indom (R rn) M then
-    MemMap.set (R rn) (Some w) M
+Definition set_R (R : RegFile) (rn : RegName) (w : Word) :=
+  if is_indom rn R then
+    RegMap.set rn (Some w) R
   else
-    M.
+    R.
 
-(* fetch *) 
-Definition fetch_frame (M : Memory) (R : RegFile) (rr0 rr1 rr2 rr3 rr4 rr5 rr6 rr7 : GenReg) :
+(* fetch *)
+Definition fetch_frame (R : RegFile) (rr0 rr1 rr2 rr3 rr4 rr5 rr6 rr7 : GenReg) :
   option Frame :=
-  match (eval_reg R M rr0), (eval_reg R M rr1), (eval_reg R M rr2), (eval_reg R M rr3), (eval_reg R M rr4), (eval_reg R M rr5), (eval_reg R M rr6), (eval_reg R M rr7) with
+  match (R rr0), (R rr1), (R rr2), (R rr3), (R rr4), (R rr5), (R rr6), (R rr7) with
   | Some w0, Some w1, Some w2, Some w3, Some w4, Some w5, Some w6, Some w7 =>
     Some ([[w0, w1, w2, w3, w4, w5, w6, w7]])
   | _, _, _, _, _, _, _, _ => None
   end.
 
-Definition fetch (M : Memory) (R : RegFile) :=
-  match (fetch_frame M R r8 r9 r10 r11 r12 r13 r14 r15),
-        (fetch_frame M R r16 r17 r18 r19 r20 r21 r22 r23),
-        (fetch_frame M R r24 r25 r26 r27 r28 r29 r30 r31) with
+Definition fetch (R : RegFile) :=
+  match (fetch_frame R r8 r9 r10 r11 r12 r13 r14 r15),
+        (fetch_frame R r16 r17 r18 r19 r20 r21 r22 r23),
+        (fetch_frame R r24 r25 r26 r27 r28 r29 r30 r31) with
   | Some fmo, Some fml, Some fmi =>
     Some (fmo :: fml :: fmi :: nil)
   | _, _, _ => None
   end.
 
 (* exe_delay *)
-Fixpoint exe_delay (M : Memory) (R : RegFile) (D : DelayList) : Memory * DelayList :=
+Fixpoint exe_delay (R : RegFile) (D : DelayList) : RegFile * DelayList :=
   match D with
   | (0%nat, rsp, w) :: D =>
-    let (M', D') := exe_delay M R D in
-    (set_R R M' rsp w, D')
+    let (R', D') := exe_delay R D in
+    (set_R R' rsp w, D')
   | (S k, rsp, w) :: D =>
-    let (M', D') := exe_delay M R D in
-    (M', (k, rsp, w) :: D')
-  | nil => (M, D)
+    let (R', D') := exe_delay R D in
+    (R', (k, rsp, w) :: D')
+  | nil => (R, D)
   end.
-
-
-
-    

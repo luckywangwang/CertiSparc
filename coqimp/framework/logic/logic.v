@@ -103,34 +103,35 @@ Definition inDlyBuff (d : DelayItem) (D : DelayList) :=
 
 (* $ rn = v hold if the value v locates in memory with address R(rn) *)
 Definition regSt (rn : RegName) (v : Word) (s : State) :=
-  getmem s = MemMap.set (getregs s rn) (Some v) emp /\
+  getregs s = RegMap.set rn (Some v) empR /\ getmem s = empM /\
   ~ (regInDlyBuff rn (getdlyls s)).
 
 Fixpoint regdlySt (n : nat) (rsp : SpReg) (v : Word) (s : State) :=
   match n with
-  | 0%nat => True
-  | (S n')%nat => inDlyBuff (n', rsp, v) (getdlyls s) \/ regdlySt n' rsp v s
+  | 0%nat => inDlyBuff (0, rsp, v) (getdlyls s)
+  | (S n')%nat => inDlyBuff (n, rsp, v) (getdlyls s) \/ regdlySt n' rsp v s
   end.
 
-(* S1 S2 can be union if their register state and delaylist are same 
-and memory states are disjoint *)
+(* S1 S2 can be union if their delaylist is same 
+and memory states and register state are disjoint *)
 Definition state_union (s1 s2 s : State) :=
   match s1, s2 with
-  | (M1, Q1, D1), (M2, Q2, D2) =>
-    disjoint M1 M2 /\ s = (merge M1 M2, Q1, D1) /\ Q1 = Q2 /\ D1 = D2
+  | (M1, (R1, F1), D1), (M2, (R2, F2), D2) =>
+    disjoint M1 M2 /\ disjoint R1 R2 /\
+    s = (merge M1 M2, (merge R1 R2, F1), D1) /\ F1 = F2 /\ D1 = D2
   end.
 
 (* semantics of assertion language *)
 Fixpoint sat (s : State) (p : asrt) {struct p} : Prop :=
   match p with
-  | Aemp => getmem s = emp
-  | Amapsto l v => getmem s = MemMap.set l (Some v) emp
-  | Aaexpevl aexp addr => eval_addrexp (getregs s) (getmem s) aexp = Some addr /\
+  | Aemp => getmem s = empM /\ getregs s = empR
+  | Amapsto l v => getmem s = MemMap.set l (Some v) empM /\ getregs s = empR
+  | Aaexpevl aexp addr => eval_addrexp (getregs s) aexp = Some addr /\
                           word_aligned addr = true
-  | Aoexpevl oexp v => eval_opexp (getregs s) (getmem s) oexp = Some v
+  | Aoexpevl oexp v => eval_opexp (getregs s) oexp = Some v
   | Areg rn v => regSt rn v s
   | Aregdly t rsp v =>
-    exists v', getmem s = MemMap.set ((getregs s) rsp) (Some v') emp /\
+    exists v', getregs s = RegMap.set rsp (Some v') empR /\ getmem s = empM /\
           (regdlySt t rsp v s \/ regSt rsp v s)
   | Apure p => p
   | Aframe id F => regSt cwp id s /\ getframelst s = F
@@ -151,8 +152,6 @@ Notation "p ==> q" :=
 Notation "p <==> q" :=
   (forall s, s |= p <-> s |= q)
     (at level 33, right associativity).
-
-(*** Inference Rule *)
 
 Definition OutRegs (fm : Frame) : asrt :=
   match fm with
@@ -311,8 +310,8 @@ Notation "p ↓" := (TimReduce p) (at level 40).
 
 Definition fretSta (p1 p2 : asrt) :=
   forall s s', s |= p1 -> s' |= p2 ->
-          (exists v, (getmem s) ((getregs s) r15) = Some v /\
-                (getmem s') ((getregs s) r15) = Some v).
+          (exists v, (getregs s) r15 = Some v /\
+                (getregs s') r15 = Some v).
 
 Inductive wf_seq : funspec -> asrt -> InsSeq -> asrt -> Prop :=
 | seq_rule : forall f i I p p' q Spec,
