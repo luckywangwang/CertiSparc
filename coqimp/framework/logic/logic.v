@@ -338,21 +338,21 @@ Inductive wf_seq : funspec -> asrt -> InsSeq -> asrt -> Prop :=
 | J2_rule : forall p p1 p2 q r fp fq L aexp1 aexp2 f1 f1' f2 f2' (r1 r2 : GenReg) v1 v2 Spec,
     (p ↓) ==> (aexp1 ==ₓ f1') -> (p ↓) ==> r1 |=> v1 ** p1 ->
     ((r1 |=> f1 ** p1) ↓) ==> (aexp2 ==ₓ f2') -> ((r1 |=> f1 ** p1) ↓) ==> r2 |=> v2 ** p2 ->
-    Spec (f1, f2) = Some (fp, fq) ->
-    (r2 |=> f2 ** p2) ↓ ==> fp L ** r -> fq L ** r ==> q -> DlyFrameFree r ->
+    Spec (f1', f2') = Some (fp, fq) ->
+    (r2 |=> f2 ** p2) ==> fp L ** r -> fq L ** r ==> q -> DlyFrameFree r ->
     wf_seq Spec p (consJ2 f1 aexp1 r1 f2 aexp2 r2) q
 
 | Be_rule : forall p p' q r aexp f1 f2 f bv fp fq L i I Spec,
     (p ↓) ==> (aexp ==ₓ f) -> Spec (f, f +ᵢ ($ 4)) = Some (fp, fq) ->
-    |- {{ p ↓ }} i {{ p' }} -> (p ↓) ==> z |=> bv ** Atrue ->
-    wf_seq Spec ( p' //\\ [| bv =ᵢ ($ 0) = true |] ) I q ->
+    |- {{ p ↓↓ }} i {{ p' }} -> (p ↓) ==> z |=> bv ** Atrue ->
+    wf_seq Spec ( p' //\\ [| bv =ᵢ ($ 0) = true |] ) I q -> DlyFrameFree r ->
     ((bv =ᵢ ($ 0) = false) -> ((p' ==> fp L ** r) /\ (fq L ** r ==> q))) ->
     wf_seq Spec p (f1 e> be aexp ;; f2 e> i ;; I) q
 
 | Bne_rule : forall p p' q r aexp f1 f2 f bv fp fq L i I Spec,
     (p ↓) ==> (aexp ==ₓ f) -> Spec (f, f +ᵢ ($ 4)) = Some (fp, fq) ->
-    |- {{ p ↓ }} i {{ p' }} -> (p ↓) ==> z |=> bv ** Atrue ->
-    wf_seq Spec ( p' //\\ [| bv =ᵢ ($ 0) = false |] ) I q ->
+    |- {{ p ↓↓ }} i {{ p' }} -> (p ↓) ==> z |=> bv ** Atrue ->
+    wf_seq Spec ( p' //\\ [| bv =ᵢ ($ 0) = false |] ) I q -> DlyFrameFree r ->
     ((bv =ᵢ ($ 0) = true) -> ((p' ==> fp L ** r) /\ (fq L ** r ==> q))) ->
     wf_seq Spec p (f1 n> bne aexp ;; f2 n> i ;; I) q
 

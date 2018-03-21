@@ -305,20 +305,20 @@ Inductive H__ : CodeHeap -> State * Label * Label -> State * Label * Label -> Pr
 | Be_false :
     forall C M (R : RegFile) F D pc npc f aexp,
       C pc = Some (cbe aexp) -> eval_addrexp R aexp = Some f ->
-      R z = Some ($ 0) -> word_aligned f = false ->
+      R z = Some ($ 0) -> word_aligned f = true ->
       H__ C ((M, (R, F), D), pc, npc) ((M, (R, F), D), npc, npc +ᵢ ($ 4))
 
 | Bne_true :
     forall C M (R : RegFile) F D pc npc f aexp,
       C pc = Some (cbne aexp) -> eval_addrexp R aexp = Some f ->
-      R z = Some ($ 0) -> word_aligned f = false ->
-      H__ C ((M, (R, F), D), pc, npc) ((M, (R, F), D), npc, npc +ᵢ ($ 4))
+      R z = Some ($ 0) -> word_aligned f = true ->
+      H__ C ((M, (R, F), D), pc, npc) ((M, (R, F), D), npc, f)
 
 | Bne_false :
     forall C M (R : RegFile) F D pc npc f aexp v,
       C pc = Some (cbne aexp) -> eval_addrexp R aexp = Some f ->
       R z = Some v -> v <> ($ 0) -> word_aligned f = true ->
-      H__ C ((M, (R, F), D), pc, npc) ((M, (R, F), D), npc, f).
+      H__ C ((M, (R, F), D), pc, npc) ((M, (R, F), D), npc, npc +ᵢ ($ 4)).
 
 Inductive P__ : CodeHeap -> State * Label * Label -> State * Label * Label -> Prop :=
   CStep :
