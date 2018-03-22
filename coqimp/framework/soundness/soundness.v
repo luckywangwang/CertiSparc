@@ -23,6 +23,18 @@ Definition ins_sound p q i :=
   forall s,
     s |= p -> (exists s', (Q__ s (cntrans i) s') /\ s' |= q).
 
+(*
+Inductive safety : nat -> CodeHeap -> State -> Label -> Label -> asrt -> nat -> Prop :=
+| safety_ret1 :
+     forall C S S1 S2 pc pc1 pc2 npc npc1 npc2 q,
+        C pc = Some (cretl) ->
+        P__ C (S, pc, npc) (S1, pc1, npc1) ->
+        P__ C (S1, pc1, npc1) (S2, pc2, npc2) -> S2 |= q ->
+        safety 2 C S pc npc q 0
+
+               | 
+*)
+
 (*+ soundness of instruction rule +*)
 CoInductive safety : CodeHeap -> State -> Label -> Label -> asrt -> nat -> Prop :=
 | safety_cons : forall C S pc npc q n,

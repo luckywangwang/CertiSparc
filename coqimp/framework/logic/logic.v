@@ -362,7 +362,11 @@ Inductive wf_seq : funspec -> asrt -> InsSeq -> asrt -> Prop :=
 
 | Ex_intro_rule : forall q I {tp:Type} p Spec,
     (forall x', wf_seq Spec (p x') I q) ->
-    wf_seq Spec (EX x : tp, p x) I q.
+    wf_seq Spec (EX x : tp, p x) I q
+
+| Seq_conseq_rule : forall p p' q q' I Spec,
+    wf_seq Spec p' I q' -> p ==> p' -> q' ==> q ->
+    wf_seq Spec p I q.
 
 Notation " Spec '|-' '{{' p '}}' I '{{' q '}}' " :=
   (wf_seq Spec p I q) (at level 55).
