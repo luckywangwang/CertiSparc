@@ -1962,19 +1962,200 @@ Ltac get_ins_diff_false :=
     tryfalse; subst
   end.
 
-Lemma frm_test :
-  forall C S pc npc q r,
-    safety C S pc npc (q ** r) 0.
-Proof.
-Admitted.
-
 Lemma call_test :
   forall C S pc npc q,
     safety C S pc npc q 0.
 Proof.
 Admitted.
 
+Lemma st_test :
+  forall p s,
+    s |= p.
+Proof.
+  Admitted.
 
+Lemma safety_frame :
+  forall M M' R R' F D C r f1 f2 q n,
+    safety C (M, (R, F), D) f1 f2 q n ->
+    (M', (R', F), D) |= r -> disjoint R R' -> disjoint M M' -> DlyFrameFree r ->
+    safety C (merge M M', (merge R R', F), D) f1 f2 (q ** r) n.
+Proof.
+Admitted.
+
+Lemma insSeq_rule_sound :
+  forall Spec Spec' f1 f2 fp fq L S C,
+    wf_cdhp Spec C Spec' -> cdhp_subst Spec Spec' ->
+    Spec' (f1, f2) = Some (fp, fq) -> S |= (fp L) ->
+    safety C S f1 f2 (fq L) 0.
+Proof.
+  cofix.
+  intros.
+  lets Hwfcdhp : H.
+  unfold wf_cdhp in H.
+  lets Hspec : H1.
+  eapply H with (L := L) in H1.
+  clear H.
+  simpljoin1.
+  rename x into I.
+  inversion H1; subst.
+
+   - (** Seq *)
+    eapply call_test.
+
+  - (** Call *)
+    eapply call_test.
+
+  - (** Retl *)
+    eapply call_test.
+  
+  - (** J1 *)  
+    unfold cdhp_subst in H0.
+    eapply H0 in H4.
+    eapply insSeq_rule_sound in H4.
+    eapply st_test; eauto.
+    
+  - (** J2 *)
+    eapply call_test.
+
+  - (** Be *)
+    eapply call_test.
+
+  - (** Bne *)
+    eapply call_test.
+
+  - (** frame *)
+    eapply call_test.
+
+  - (** ex_intro *)
+    eapply call_test.
+
+    Unshelve.
+    exact S.
+    exact L.
+Qed.
+  
+Lemma insSeq_rule_sound :
+  forall Spec Spec' f1 f2 fp fq L S C,
+    wf_cdhp Spec C Spec' -> cdhp_subst Spec Spec' ->
+    Spec' (f1, f2) = Some (fp, fq) -> S |= (fp L) ->
+    safety C S f1 f2 (fq L) 0.
+Proof.
+  cofix.
+  intros.
+  lets Hwfcdhp : H.
+  unfold wf_cdhp in H.
+  lets Hspec : H1.
+  eapply H with (L := L) in H1.
+  clear H.
+  simpljoin1.
+  rename x into I.
+  generalize dependent f1.
+  generalize dependent f2.
+  generalize dependent Spec'.
+  generalize dependent S.
+
+  induction H1; intros.
+
+  - (** Seq *)
+    eapply call_test.
+
+  - (** Call *)
+    eapply call_test.
+
+  - (** Retl *)
+    eapply call_test.
+ 
+  - (** J1 *)
+    inversion H8; subst.
+    clear Hspec H8.
+    eapply safety_cons;
+      try solve [intros; get_ins_diff_false].
+    intros.
+    inversion H9; subst.
+    eapply dly_reduce_asrt_stable in H13; eauto.
+    inversion H20; get_ins_diff_false.
+    lets Hf : H13.
+    eapply H in Hf; eauto.
+    simpl in Hf.
+    simpljoin1.
+    rewrite H14 in H8.
+    inversion H8; subst.
+    rewrite H28 in H10.
+    inversion H10; subst.
+    clear H10.
+    lets Hst : H13.
+    eapply H1 in Hst.
+    assert (Hwrf1 : (M', (set_R R' rd0 f1, F'), D'') |= rd0 |=> f1 ** p1).
+    {
+      clear - Hst.
+      sep_star_split_tac.
+      simpl in H3.
+      simpljoin1.
+      simpl in H1.
+      simpl.
+      exists (m, (set_R r rd0 f1, f0), d0) (m0, (r0, f0), d0).
+      unfolds regSt.
+      simpls.
+      simpljoin1.
+      repeat (split; eauto).
+      eapply disjoint_setR_still1; eauto.
+      rewrite indom_setR_merge_eq1; eauto.
+      eapply regset_l_l_indom; eauto.
+      rewrite indom_setR_eq_RegMap_set; eauto.
+      rewrite regset_twice; eauto.
+      eapply regset_l_l_indom; eauto.
+    }
+    clear Hst H14 H8.
+    eapply ins_rule_sound in H2.
+    eapply total_to_partial in H2.
+    eapply safety_cons;
+      try solve [intros; get_ins_diff_false].
+    intros.
+    rewrite H18 in H8.
+    inversion H8; subst.
+    clear H8.
+    inversion H10; subst.
+    eapply dly_reduce_asrt_stable in H15; eauto.
+    inversion H25; get_ins_diff_false.
+    eapply H2 in H15; eauto.
+    eapply H15 in H23; eauto.
+    clear H15.
+    eapply H3 in H23. 
+    clear - insSeq_rule_sound H H7 Hwfcdhp H4 H5 H23 H0.
+    sep_star_split_tac.
+    simpl in H6.
+    simpljoin1.
+    lets Hcdhp_subst : H7.
+    unfold cdhp_subst in H7.
+    eapply H7 in H0.
+    eapply safety_post_weak; eauto.
+    simpl in H8.
+    simpljoin1. 
+    eapply insSeq_rule_sound in H3; eauto.
+    eapply call_test.
+    (*
+    simpl in H8.
+    simpljoin1.
+    eapply safety_frame with (r := r) (M' := m0) (R' := r1) in H0; eauto.
+    eapply safety_post_weak; eauto.*)
+  - (** J2 *)
+    eapply call_test.
+
+  - (** Be *)
+    eapply call_test.
+
+  - (** Bne *)
+    eapply call_test.
+
+  - (** frame *)
+    eapply call_test.
+
+  - (** ex_intro *)
+    eapply call_test.
+Qed.
+    
+  
+(*
 Lemma insSeq_rule_sound :
   forall Spec Spec' p q I pc npc S C,
     wf_seq Spec p I q -> LookupC C pc npc I ->
@@ -2023,6 +2204,7 @@ Proof.
     eapply H4 in H3; eauto.
 
   - (** J1 *)
+    
     clear H.
     inversion H0; subst.
     eapply safety_cons;
@@ -2227,9 +2409,7 @@ Proof.
 *)
 
   - (** be *)
-    eapply call_test.
     
-    (*
     inversion H0; subst.
     eapply safety_cons;
       try solve [intros; get_ins_diff_false].
@@ -2240,13 +2420,16 @@ Proof.
     inversion H0; subst.
     eapply dly_reduce_asrt_stable in H14; eauto.
     lets Hp1 : H14.
-    eapply H4 in Hp1; eauto. 
+    eapply H4 in Hp1; eauto.  
     inversion H22; get_ins_diff_false.
+
+    eapply call_test.
+    (*
     simpl in Hp1.
-    simpljoin1. 
+    simpljoin1.  
     rewrite H11 in H30.
     inversion H30; subst.
-    clear H30 H17.
+    clear H30 H17. 
     
     assert (v = bv).
     {
@@ -2309,6 +2492,7 @@ Proof.
     eapply Seq_frame_rule with (r := r) in H4; eauto.
     eapply insSeq_rule_sound in H4; eauto.
     eapply safety_post_weak; eauto.
+*)
 
     clear H17.
     eapply safety_cons;
@@ -2366,12 +2550,11 @@ Proof.
     rewrite <- H0.
     eauto.
     simpl; eauto.
-*)
 
   - (** Bne *)
     eapply call_test.
     
-    (*
+  (*
     clear H.
     inversion H0; subst.
     eapply safety_cons;
@@ -2497,14 +2680,15 @@ Proof.
     eapply call_test.
  
   - (** ex_intro *)
- 
+    eapply call_test.
+    (*
     clear H.
     simpl in H3.
     simpljoin1.
     specialize (H4 x).
-    eapply insSeq_rule_sound in H4; eauto.
+    eapply insSeq_rule_sound in H4; eauto.*)
 Qed.
-
+*)
 
 
     
