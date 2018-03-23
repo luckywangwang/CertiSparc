@@ -109,6 +109,49 @@ Proof.
     simpl; tryfalse; eauto.
 Qed.
 
+Lemma merge_lift :
+  forall tp (m1 m2 m3 : tp -> option Word),
+    disjoint m1 m2 ->
+    merge m1 (merge m2 m3) = merge m2 (merge m1 m3).
+Proof.
+  intros.
+  unfold merge.
+  eapply functional_extensionality; eauto.
+  intros.
+  destruct (m1 x) eqn:Heqe1;
+    destruct (m2 x) eqn:Heqe2; tryfalse; eauto.
+  unfold disjoint in *.
+  specialize (H x).
+  rewrite Heqe1 in H;
+    rewrite Heqe2 in H; tryfalse.
+Qed.
+
+Lemma get_vl_merge_still :
+  forall tp (M m : tp -> option Word) l v,
+    M l = Some v ->
+    merge M m l = Some v.
+Proof.
+  intros.
+  unfold merge in *.
+  rewrite H; eauto.
+Qed.
+
+Lemma get_vl_merge_still2 :
+  forall tp (M m : tp -> option Word) l v,
+    disjoint M m -> m l = Some v ->
+    merge M m l = Some v.
+Proof.
+  intros.
+  unfold merge in *.
+  destruct (M l) eqn:Heqe; tryfalse.
+  unfold disjoint in *.
+  specialize (H l).
+  rewrite Heqe in H.
+  rewrite H0 in H.
+  tryfalse.
+  eauto.
+Qed.
+
 (*+ Lemmas for exe_delay +*)
 Lemma exe_delay_no_abort :
   forall D R,
@@ -596,10 +639,16 @@ Proof.
   destruct_state x.
   destruct_state x0.
   simpls.
-  simpljoin1.
+  simpljoin1. 
   repeat (split; eauto).
   eapply disj_sym; eauto.
+  eapply disj_sym; eauto.
   rewrite disj_merge_reverse_eq; eauto.
+  assert (r ⊎ r0 = r0 ⊎ r).
+  {
+    rewrite disj_merge_reverse_eq; eauto.
+  }
+  rewrite H3; eauto.
 Qed.
 
 Lemma sep_star_lift :
@@ -610,19 +659,31 @@ Proof.
   intros.
   sep_star_split_tac.
   simpls; simpljoin1.
-
-  exists (m1, (r2, f2), d2) (merge m m2, (r2, f2), d2).
+ 
+  exists (m1, (r1, f2), d2) (merge m m2, (merge r r2, f2), d2).
   repeat (split; eauto).
   eapply disj_sep_merge_still; eauto.
   eapply disj_merge_disj_sep1 in H3.
   eapply disj_sym; eauto.
+  
+  eapply disj_sep_merge_still; eauto.
+  eapply disj_merge_disj_sep1 in H4.
+  eapply disj_sym; eauto.  
+ 
   rewrite merge_lift; eauto.
+  assert (r ⊎ (r1 ⊎ r2) = r1 ⊎ (r ⊎ r2)).
+  {
+    rewrite merge_lift; eauto.
+    eapply disj_merge_disj_sep1 in H4; eauto.
+  }
+  rewrite H5; eauto.
   eapply disj_merge_disj_sep1 in H3; eauto.
 
-  exists (m, (r2, f2), d2) (m2, (r2, f2), d2).
+  exists (m, (r, f2), d2) (m2, (r2, f2), d2).
   simpl; eauto.
   repeat (split; eauto).
   eapply disj_merge_disj_sep2 in H3; eauto.
+  eapply disj_merge_disj_sep2 in H4; eauto.
 Qed.
     
 
@@ -659,6 +720,17 @@ Proof.
   eauto.
 Qed.
 
+Lemma pc_be_npc_i :
+  forall pc npc C aexp I,
+    LookupC C pc npc I ->
+    C pc = Some (cbe aexp) ->
+    exists i, C npc = Some (cntrans i).
+Proof.
+  intros.
+  inversion H; get_ins_diff_false.
+  eauto.
+Qed.
+  
 (*+ progress +*)
 Lemma seq_progress :
   forall p q S pc npc i C Spec I,
@@ -847,7 +919,250 @@ Proof.
   -
     eapply H0 in H2.
     eauto.
-Qed.    
+Qed.
+
+Lemma jmpl_progress2 :
+  forall p q S pc npc aexp1 aexp2 r1 r2 C Spec I,
+    wf_seq Spec p I q -> LookupC C pc npc I -> S |= p ->
+    C pc = Some (cjumpl aexp1 r1) -> C npc = Some (cjumpl aexp2 r2) ->
+    exists S1 S2 pc1 pc2 npc1 npc2,
+      P__ C (S, pc, npc) (S1, pc1, npc1) /\
+      P__ C (S1, pc1, npc1) (S2, pc2, npc2).
+Proof.
+  intros.
+  generalize dependent C.
+  generalize dependent S.
+  generalize dependent pc.
+  generalize dependent npc.
+  generalize dependent aexp1.
+  generalize dependent aexp2.
+  generalize dependent r1.
+  generalize dependent r2.
+
+  induction H; intros; elim_ins_neq.
+
+  - 
+    rewrite H9 in H16.
+    inversion H16; subst.
+    clear H16 H21.
+    destruct_state S.
+    assert (Hexe_dly1 : exists R' D', exe_delay r0 d = (R', D')).
+    {
+      eapply exe_delay_no_abort; eauto.
+    }
+    simpljoin1.
+    renames x to R', x0 to D'.
+    lets Hexe_delay1 : H11.
+    symmetry in H11.
+    eapply dly_reduce_asrt_stable in H11; eauto.
+    lets Haexp1 : H11.
+    eapply H in Haexp1.
+    simpl in Haexp1.
+    simpljoin1.
+    assert (Hjmp_step1 : (m, (set_R R' r1 f1, f), D') |= r1 |=> f1 ** p1).
+    {
+      clear - H11 H0.
+      eapply H0 in H11.
+      sep_star_split_tac.
+      simpl.
+      simpl in H4.
+      simpljoin1.
+      exists (m0, (set_R r r1 f1, f2), d0) (m1, (r0, f2), d0).
+      clear H0.
+      simpls.
+      unfolds regSt.
+      simpls.
+      simpljoin1.
+      repeat (split; eauto).
+      eapply disjoint_setR_still1; eauto.
+      rewrite indom_setR_merge_eq1; eauto.
+      eapply regset_l_l_indom; eauto.
+      rewrite indom_setR_eq_RegMap_set; eauto.
+      rewrite regset_twice; eauto.
+      eapply regset_l_l_indom; eauto.
+    }
+
+    assert (Hexe_dly2 : exists R'' D'', exe_delay (set_R R' r1 f1) D' = (R'', D'')).
+    {
+      eapply exe_delay_no_abort; eauto.
+    }
+    simpljoin1.
+    renames x to R'', x0 to D''.
+    lets Hexe_delay2 : H14.
+    symmetry in H14.
+    eapply dly_reduce_asrt_stable in H14; eauto.
+    lets Haexp2 : H14.
+    eapply H1 in Haexp2.
+    simpl in Haexp2.
+    simpljoin1.
+    eapply H2 in H14.
+    assert (Hjmp_step2 : (m, (set_R R'' r2 f2, f), D'') |= r2 |=> f2 ** p2).
+    {
+      clear - H14.
+      sep_star_split_tac.
+      simpl in H3.
+      simpljoin1.
+      simpl.
+      exists (m0, (set_R r r2 f2, f1), d0) (m1, (r0, f1), d0).
+      simpls.
+      unfolds regSt.
+      simpls.
+      simpljoin1.
+      repeat (split; eauto).
+      eapply disjoint_setR_still1; eauto.
+      rewrite indom_setR_merge_eq1; eauto.
+      eapply regset_l_l_indom; eauto.
+      rewrite indom_setR_eq_RegMap_set; eauto.
+      rewrite regset_twice; eauto.
+      eapply regset_l_l_indom; eauto.
+    }
+
+    exists (m, (set_R R' r1 f1, f), D') (m, (set_R R'' r2 f2, f), D'') f2 f1' f1' f2'.
+    split.
+    econstructor; eauto.
+    eapply Jumpl; eauto.  
+    clear - H0 H11.
+    eapply H0 in H11.
+    sep_star_split_tac.
+    simpls.
+    unfolds regSt.
+    simpls.
+    simpljoin1.
+    eapply indom_merge_still; eauto.
+    eapply regset_l_l_indom; eauto.
+
+    econstructor; eauto.
+    eapply Jumpl; eauto.
+    clear - H14.
+    sep_star_split_tac.
+    simpls.
+    unfolds regSt.
+    simpls.
+    simpljoin1.
+    eapply indom_merge_still; eauto.
+    eapply regset_l_l_indom; eauto.
+
+  -
+    sep_star_split_tac.
+    simpl in H10.
+    simpljoin1.
+    rewrite H3 in H5.
+    inversion H5; subst.
+    clear H5.
+    eapply IHwf_seq in H1; eauto.
+    simpljoin1.
+    eapply program_step_safety_property with (s := (merge m m0, (merge r0 r2, f0), d0))
+      in H1; eauto.
+    simpljoin1.
+    destruct_state x.
+    destruct_state x6.
+    simpl in H8.
+    simpljoin1.
+    eapply program_step_safety_property with (s := (merge m1 m2, (merge r1 r3, f1), d1))
+      in H5; eauto.
+    simpljoin1.
+    destruct_state x0.
+    destruct_state x5.
+    simpl in H12.
+    simpljoin1.
+    exists (m1 ⊎ m2, (r1 ⊎ r3, f1), d1) (m3 ⊎ m4, (r4 ⊎ r5, f2), d2)
+      x1 x2 x3 x4.
+    split; eauto.
+    simpl.
+    repeat (split; eauto).
+    simpl.
+    repeat (split; eauto).
+
+  -
+    rewrite H3 in H5.
+    inversion H5; subst.
+    clear H5 H6.
+    simpl in H1.
+    simpljoin1.
+    eauto.
+
+  -
+    eapply H0 in H2.
+    eauto.
+Qed.
+
+Lemma be_progress :
+  forall p q S pc npc aexp C Spec I,
+    wf_seq Spec p I q -> LookupC C pc npc I -> S |= p ->
+    C pc = Some (cbe aexp) ->
+    exists S1 S2 pc1 pc2 npc1 npc2,
+      P__ C (S, pc, npc) (S1, pc1, npc1) /\
+      P__ C (S1, pc1, npc1) (S2, pc2, npc2).
+Proof.
+  intros.
+  generalize dependent C.
+  generalize dependent S.
+  generalize dependent pc.
+  generalize dependent npc.
+  generalize dependent aexp.
+
+  induction H; intros; elim_ins_neq.
+
+  -
+    clear H15.
+    destruct_state S.
+    assert (Hexe_dly1 : exists R' D', exe_delay r0 d = (R', D')).
+    {
+      eapply exe_delay_no_abort; eauto.
+    }
+    simpljoin1.
+    renames x to R', x0 to D'.
+    lets Hexe_delay1 : H9.
+    symmetry in H9.
+    eapply dly_reduce_asrt_stable in H9; eauto.
+    lets Haexp : H9.
+    eapply H in Haexp.
+    simpl in Haexp.
+    simpljoin1.
+    assert (Hexe_delay2 : exists R'' D'', exe_delay R' D' = (R'', D'')).
+    {
+      eapply exe_delay_no_abort; eauto.
+    }
+    simpljoin1.
+    renames x to R'', x0 to D''.
+    lets Hexe_delay2 : H12.
+    symmetry in H12.
+    eapply dly_reduce_asrt_stable in H12; eauto.
+    eapply ins_rule_sound in H1.
+    eapply H1 in H12.
+    simpljoin1.
+    destruct (Int.eq bv ($ 0)) eqn:Heqe.
+    { 
+      exists (m, (R', f0), D') x f2 (f2 +ᵢ ($ 4)) (f2 +ᵢ ($ 4)) ((f2 +ᵢ ($ 4)) +ᵢ ($ 4)).
+      split.
+      econstructor; eauto.
+      eapply Be_false; eauto.
+      eapply H2 in H9.
+      clear - H9 Heqe.
+      simpl in H9.
+      unfolds regSt.
+      simpls.
+      simpljoin1.
+      destruct_state x.
+      destruct_state x0.
+      simpls.
+      simpljoin1.
+      unfold merge.
+      unfold RegMap.set.
+      destruct_rneq.
+      clear - Heqe.
+      unfolds Int.eq.
+      destruct (zeq (Int.unsigned bv) (Int.unsigned $ 0)); tryfalse.
+      eapply z_eq_to_int_eq in e.
+      do 2 rewrite Int.repr_unsigned in e.
+      inversion e; subst; eauto.
+      destruct_state x. 
+      econstructor; eauto.
+      eapply NTrans; eauto.
+    }
+    
+    >>>>>>>
+    
     
 (*+ preservation +*)
 Lemma seq_preservation :
@@ -1028,26 +1343,381 @@ Proof.
     simpl in H20.
     simpljoin1.
     eapply program_step_deterministic in H8; eauto.
-    simpljoin1.
+    simpljoin1. 
     exists I' fp fq L (r' ** r).
     repeat (split; eauto).
-    eapply Seq_frame_rule in H1; eauto.
-    
-    
-    >>>>>>>>>>>>>>>>
-    
+    eapply Seq_frame_rule with (r := r) in H1; eauto.
+    eapply Seq_conseq_rule with (p := fp L ** r' ** r) (q := fq L ** r' ** r) in H1.
+    Focus 2.
+    clear.
+    intros.
+    eapply sep_star_assoc; eauto.
+    Focus 2.
+    clear.
+    intros.
+    eapply sep_star_assoc2; eauto.
+    eauto.  
+    clear - H21 H16 H20 H22.
+    eapply sep_star_assoc2.
+    simpls. 
+    simpljoin1.
+    destruct_state x.
+    destruct_state x0.
+    simpl in H.
+    simpljoin1.
+    do 2 eexists. 
+    repeat (split; eauto).
+    Focus 2.
+    do 2 eexists.
+    repeat (split; eauto).
+    simpl.
+    repeat (split; eauto).
+    intros.
+    clear - H17 H8.
+    eapply sep_star_assoc in H8.
+    eapply sep_star_split in H8.
+    simpljoin1.
+    destruct_state x.
+    destruct_state x0.
+    simpl in H1.
+    simpljoin1.
+    eapply H17 in H.
+    simpl.
+    do 2 eexists.
+    repeat (split; eauto).
+
+    simpl.
+    repeat (split; eauto).
+    simpl.
+    repeat (split; eauto).
+
+  -
+    simpl in H1.
+    simpljoin1.
+    eapply H0 in H1; eauto.
+
+  -
+    eapply H0 in H2.
+    eapply IHwf_seq in H2; eauto.
+    simpljoin1.
+    renames x0 to fp, x1 to fq, x2 to L, x3 to r, x to I.
+    exists I fp fq L r.
+    repeat (split; eauto).
+Qed.
 
 Lemma jmpl_preservation2 :
-  forall p q S S1 S2 aexp1 aexp2 r1 r2 pc pc1 pc2 npc npc1 npc2 Spec C I,
+  forall p q S S1 S2 aexp1 aexp2 r1 r2 pc pc1 pc2 npc npc1 npc2 Spec Spec' C I,
     wf_seq Spec p I q -> LookupC C pc npc I -> S |= p ->
+    wf_cdhp Spec C Spec' -> cdhp_subst Spec Spec' ->
     C pc = Some (cjumpl aexp1 r1) -> C npc = Some (cjumpl aexp2 r2) ->
     P__ C (S, pc, npc) (S1, pc1, npc1) -> P__ C (S1, pc1, npc1) (S2, pc2, npc2) ->
-    exists I' fp fq L,
-      wf_seq Spec (fp L) I' (fq L) /\ LookupC C pc2 npc2 I' /\
-      Spec (pc2, npc2) = Some (fp, fq) /\ S2 |= (fp L) /\ fq L ==> q.
+    exists I' fp fq L r,
+      wf_seq Spec (fp L ** r) I' (fq L ** r) /\ LookupC C pc2 npc2 I' /\ DlyFrameFree r /\
+      Spec (pc2, npc2) = Some (fp, fq) /\ S2 |= (fp L ** r) /\ fq L ** r ==> q.
 Proof.
-Admitted.
+  intros.
+  generalize dependent C.
+  generalize dependent S.
+  generalize dependent S1.
+  generalize dependent S2.
+  generalize dependent pc.
+  generalize dependent pc1.
+  generalize dependent pc2.
+  generalize dependent npc.
+  generalize dependent npc1.
+  generalize dependent npc2.
+  generalize dependent aexp1.
+  generalize dependent aexp2.
 
+  induction H; intros; elim_ins_neq.
+
+  -
+    inversion H13; subst.
+    lets Hexe_dly1 : H18.
+    eapply dly_reduce_asrt_stable in H18; eauto.
+    clear H25.
+    inversion H24; get_ins_diff_false.
+    lets Haexp : H18.
+    eapply H in Haexp.
+    simpl in Haexp.
+    simpljoin1.
+    rewrite H32 in H15.
+    inversion H15; subst.
+    clear H15 H16.
+    inversion H14; subst.
+    lets Hexe_dly2 : H19.
+    eapply H0 in H18.
+    assert (Hp1 : (M', (set_R R' rd f1, F'), D'') |= rd |=> f1 ** p1).
+    {
+      clear - H18.
+      simpls.
+      simpljoin1.
+      destruct_state x.
+      destruct_state x0.
+      unfolds regSt.
+      simpls.
+      simpljoin1.
+      exists (empM, (set_R (RegMap.set rd (Some v1) empR) rd f1, f0), d0) (m0, (r0, f0), d0).
+      simpls.
+      repeat (split; eauto).
+      eapply disjoint_setR_still1; eauto.
+      rewrite indom_setR_merge_eq1; eauto.
+      eapply regset_l_l_indom; eauto.
+      rewrite indom_setR_eq_RegMap_set; eauto.
+      rewrite regset_twice; eauto.
+      eapply regset_l_l_indom; eauto.
+    }
+    eapply dly_reduce_asrt_stable in H19; eauto.
+    lets Haexp2 : H19.
+    eapply H1 in Haexp2.
+    simpl in Haexp2.
+    simpljoin1.
+    inversion H29; get_ins_diff_false.
+    rewrite H39 in H15.
+    inversion H15; subst.
+    clear H15 H16.
+    lets Hwf_cdhp : H10.
+    lets Hcdhp_subst : H3.
+    unfold cdhp_subst in Hcdhp_subst.
+    lets Hspec : H4.
+    eapply Hcdhp_subst in Hspec.
+    unfold wf_cdhp in Hwf_cdhp. 
+    eapply Hwf_cdhp with (L := L) in Hspec.
+    simpljoin1.
+    rename x into I'.
+    eapply Seq_frame_rule with (r := r) in H16; eauto.
+    exists I' fp fq L r.
+    repeat (split; eauto).
+    eapply H2 in H19.
+    clear - H19 H5.
+    assert ((M'0, (set_R R'0 rd0 pc1, F'0), D''0) |= rd0 |=> pc1 ** p2).
+    {
+      sep_star_split_tac.
+      simpl in H3.
+      simpljoin1.
+      clear H5.
+      simpls.
+      unfolds regSt.
+      simpls.
+      exists (m, (set_R r0 rd0 pc1, f0), d0) (m0, (r1, f0), d0).
+      simpljoin1.
+      simpl.
+      repeat (split; eauto).
+      eapply disjoint_setR_still1; eauto.
+      rewrite indom_setR_merge_eq1; eauto.
+      eapply regset_l_l_indom; eauto.
+      rewrite indom_setR_eq_RegMap_set; eauto.
+      rewrite regset_twice; eauto.
+      eapply regset_l_l_indom; eauto.
+    }
+    eauto.
+
+  -
+    rewrite H5 in H9.
+    inversion H9; subst.
+    clear H9 H10.
+    sep_star_split_tac.
+    simpl in H12.
+    simpljoin1.
+    eapply jmpl_progress2 in H; eauto.
+    simpljoin1.
+    lets Hstep1 : H.
+    eapply program_step_safety_property
+    with (s := (merge m m0, (merge r0 r1, f0), d0)) in Hstep1; eauto.
+    simpljoin1.
+    destruct_state x.
+    destruct_state x6.
+    simpl in H14.
+    simpljoin1.
+    lets Hstep2 : H12.
+    eapply program_step_safety_property
+    with (s := (merge m1 m2, (merge r2 r3, f1), d1)) in Hstep2; eauto.
+    simpljoin1.
+    destruct_state x0.
+    destruct_state x5.
+    simpl in H18.
+    simpljoin1.
+    eapply program_step_deterministic in H7; eauto.
+    simpljoin1.
+    eapply program_step_deterministic in H8; eauto.
+    simpljoin1.
+    eapply IHwf_seq in H1; eauto.
+    simpljoin1.
+    renames x0 to fp, x1 to fq, x2 to L, x3 to r', x to I'.
+    exists I' fp fq L (r' ** r).
+    repeat (split; eauto).
+
+    eapply Seq_frame_rule with (r := r) in H1.
+    eapply Seq_conseq_rule in H1; eauto.
+    intros.
+    eapply sep_star_assoc; eauto.
+    intros.
+    eapply sep_star_assoc2; eauto.
+    eauto.
+
+    clear - H18 H20 H19 H22.
+    eapply sep_star_assoc2; eauto.
+    eapply disj_sep_star_merge; eauto.
+
+    clear - H23.
+    intros.
+    eapply sep_star_assoc in H.
+    eapply sep_star_split in H; eauto.
+    simpljoin1.
+    destruct_state x.
+    destruct_state x0.
+    simpl in H1; simpljoin1.
+    eapply H23 in H.
+    eapply disj_sep_star_merge; eauto.
+
+    simpl.
+    repeat (split; eauto).
+
+    simpl.
+    repeat (split; eauto).
+
+  -
+    simpl in H1.
+    simpljoin1.
+    eauto.
+
+  -
+    eapply H0 in H2.
+    eapply IHwf_seq in H2; eauto.
+    simpljoin1.
+    do 5 eexists.
+    repeat (split; eauto).
+Qed.
+
+Lemma be_preservation :
+  forall p q S S1 S2 aexp pc npc pc1 npc1 pc2 npc2 Spec Spec' C i I,
+     wf_seq Spec p I q -> LookupC C pc npc I -> S |= p ->
+     wf_cdhp Spec C Spec' -> cdhp_subst Spec Spec' ->
+     C pc = Some (cbe aexp) -> C npc = Some (cntrans i) ->
+     P__ C (S, pc, npc) (S1, pc1, npc1) -> P__ C (S1, pc1, npc1) (S2, pc2, npc2) ->
+     exists I' p',
+       wf_seq Spec p' I' q /\ LookupC C pc2 npc2 I' /\ S2 |= p'.
+Proof.
+  intros.
+  generalize dependent C.
+  generalize dependent S.
+  generalize dependent S1.
+  generalize dependent S2.
+  generalize dependent aexp.
+  generalize dependent pc.
+  generalize dependent pc1.
+  generalize dependent pc2.
+  generalize dependent npc.
+  generalize dependent npc1.
+  generalize dependent npc2.
+  generalize dependent i.
+
+  induction H; intros; elim_ins_neq.
+
+  -
+    inversion H12; subst.
+    rewrite H10 in H20.
+    inversion H20; subst.
+    inversion H25; get_ins_diff_false.
+
+    clear H23 H22 H20.
+    eapply dly_reduce_asrt_stable in H17; eauto.
+    lets Hz : H17.
+    eapply H2 in Hz.
+    assert (bv = v).
+    {
+      clear - Hz H34.
+      sep_star_split_tac.
+      simpl in H3.
+      simpljoin1.
+      simpl in H1.
+      unfolds regSt.
+      simpls.
+      simpljoin1.
+      clear - H34.
+      unfold merge in *.
+      unfolds RegMap.set.
+      destruct_rneq_H.
+      inversion H34; eauto.
+    }
+    subst.
+
+    inversion H13; subst.
+    eapply dly_reduce_asrt_stable with (p := p ↓) in H18; eauto.
+    eapply ins_rule_sound in H1.
+    eapply total_to_partial in H1.
+    inversion H28; get_ins_diff_false.
+    eapply H1 in H18; eauto.
+    eapply H18 in H26; eauto.
+    clear H18.
+    assert (Hfalse : v =ᵢ ($ 0) = false).
+    {
+      clear - H35.
+      unfold Int.eq.
+      destruct (zeq (Int.unsigned v) (Int.unsigned $ 0)) eqn:Heqe; eauto.
+      clear Heqe.
+      eapply z_eq_to_int_eq in e; eauto.
+      do 2 rewrite Int.repr_unsigned in e.
+      subst.
+      tryfalse.
+    }
+    eapply H6 in Hfalse.
+    lets Hspec : H0.
+    unfold cdhp_subst in H3.
+    eapply H3 in Hspec.
+    unfold wf_cdhp in H9.
+    eapply H9 with (L := L) in Hspec; eauto.
+    simpljoin1.
+    rename x into I'.
+    eapply Seq_frame_rule with (r := r) in H15; eauto.
+    eapply H in H17.
+    simpl in H17.
+    simpljoin1.
+    rewrite H17 in H33.
+    inversion H33; subst.
+    exists I' (fp L ** r).
+    repeat (split; eauto).
+    eapply Seq_conseq_rule; eauto.
+
+    clear H20 H21 H23.
+    eapply dly_reduce_asrt_stable in H17; eauto.
+    inversion H13; subst.
+    eapply dly_reduce_asrt_stable in H18; eauto.
+    inversion H28; get_ins_diff_false.
+    eapply ins_rule_sound in H1.
+    eapply total_to_partial in H1.
+    eapply H1 in H18.
+    eapply H18 in H26; eauto.
+    clear H18.
+    exists I (p' //\\ [|bv =ᵢ ($ 0) = true|]).
+    repeat (split; eauto).
+    assert ((pc1 +ᵢ ($ 4)) +ᵢ ($ 4) = pc1 +ᵢ ($ 8)).
+    {
+      rewrite Int.add_assoc; eauto.
+    }
+    rewrite H14; eauto.
+    clear - H34 H2 H17.
+    eapply H2 in H17.
+    sep_star_split_tac.
+    simpl in H4.
+    simpljoin1.
+    clear - H34 H1.
+    simpl in H1.
+    unfolds regSt.
+    simpls.
+    simpljoin1.
+    unfold merge in *.
+    unfolds RegMap.set.
+    destruct_rneq_H.
+    inversion H34; eauto.
+
+  -
+    rewrite H5 in H9.
+    inversion H9; subst.
+    clear H9 H10.
+    >>>>>>>>>>>>>>>>>>>>>>>
+    
+    
 Lemma program_step_next :
   forall C S S' pc npc pc' npc',
     P__ C (S, pc, npc) (S', pc', npc') ->
@@ -1081,16 +1751,16 @@ Proof.
     eapply program_step_next in H5.
     subst.
     eapply safety_cons; intros.
-
+  
     eapply jmpl_preservation1 in H4; eauto.
-    simpljoin1.
-    renames x0 to fp, x1 to fq, x2 to L, x to I'.
-    eapply Seq_conseq_rule with (p := fp L) (q := q) in H4; eauto.
-
+    simpljoin1. 
+    renames x0 to fp, x1 to fq, x2 to L, x to I', x3 to r.
+    eapply Seq_conseq_rule with (p := fp L ** r) (q := q) in H4; eauto.
+ 
     eapply jmpl_preservation2 with (npc := npc) in H4; eauto.
     simpljoin1.
-    renames x0 to fp, x1 to fq, x2 to L, x to I'. 
-    eapply Seq_conseq_rule with (p := fp L) (q := q) in H4; eauto.
+    renames x0 to fp, x1 to fq, x2 to L, x to I', x3 to r. 
+    eapply Seq_conseq_rule with (p := fp L ** r) (q := q) in H4; eauto.
 
     Local Ltac jmp_continue_fail H :=
       destruct H as [ [?i H] | [?aexp [?r H] ] ];
@@ -1100,6 +1770,20 @@ Proof.
     jmp_continue_fail Hnpc.
     jmp_continue_fail Hnpc.
     jmp_continue_fail Hnpc.
+ 
+  - (** C pc = be aexp *)
+    lets Hnpc : H4.
+    eapply pc_be_npc_i in Hnpc; eauto.
+    destruct Hnpc as [i Hnpc].
+    lets Ht : H5.
+    eapply program_step_next in H5.
+    subst.
+    eapply safety_cons;
+      try solve [intros; get_ins_diff_false].
+    intros.
+    rewrite Hnpc in H5.
+    inversion H5; subst.
+    clear H5.
     
     
     >>>>>>>>>>>>>>>>>
