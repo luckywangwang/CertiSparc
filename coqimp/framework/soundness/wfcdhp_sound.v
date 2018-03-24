@@ -1,4 +1,4 @@
-Require Import Coqlib.   
+Require Import Coqlib.    
 Require Import Maps.  
 Require Import LibTactics.
    
@@ -2641,11 +2641,66 @@ Proof.
     eapply safety_step_ret1; intros.
     eapply retl_preservation in H; eauto.
   -
-    
-  
+    destruct c.
+    +
+      admit.
 
->>>>>>>>>>>>>>>>>>>>>
-    
+    + (** C pc = i *)
+      econstructor; intros.
+      eapply seq_preservation in H; eauto.
+      simpljoin1.
+      eauto.
+
+    + (** C pc = tj *)
+      econstructor; intros.
+      lets Hnpc : H0.
+      eapply pc_jmpl_npc_i_or_jmp in Hnpc; eauto.
+      lets Ht : H5.
+      eapply program_step_next in H5.
+      subst.  
+      destruct Hnpc as [ [i Hnpc] | [aexp2 [ r2 Hnpc ] ] ].
+      
+      eapply jmpl_preservation1 in H4; eauto.
+      simpljoin1. 
+      renames x0 to fp, x1 to fq, x2 to L, x to I', x3 to r.
+      eapply Seq_conseq_rule with (p := fp L ** r) (q := q) in H4; eauto.
+      
+      eapply jmpl_preservation2 with (npc := npc) in H4; eauto.
+      simpljoin1.
+      renames x0 to fp, x1 to fq, x2 to L, x to I', x3 to r. 
+      eapply Seq_conseq_rule with (p := fp L ** r) (q := q) in H4; eauto.
+
+    + (** C pc = retl *)
+      econstructor; intros.
+      omega.
+
+    + (** C pc = be *)
+      econstructor; intros.
+      lets Hnpc : H4.
+      eapply pc_be_npc_i in Hnpc; eauto.
+      destruct Hnpc as [i Hnpc].
+      lets Ht : H5.
+      eapply program_step_next in H5.
+      subst.
+      eapply be_preservation in H; eauto.
+      simpljoin1.
+      renames x0 to p', x to I'.
+      eauto.
+ 
+    + (** C pc = bne *)
+      econstructor; intros.
+      lets Hnpc : H4.
+      eapply pc_bne_npc_i in Hnpc; eauto.
+      destruct Hnpc as [i Hnpc].
+      lets Ht : H5.
+      eapply program_step_next in H5.
+      subst.
+      eapply bne_preservation in H; eauto.
+      simpljoin1.
+      renames x0 to p', x to I'.
+      eauto.
+      
+      
 Lemma insSeq_rule_sound :
   forall Spec Spec' p q I pc npc S C,
     wf_seq Spec p I q -> LookupC C pc npc I ->

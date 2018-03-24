@@ -85,11 +85,11 @@ Inductive safety_step : CodeHeap -> State -> Label -> Label -> asrt -> steprecor
 | safety_step_ret2 :
     forall C S pc npc q n cls,
       (forall S1 S2 pc1 pc2 npc1 npc2,
-        C pc = Some (cretl) ->
+        C pc = Some (cretl) -> n > 0 ->
         P__ C (S, pc, npc) (S1, pc1, npc1) ->
         P__ C (S1, pc1, npc1) (S2, pc2, npc2) ->
-        safety_step C S2 pc2 npc2 q cls n) ->
-      safety_step C S pc npc q (step_cons tr cls) (Nat.succ n).        
+        safety_step C S2 pc2 npc2 q cls (Nat.pred n)) ->
+      safety_step C S pc npc q (step_cons tr cls) n.        
 
 (*+ soundness of instruction rule +*)
 CoInductive safety : CodeHeap -> State -> Label -> Label -> asrt -> nat -> Prop :=
