@@ -2133,49 +2133,4 @@ Lemma ins_safety_property :
 Proof.
 Admitted.
 
-(*+ Lemmas about safety +*)
-Lemma safety_post_weak :
-  forall C S pc npc q q' n,
-    q' ==> q -> safety C S pc npc q' n ->
-    safety C S pc npc q n.
-Proof.
-  cofix.
-
-  intros.
-  econstructor; inversion H0.
-  {
-    intros; subst.
-    eapply H1 in H13; eauto.
-  }
-  { 
-    intros; subst.
-    eapply H2 in H13; eauto.
-  }
-  {
-    intros; subst.
-    eapply H3 in H13; eauto.
-  }
-  {
-    intros; subst.
-    eapply H4 in H13; eauto.
-  }
-  {
-    intros; subst.
-    eapply H5 in H13; eauto.
-  }
-  {
-    intros; subst.
-    eapply H6 in H13; eauto.
-    destruct H13.
-    left.
-    destruct H7.
-    eauto.
-    right.
-    destruct H7.
-    split.
-    eauto.
-    eapply safety_post_weak; eauto.
-  }
-Qed.
-
 

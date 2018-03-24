@@ -322,7 +322,8 @@ Inductive wf_seq : funspec -> asrt -> InsSeq -> asrt -> Prop :=
     Spec (f, f +ᵢ ($ 4)) = Some (fp, fq) ->
     (p ↓) ==> r15 |=> v ** p1 ->
     |- {{ (r15 |=> f1 ** p1) ↓ }} i {{ p2 }} -> p2 ==> ((Or r15) ==ₑ f1) ->
-    p2 ==> fp L ** r -> fq L ** r ==> p'-> fq L ==> ((Or r15) ==ₑ f1) -> DlyFrameFree r ->  
+    p2 ==> fp L ** r -> fq L ** r ==> p'-> fq L ==> ((Or r15) ==ₑ f1) ->
+    DlyFrameFree r -> wf_seq Spec p' I q ->
     wf_seq Spec p (f1 c> call f ;; f2 c> i ;; I) q
 
 | retl_rule : forall p p' q f1 f2 i Spec,

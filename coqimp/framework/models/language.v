@@ -288,7 +288,7 @@ Inductive H__ : CodeHeap -> State * Label * Label -> State * Label * Label -> Pr
 
 | Call :
     forall C M (R R' : RegFile) F D pc npc f,
-      C pc = Some (ccall f) -> indom r15 R -> set_R R r15 f = R' ->
+      C pc = Some (ccall f) -> indom r15 R -> set_R R r15 pc = R' ->
       H__ C ((M, (R, F), D), pc, npc) ((M, (R', F), D), npc, f)
 
 | Retl :
