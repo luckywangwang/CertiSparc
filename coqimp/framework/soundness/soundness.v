@@ -150,7 +150,13 @@ Inductive safety_insSeq : CodeHeap -> State -> Label -> Label -> asrt -> funspec
       forall S1 S2 pc1 npc1 pc2 npc2,
         P__ C (S, pc, npc) (S1, pc1, npc1) ->
         P__ C (S1, pc1, npc1) (S2, pc2, npc2) ->
-        S2 |= q
+        (
+          S2 |= q /\
+          (exists f,
+              getregs S2 r15 = Some f /\
+              pc2 = f +ᵢ ($ 8) /\ npc2 = f +ᵢ ($ 12)
+          )
+        )
     ) ->
     safety_insSeq C S pc npc q Spec.
 
