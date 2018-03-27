@@ -1,11 +1,11 @@
-Require Import Coqlib.    
-Require Import Maps.  
-Require Import LibTactics.
-   
-Require Import Integers. 
-Open Scope Z_scope.  
+Require Import Coqlib.      
+Require Import Maps.     
+Require Import LibTactics.  
+       
+Require Import Integers.  
+Open Scope Z_scope.    
 Import ListNotations.
-
+  
 Set Asymmetric Patterns. 
       
 Require Import state.    
@@ -2456,14 +2456,14 @@ Proof.
        (r := r) in H9; eauto.
     simpljoin1.
     destruct_state x0.
-    simpl in H14.
+    simpl in H14. 
     simpljoin1.
     eapply program_step_deterministic in H5; eauto.
     simpljoin1.
     eapply program_step_deterministic in H4; eauto.
     simpljoin1.
     exists (m2, (r3, f), d) (m4, (r5, f), d).
-    simpl; eauto. 
+    simpl; eauto.  
     repeat (split; eauto).
     simpl; eauto.
     simpl; eauto.
@@ -2629,78 +2629,396 @@ Proof.
   inversion H8; subst; eauto.
 Qed.
 
-Lemma insSeq_rule_sound :
-  forall cls Spec Spec' p q I pc npc S C,
-    wf_seq Spec p I q -> LookupC C pc npc I ->
-    wf_cdhp Spec C Spec' -> cdhp_subst Spec Spec' -> S |= p ->
-    safety_step C S pc npc q cls 0.
+(*+ Instruction Sequence Rule Sound +*)
+Theorem wf_seq_frame_rule :
+  forall p q r I Spec,
+    insSeq_sound Spec p I q -> DlyFrameFree r ->
+    insSeq_sound Spec (p ** r) I (q ** r).
 Proof.
-  intro cls.
-  induction cls; intros.
+Admitted.
+
+Theorem wf_seq_conseq_rule :
+  forall p p1 q1 q I Spec,
+    p ==> p1 -> q1 ==> q -> insSeq_sound Spec p1 I q1 ->
+    insSeq_sound Spec p I q.
+Proof.
+Admitted.
+  
+(*+ Well-formed function proof +*)
+Lemma safety_Sn_safety_n :
+  forall n C S pc npc q k,
+    safety (Nat.succ n) C S pc npc q k ->
+    safety n C S pc npc q k.
+Proof.
+  intro n.
+  induction n; intros.
+
   -
-    eapply safety_step_ret1; intros.
-    eapply retl_preservation in H; eauto.
+    econstructor; eauto.
+
   -
-    destruct c.
+    econstructor; intros.
+
     +
-      admit.
-
-    + (** C pc = i *)
-      econstructor; intros.
-      eapply seq_preservation in H; eauto.
+      inversion H; subst.
+      clear H3 H4 H5 H6 H7.
+      eapply H2 in H0.
+      clear H2.
       simpljoin1.
+      split; eauto.
+
+    +
+      inversion H; subst.
+      clear H2 H4 H5 H6 H7.
+      eapply H3 in H0.
+      clear H3.
+      simpljoin1.
+      split; eauto.
+      exists x x0 x1 x2 x3 x4.
+      split; eauto.
+
+    + 
+      inversion H; subst.
+      clear H2 H3 H5 H6 H7.
+      eapply H4 in H0.
+      clear H4.
+      simpljoin1; eauto.
+      split; eauto.
+      exists x x0 x1 x2 x3 x4.
+      split; eauto.
+
+    +
+      inversion H; subst.
+      clear H2 H3 H4 H6 H7.
+      eapply H5 in H0; eauto.
+      simpljoin1.
+      split; eauto.
+      exists x x0 x1 x2 x3 x4.
       eauto.
 
-    + (** C pc = tj *)
-      econstructor; intros.
-      lets Hnpc : H0.
-      eapply pc_jmpl_npc_i_or_jmp in Hnpc; eauto.
-      lets Ht : H5.
-      eapply program_step_next in H5.
-      subst.  
-      destruct Hnpc as [ [i Hnpc] | [aexp2 [ r2 Hnpc ] ] ].
-      
-      eapply jmpl_preservation1 in H4; eauto.
-      simpljoin1. 
-      renames x0 to fp, x1 to fq, x2 to L, x to I', x3 to r.
-      eapply Seq_conseq_rule with (p := fp L ** r) (q := q) in H4; eauto.
-      
-      eapply jmpl_preservation2 with (npc := npc) in H4; eauto.
+    +
+      inversion H; subst.
+      clear H2 H3 H4 H5 H7.
+      eapply H6 in H0.
       simpljoin1.
-      renames x0 to fp, x1 to fq, x2 to L, x to I', x3 to r. 
-      eapply Seq_conseq_rule with (p := fp L ** r) (q := q) in H4; eauto.
-
-    + (** C pc = retl *)
-      econstructor; intros.
-      omega.
-
-    + (** C pc = be *)
-      econstructor; intros.
-      lets Hnpc : H4.
-      eapply pc_be_npc_i in Hnpc; eauto.
-      destruct Hnpc as [i Hnpc].
-      lets Ht : H5.
-      eapply program_step_next in H5.
-      subst.
-      eapply be_preservation in H; eauto.
-      simpljoin1.
-      renames x0 to p', x to I'.
+      split; eauto.
+      exists x x0 x1 x2 x3 x4.
       eauto.
+
+    +
+      inversion H; subst.
+      clear H2 H3 H4 H5 H6.
+      eapply H7 in H0.
+      simpljoin1.
+      split; eauto.
+      exists x x0 x1 x2 x3 x4.
+      eauto.
+      clear H7.
+      intros.
+      eapply H1 in H4; eauto.
+      destruct H4; eauto.
+      right.
+      simpljoin1.
+      split; eauto.
+Qed.
+
+Lemma safety_call_ret :
+  forall n C S pc npc q q' Spec Spec' f k,
+    safety_insSeq C S pc npc q Spec ->
+    cdhp_subst Spec Spec' -> cdhp_sound Spec C Spec' -> q ==> (Or r15 ==ₑ f) ->
+    (forall S', S' |= q -> safety n C S' (f +ᵢ ($ 8)) (f +ᵢ ($ 12)) q' k) ->
+    safety n C S pc npc q' (Nat.succ k).
+Proof.
+  intro n.
+  induction n; intros.
+
+  -
+    econstructor; eauto.
+
+  -
+    inversion H; subst.
+
+    + 
+      econstructor; intros; get_ins_diff_false.
+      clear H7.
+      split; eauto.
+      intros.
+      eapply IHn; eauto.
+      intros.
+      eapply H3 in H8.
+      clear - H8.
+      eapply safety_Sn_safety_n; eauto.
+
+    +
+      econstructor; intros; get_ins_diff_false.
+      clear H7.
+      split; eauto.
+      clear H5.
+      intros.
+      eapply H6 in H7; eauto.
+      simpljoin1.
+      renames x to fp, x0 to fq, x1 to L, x2 to r.
+      lets Hfp : H10.
+      eapply sep_star_split in Hfp.
+      simpljoin1.
+      destruct_state x.
+      destruct_state x0.
+      simpl in H14.
+      simpljoin1.
+      lets Hcdhp_subst : H0.
+      lets Hcdhp_sound : H1.
+      unfold cdhp_subst in Hcdhp_subst.
+      unfold cdhp_sound in Hcdhp_sound.
+      eapply Hcdhp_subst in H9.
+      eapply Hcdhp_sound in H9; eauto.
+      simpljoin1.
+      rename x into I.
+      eapply wf_seq_frame_rule in H16; eauto.
+      eapply IHn with (q := fq L ** r) (f := pc); eauto.
+      clear - H7 H13.
+      intros.
+      sep_star_split_tac.
+      simpls.
+      simpljoin1.
+      simpls.
+      eapply H13 in H7; eauto.
+      simpls.
+      simpljoin1.
+      unfold merge.
+      rewrite H4; eauto.
+      intros.
+      eapply IHn; eauto.
+      intros.
+      eapply H3 in H18.
+      eapply safety_Sn_safety_n; eauto.
+
+    +
+      econstructor; intros; get_ins_diff_false.
+      
+      
+
+Lemma safety_function :
+  forall n C S pc npc q Spec Spec',
+    safety_insSeq C S pc npc q Spec ->
+    cdhp_subst Spec Spec' -> cdhp_sound Spec C Spec' ->
+    safety n C S pc npc q 0.
+Proof.
+  intro n.
+  induction n; intros.
+  
+  -
+    econstructor; eauto.
+
+  -
+    inversion H; subst.
+
+    +
+      econstructor; intros; get_ins_diff_false.
+      clear H5.
+      split; eauto.
  
-    + (** C pc = bne *)
-      econstructor; intros.
-      lets Hnpc : H4.
-      eapply pc_bne_npc_i in Hnpc; eauto.
-      destruct Hnpc as [i Hnpc].
-      lets Ht : H5.
-      eapply program_step_next in H5.
-      subst.
-      eapply bne_preservation in H; eauto.
+    + 
+      econstructor; intros; get_ins_diff_false.
+      split; eauto.
+      clear H5. 
+      unfold Nat.succ.
+      intros.
+      eapply H4 in H6; eauto. simpljoin1.
+      renames x to fp, x0 to fq, x1 to L, x2 to r.
+      eapply safety_call_ret with (q := fq L ** r) (f := pc); eauto.
+      clear - H8 H9 H10 H0 H1.
+      unfolds cdhp_subst.
+      unfolds cdhp_sound.
+      eapply H0 in H8.
+      sep_star_split_tac.
+      simpls.
       simpljoin1.
-      renames x0 to p', x to I'.
-      eauto.
-      
-      
+      eapply H1 in H8; eauto.
+      simpljoin1.
+      renames x to I.
+      eapply wf_seq_frame_rule in H6; eauto.
+      unfolds insSeq_sound.
+      eapply H6; eauto.
+      simpl.
+      exists (m, (r0, f1), d0) (m0, (r1, f1), d0).
+      repeat (split; eauto).
+      intros.
+      clear - H9 H6 H12.
+      sep_star_split_tac.
+      simpls.
+      simpljoin1.
+      simpls.
+      eapply H12 in H; eauto.
+      simpls.
+      simpljoin1.
+      unfold merge. 
+      rewrite H5; eauto. 
+
+    +
+      econstructor; intros; get_ins_diff_false.
+      split; eauto.
+      intros.
+      clear H5 H3.
+      eapply H4 in H7; eauto.
+      simpljoin1.
+      renames x to fp, x0 to fq, x1 to L, x2 to r.
+      clear - IHn H3 H5 H7 H8 H0 H1.
+      lets Hcdhp_subst : H0.
+      lets Hcdhp_sound : H1.
+      unfold cdhp_subst in Hcdhp_subst.
+      unfold cdhp_sound in Hcdhp_sound.
+      eapply Hcdhp_subst in H3.
+      sep_star_split_tac.
+      simpl in H6.
+      simpljoin1.
+      eapply Hcdhp_sound in H3; eauto.
+      simpljoin1.
+      renames x to I.
+      eapply wf_seq_frame_rule in H6; eauto.
+      eapply wf_seq_conseq_rule in H6; eauto.
+      unfolds insSeq_sound.
+      eapply H6 in H3; eauto.
+      simpl.
+      exists (m, (r0, f0), d0) (m0, (r1, f0), d0).
+      simpl.
+      repeat (split; eauto).
+
+    +
+      econstructor; intros; get_ins_diff_false.
+      split; eauto.
+      intros.
+      clear H5 H3.
+      eapply H4 in H7; eauto.
+      simpljoin1.
+      destruct (Int.eq x ($ 0)) eqn:Hx.
+      {
+        assert (Hx0 : x = $ 0).
+        {
+          clear - Hx.
+          unfolds Int.eq.
+          destruct (zeq (Int.unsigned x) (Int.unsigned $ 0)) eqn:Heqe; tryfalse.
+          clear Heqe.
+          eapply z_eq_to_int_eq in e.
+          do 2 rewrite Int.repr_unsigned in e; eauto.
+        }
+
+        eapply H7 in Hx0.
+        eauto.
+      }
+      {
+        assert (Hx_neq0 : x <> $ 0).
+        {
+          clear - Hx.
+          unfolds Int.eq.
+          destruct (zeq (Int.unsigned x) (Int.unsigned $ 0)) eqn:Heqe; tryfalse.
+          clear Heqe.
+          intro.
+          subst.
+          eauto.
+        }
+
+        eapply H5 in Hx_neq0.
+        simpljoin1.
+        renames x0 to fp, x1 to fq, x2 to L, x3 to r.
+        sep_star_split_tac.
+        simpl in H15.
+        simpljoin1.
+        lets Hcdhp_subst : H0.
+        lets Hcdhp_sound : H1.
+        unfold cdhp_subst in Hcdhp_subst.
+        unfold cdhp_sound in Hcdhp_sound.
+        eapply Hcdhp_subst in H8.
+        eapply Hcdhp_sound in H8; eauto.
+        simpljoin1.
+        renames x0 to I.
+        eapply wf_seq_frame_rule in H15; eauto.
+        eapply wf_seq_conseq_rule in H15; eauto.
+        unfold insSeq_sound in H15.
+        eapply H15 in H8; eauto.
+        simpl.
+        exists (m, (r0, f0), d0) (m0, (r1, f0), d0).
+        simpl.
+        repeat (split; eauto).
+      }
+
+    +
+      econstructor; intros; get_ins_diff_false.
+      split; eauto.
+      intros.
+      clear H5 H3.
+      eapply H4 in H7; eauto.
+      simpljoin1.
+      destruct (Int.eq x ($ 0)) eqn:Hx.
+      {
+        assert (Hx0 : x = $ 0).
+        {
+          clear - Hx.
+          unfolds Int.eq.
+          destruct (zeq (Int.unsigned x) (Int.unsigned $ 0)) eqn:Heqe; tryfalse.
+          clear Heqe.
+          eapply z_eq_to_int_eq in e.
+          do 2 rewrite Int.repr_unsigned in e; eauto.
+        }
+
+        eapply H5 in Hx0.
+        simpljoin1.
+        renames x0 to fp, x1 to fq, x2 to L, x3 to r.
+        sep_star_split_tac.
+        simpl in H15.
+        simpljoin1.
+        lets Hcdhp_subst : H0.
+        lets Hcdhp_sound : H1.
+        unfold cdhp_subst in Hcdhp_subst.
+        unfold cdhp_sound in Hcdhp_sound.
+        eapply Hcdhp_subst in H8.
+        eapply Hcdhp_sound in H8; eauto.
+        simpljoin1.
+        renames x0 to I.
+        eapply wf_seq_frame_rule in H15; eauto.
+        eapply wf_seq_conseq_rule in H15; eauto.
+        unfold insSeq_sound in H15.
+        eapply H15 in H8; eauto.
+        simpl.
+        exists (m, (r0, f0), d0) (m0, (r1, f0), d0).
+        simpl.
+        repeat (split; eauto).
+      }
+      {
+        assert (Hx_neq0 : x <> $ 0).
+        {
+          clear - Hx.
+          unfolds Int.eq.
+          destruct (zeq (Int.unsigned x) (Int.unsigned $ 0)) eqn:Heqe; tryfalse.
+          clear Heqe.
+          intro.
+          subst.
+          eauto.
+        }
+
+        eapply H7 in Hx_neq0.
+        eauto.
+      }
+
+    +
+      econstructor; intros; get_ins_diff_false.
+      split; eauto.
+Qed.  
+
+(** wf_function means if the current instruction sequence is well-formed and the code heap is well-formed, then we get the execution of the current function is safe for any steps n *)
+Theorem wf_function :
+  forall p q Spec Spec' S C pc npc I,
+    insSeq_sound Spec p I q -> LookupC C pc npc I ->
+    cdhp_subst Spec Spec' -> cdhp_sound Spec C Spec' -> S |= p ->
+    forall n, safety n C S pc npc q 0.
+Proof.
+  intros.
+  unfolds insSeq_sound.
+  lets Hsafety_insSeq : H0.
+  eapply H in Hsafety_insSeq; eauto.
+  eapply safety_function; eauto.
+Qed.
+  
+(**
 Lemma insSeq_rule_sound :
   forall Spec Spec' p q I pc npc S C,
     wf_seq Spec p I q -> LookupC C pc npc I ->
@@ -2784,6 +3102,7 @@ Proof.
     eapply call_preservation in H; eauto.
     simpljoin1. 
     renames x1 to p1, x2 to p2, x to Ic, x0 to I'.
+    unfold Nat.succ.
     admit.
     
   - (** retl *)
@@ -2809,6 +3128,6 @@ Proof.
   simpljoin1. 
   rename x into I.
   eapply insSeq_rule_sound ; eauto.
-Qed.
+Qed.**)
 
   

@@ -23,75 +23,244 @@ Definition ins_sound p q i :=
   forall s,
     s |= p -> (exists s', (Q__ s (cntrans i) s') /\ s' |= q).
 
-Inductive comtype := tc | ti | tj | tr | tbe | tbne.
-
-Inductive steprecord :=
-| step_end : steprecord
-| step_cons : comtype -> steprecord -> steprecord.
-
-Inductive safety_step : CodeHeap -> State -> Label -> Label -> asrt -> steprecord -> nat -> Prop :=
-| safety_step_i :
-    forall C S pc npc q n cls,
-      (forall S' i pc' npc', 
-        C pc = Some (cntrans i) ->
+(*+ soundness of instruction sequence rule +*)
+Inductive safety_insSeq : CodeHeap -> State -> Label -> Label -> asrt -> funspec -> Prop :=
+| i_seq : forall C S pc npc q Spec i,
+    C pc = Some (cntrans i) -> 
+    (
+      exists S' pc' npc',
+        P__ C (S, pc, npc) (S', pc', npc')
+    ) ->
+    (
+      forall S' pc' npc',
         P__ C (S, pc, npc) (S', pc', npc') ->
-        safety_step C S' pc' npc' q cls n) ->
-      safety_step C S pc npc q (step_cons ti cls) n
+        safety_insSeq C S' pc' npc' q Spec
+    ) ->
+    safety_insSeq C S pc npc q Spec
 
-| safety_step_j :
-    forall C S pc npc q n cls,
-      (forall S1 S2 pc1 pc2 npc1 npc2 aexp rd,
+| call_seq : forall C S pc npc q Spec f,
+    C pc = Some (ccall f) ->
+    (
+      exists S1 S2 pc1 npc1 pc2 npc2,
+        P__ C (S, pc, npc) (S1, pc1, npc1) /\
+        P__ C (S1, pc1, npc1) (S2, pc2, npc2)
+    ) ->
+    (
+      forall S1 S2 pc1 npc1 pc2 npc2,
+        P__ C (S, pc, npc) (S1, pc1, npc1) ->
+        P__ C (S1, pc1, npc1) (S2, pc2, npc2) ->
+        (
+          exists fp fq L r,
+            pc2 = f /\ npc2 = f +ᵢ ($ 4) /\
+            Spec (f, f +ᵢ ($ 4)) = Some (fp, fq) /\ S2 |= (fp L) ** r /\
+            DlyFrameFree r /\
+            (forall S', S' |= (fq L) ** r ->
+                        safety_insSeq C S' (pc +ᵢ ($ 8)) (pc +ᵢ ($ 12)) q Spec) /\
+            (forall S' S'', S' |= fp L -> S'' |= fq L ->
+                       (getregs S' r15 = Some pc /\ getregs S'' r15 = Some pc))
+        )
+    ) ->
+    safety_insSeq C S pc npc q Spec
+
+| jmpl_seq : forall C S pc npc q aexp rd Spec,
+    C pc = Some (cjumpl aexp rd) ->
+    (
+      exists S1 S2 pc1 npc1 pc2 npc2,
+        P__ C (S, pc, npc) (S1, pc1, npc1) /\
+        P__ C (S1, pc1, npc1) (S2, pc2, npc2)
+    ) ->
+    (
+      forall S1 S2 pc1 npc1 pc2 npc2,
+        P__ C (S, pc, npc) (S1, pc1, npc1) ->
+        P__ C (S1, pc1, npc1) (S2, pc2, npc2) ->
+        (
+          exists fp fq L r,
+            Spec (pc2, npc2) = Some (fp, fq) /\ S2 |= (fp L) ** r /\ (fq L) ** r ==> q /\
+            DlyFrameFree r
+        )
+    ) ->
+    safety_insSeq C S pc npc q Spec
+
+| be_seq : forall C S pc npc q aexp Spec,
+    C pc = Some (cbe aexp) ->
+    (
+      exists S1 S2 pc1 npc1 pc2 npc2,
+        P__ C (S, pc, npc) (S1, pc1, npc1) /\
+        P__ C (S1, pc1, npc1) (S2, pc2, npc2)
+    ) ->
+    (
+      forall S1 S2 pc1 npc1 pc2 npc2,
+        P__ C (S, pc, npc) (S1, pc1, npc1) ->
+        P__ C (S1, pc1, npc1) (S2, pc2, npc2) ->
+        (
+          exists v, getregs S z = Some v /\
+          (
+            v <> ($ 0) ->
+            (
+              exists fp fq L r,
+                Spec (pc2, npc2) = Some (fp, fq) /\ S2 |= (fp L) ** r /\
+                (fq L ** r) ==> q /\ DlyFrameFree r
+            )
+          ) /\
+          ( 
+            v = ($ 0) ->
+            safety_insSeq C S2 pc2 npc2 q Spec
+          )
+        )
+    ) ->
+    safety_insSeq C S pc npc q Spec
+
+| bne_seq : forall C S pc npc q aexp Spec,
+    C pc = Some (cbne aexp) ->
+    (
+      exists S1 S2 pc1 npc1 pc2 npc2,
+        P__ C (S, pc, npc) (S1, pc1, npc1) /\
+        P__ C (S1, pc1, npc1) (S2, pc2, npc2)
+    ) ->
+    (
+      forall S1 S2 pc1 npc1 pc2 npc2,
+        P__ C (S, pc, npc) (S1, pc1, npc1) ->
+        P__ C (S1, pc1, npc1) (S2, pc2, npc2) ->
+        (
+          exists v, getregs S z = Some v /\
+          (
+            v = ($ 0) ->
+            (
+              exists fp fq L r,
+                Spec (pc2, npc2) = Some (fp, fq) /\ S2 |= (fp L) ** r /\
+                (fq L ** r) ==> q /\ DlyFrameFree r
+            )
+          ) /\
+          ( 
+            v <> ($ 0) ->
+            safety_insSeq C S2 pc2 npc2 q Spec
+          )
+        )
+    ) ->
+    safety_insSeq C S pc npc q Spec
+
+| ret_seq : forall C S pc npc q Spec,
+    C pc = Some (cretl) ->
+    (
+      exists S1 S2 pc1 npc1 pc2 npc2,
+        P__ C (S, pc, npc) (S1, pc1, npc1) /\
+        P__ C (S1, pc1, npc1) (S2, pc2, npc2)
+    ) ->
+    (
+      forall S1 S2 pc1 npc1 pc2 npc2,
+        P__ C (S, pc, npc) (S1, pc1, npc1) ->
+        P__ C (S1, pc1, npc1) (S2, pc2, npc2) ->
+        S2 |= q
+    ) ->
+    safety_insSeq C S pc npc q Spec.
+
+(*+ Safety +*)
+Inductive safety : nat -> CodeHeap -> State -> Label -> Label -> asrt -> nat -> Prop :=
+| safety_end :
+    forall C S pc npc q k,
+      safety 0 C S pc npc q k
+
+| safety_cons : forall C S pc npc q n k,
+    (
+      forall i,
+        C pc = Some (cntrans i) ->
+        (
+          (
+            exists S' pc' npc',
+              P__ C (S, pc, npc) (S', pc', npc')
+          ) /\
+          (
+            forall S' pc' npc',
+              P__ C (S, pc, npc) (S', pc', npc') ->
+              safety n C S' pc' npc' q k
+          )
+        )
+    ) ->
+    (
+      forall aexp rd,
         C pc = Some (cjumpl aexp rd) ->
-        P__ C (S, pc, npc) (S1, pc1, npc1) ->
-        P__ C (S1, pc1, npc1) (S2, pc2, npc2) ->
-        safety_step C S2 pc2 npc2 q cls n) ->
-      safety_step C S pc npc q (step_cons tj cls) n
-
-| safety_step_be :
-    forall C S pc npc q n cls,
-      (forall S1 S2 pc1 pc2 npc1 npc2 aexp,
+        (
+          (
+            exists S1 S2 pc1 npc1 pc2 npc2,
+              P__ C (S, pc, npc) (S1, pc1, npc1) /\ P__ C (S1, pc1, npc1) (S2, pc2, npc2)
+          ) /\
+          (
+            forall S1 S2 pc1 npc1 pc2 npc2,
+              P__ C (S, pc, npc) (S1, pc1, npc1) ->
+              P__ C (S1, pc1, npc1) (S2, pc2, npc2) ->
+              safety n C S2 pc2 npc2 q k
+          )
+        )
+    ) ->
+    (
+      forall aexp,
         C pc = Some (cbe aexp) ->
-        P__ C (S, pc, npc) (S1, pc1, npc1) ->
-        P__ C (S1, pc1, npc1) (S2, pc2, npc2) ->
-        safety_step C S2 pc2 npc2 q cls n) ->
-      safety_step C S pc npc q (step_cons tbe cls) n
-
-| safety_step_bne :
-    forall C S pc npc q n cls,
-      (forall S1 S2 pc1 pc2 npc1 npc2 aexp,
+        (
+          (
+            exists S1 S2 pc1 npc1 pc2 npc2,
+              P__ C (S, pc, npc) (S1, pc1, npc1) /\ P__ C (S1, pc1, npc1) (S2, pc2, npc2)
+          ) /\
+          (
+            forall S1 S2 pc1 npc1 pc2 npc2,
+              P__ C (S, pc, npc) (S1, pc1, npc1) ->
+              P__ C (S1, pc1, npc1) (S2, pc2, npc2) ->
+              safety n C S2 pc2 npc2 q k
+          )
+        )
+    ) ->
+    (
+      forall aexp,
         C pc = Some (cbne aexp) ->
-        P__ C (S, pc, npc) (S1, pc1, npc1) ->
-        P__ C (S1, pc1, npc1) (S2, pc2, npc2) ->
-        safety_step C S2 pc2 npc2 q cls n) ->
-      safety_step C S pc npc q (step_cons tbne cls) n
-
-| safety_step_call :
-    forall C S pc npc q n cls,
-      (forall S1 S2 pc1 pc2 npc1 npc2 f,
+        (
+          (
+            exists S1 S2 pc1 npc1 pc2 npc2,
+              P__ C (S, pc, npc) (S1, pc1, npc1) /\ P__ C (S1, pc1, npc1) (S2, pc2, npc2)
+          ) /\
+          (
+            forall S1 S2 pc1 npc1 pc2 npc2,
+              P__ C (S, pc, npc) (S1, pc1, npc1) ->
+              P__ C (S1, pc1, npc1) (S2, pc2, npc2) ->
+              safety n C S2 pc2 npc2 q k
+          )
+        )
+    ) ->
+    (
+      forall f,
         C pc = Some (ccall f) ->
-        P__ C (S, pc, npc) (S1, pc1, npc1) ->
-        P__ C (S1, pc1, npc1) (S2, pc2, npc2) ->
-        safety_step C S2 pc2 npc2 q cls (Nat.succ n)) ->
-      safety_step C S pc npc q (step_cons tc cls) n
+        (
+          (
+            exists S1 S2 pc1 npc1 pc2 npc2,
+              P__ C (S, pc, npc) (S1, pc1, npc1) /\ P__ C (S1, pc1, npc1) (S2, pc2, npc2)
+          ) /\
+          (
+            forall S1 S2 pc1 npc1 pc2 npc2,
+              P__ C (S, pc, npc) (S1, pc1, npc1) ->
+              P__ C (S1, pc1, npc1) (S2, pc2, npc2) ->
+              safety n C S2 pc2 npc2 q (Nat.succ k)
+          )
+        )
+    ) ->
+    (
+      C pc = Some (cretl) ->
+      (
+        (
+          exists S1 S2 pc1 npc1 pc2 npc2,
+            P__ C (S, pc, npc) (S1, pc1, npc1) /\ P__ C (S1, pc1, npc1) (S2, pc2, npc2)
+        ) /\
+        (
+          forall S1 S2 pc1 pc2 npc1 npc2,
+            P__ C (S, pc, npc) (S1, pc1, npc1) ->
+            P__ C (S1, pc1, npc1) (S2, pc2, npc2) ->
+            (
+              (Nat.eqb k 0 = true /\ S2 |= q) \/
+              (Nat.eqb k 0 = false /\ safety n C S2 pc2 npc2 q (Nat.pred k))
+            )
+        )
+      )
+    ) ->
+    safety (Nat.succ n) C S pc npc q k.
 
-| safety_step_ret1 :
-    forall C S pc npc q,
-      (forall S1 S2 pc1 pc2 npc1 npc2,
-        C pc = Some (cretl) ->
-        P__ C (S, pc, npc) (S1, pc1, npc1) ->
-        P__ C (S1, pc1, npc1) (S2, pc2, npc2) -> S2 |= q) ->
-      safety_step C S pc npc q (step_end) 0
-
-| safety_step_ret2 :
-    forall C S pc npc q n cls,
-      (forall S1 S2 pc1 pc2 npc1 npc2,
-        C pc = Some (cretl) -> n > 0 ->
-        P__ C (S, pc, npc) (S1, pc1, npc1) ->
-        P__ C (S1, pc1, npc1) (S2, pc2, npc2) ->
-        safety_step C S2 pc2 npc2 q cls (Nat.pred n)) ->
-      safety_step C S pc npc q (step_cons tr cls) n.        
-
-(*+ soundness of instruction rule +*)
+(*
 CoInductive safety : CodeHeap -> State -> Label -> Label -> asrt -> nat -> Prop :=
 | safety_cons : forall C S pc npc q n,
     (
@@ -136,11 +305,19 @@ CoInductive safety : CodeHeap -> State -> Label -> Label -> asrt -> nat -> Prop 
         )
     ) ->
     safety C S pc npc q n.
+*)
 
 Definition cdhp_subst (Spec Spec' : funspec) :=
   forall f fsp, Spec f = Some fsp -> Spec' f = Some fsp.
 
-Definition cdhp_sound C Spec Spec' :=
+(** Instruction Sequence rule Sound *)
+Definition insSeq_sound (Spec : funspec) (p : asrt) (I : InsSeq) (q : asrt) :=
+  forall C S pc npc,
+    LookupC C pc npc I -> S |= p -> safety_insSeq C S pc npc q Spec.
+
+(** Code Heap Sound *)
+Definition cdhp_sound (Spec : funspec) (C : CodeHeap) (Spec' : funspec) :=
   forall f1 f2 fp fq L S,
-    Spec' (f1, f2) = Some (fp, fq) -> S |= (fp L) -> cdhp_subst Spec Spec' ->
-    safety C S f1 f2 (fq L) 0.
+    Spec' (f1, f2) = Some (fp, fq) -> S |= (fp L) ->
+    cdhp_subst Spec Spec' ->
+    exists I, LookupC C f1 f2 I /\ insSeq_sound Spec (fp L) I (fq L).
