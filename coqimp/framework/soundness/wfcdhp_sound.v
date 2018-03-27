@@ -41,6 +41,32 @@ Ltac elim_ins_neq :=
   | _ => idtac
   end.
 
+(*+ Lemmas for Integers +*)
+Lemma int_eq_true_eq :
+  forall x y,
+    Int.eq x y = true -> x = y.
+Proof.
+  intros.
+  unfolds Int.eq.
+  destruct (zeq (Int.unsigned x) (Int.unsigned y)) eqn:Heqe; tryfalse.
+  clear Heqe.
+  eapply z_eq_to_int_eq in e.
+  do 2 rewrite Int.repr_unsigned in e.
+  eauto.
+Qed.
+
+Lemma int_eq_false_neq :
+  forall x y,
+    Int.eq x y = false -> x <> y.
+Proof.
+  intros.
+  unfolds Int.eq.
+  destruct (zeq (Int.unsigned x) (Int.unsigned y)) eqn:Heqe; tryfalse.
+  clear Heqe.
+  intro.
+  subst; eauto.
+Qed.
+  
 (*+ Lemmas for Memory +*)
 Lemma disj_sep_merge_still :
   forall tp (m m1 m2 : tp -> option Word),
@@ -2794,7 +2820,58 @@ Proof.
 
     +
       econstructor; intros; get_ins_diff_false.
-      
+      split; eauto.
+      intros.
+      eapply H6 in H9; eauto.
+      simpljoin1. 
+      renames x to fp, x0 to fq, x1 to L, x2 to r.
+      lets Hcdhp_subst : H0.
+      lets Hcdhp_sound : H1.
+      unfold cdhp_subst in Hcdhp_subst.
+      unfold cdhp_sound in Hcdhp_sound. 
+      eapply Hcdhp_subst in H9.
+      lets Ht : H10.
+      eapply sep_star_split in Ht.
+      simpljoin1.
+      destruct_state x.
+      destruct_state x0.
+      simpl in H15.
+      simpljoin1.
+      eapply Hcdhp_sound with (L := L) in H9; eauto.
+      simpljoin1.
+      renames x to I.
+      eapply wf_seq_frame_rule in H17; eauto.
+      eapply wf_seq_conseq_rule in H17; eauto.
+      unfold insSeq_sound in H17. 
+      eapply H17 in H9; eauto.
+      eapply IHn; eauto.
+      clear - H3.
+      intros.
+      eapply H3 in H.
+      eapply safety_Sn_safety_n; eauto.
+
+    +
+      econstructor; intros; get_ins_diff_false.
+      split; eauto.
+      intros.
+      clear H5 H7.
+      eapply H6 in H9; eauto.
+      simpljoin1.
+      destruct (Int.eq x ($ 0)) eqn : Heqe.
+      {
+        eapply int_eq_true_eq in Heqe.
+        eapply H9 in Heqe.
+        eapply IHn; eauto.
+        intros.
+        eapply safety_Sn_safety_n; eauto.
+      }
+      {
+        eapply int_eq_false_neq in Heqe.
+        eapply H7 in Heqe.
+        simpljoin1.
+        renames x0 to fp, x1 to fq, x2 to L, x3 to r.
+        
+      }
       
 
 Lemma safety_function :
