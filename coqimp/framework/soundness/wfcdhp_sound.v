@@ -21,6 +21,8 @@ Require Import lemmas.
 
 Require Import inssound.
 
+Require Import wf_seq_sound.
+
 Require Import Coq.Logic.FunctionalExtensionality.
   
 Open Scope nat.
@@ -1917,33 +1919,6 @@ Proof.
     repeat (split; eauto).
     eapply Seq_conseq_rule; eauto.
 Qed.
-    
-(*+ Lemmas for Sequence Rule +*)
-    
-Lemma program_step_next :
-  forall C S S' pc npc pc' npc',
-    P__ C (S, pc, npc) (S', pc', npc') ->
-    pc' = npc.
-Proof.
-  intros.
-  inversion H; subst.
-  inversion H8; subst; eauto.
-Qed.
-
-(*+ Instruction Sequence Rule Sound +*)
-Theorem wf_seq_frame_rule :
-  forall p q r I Spec,
-    insSeq_sound Spec p I q -> DlyFrameFree r ->
-    insSeq_sound Spec (p ** r) I (q ** r).
-Proof.
-Admitted.
-
-Theorem wf_seq_conseq_rule :
-  forall p p1 q1 q I Spec,
-    p ==> p1 -> q1 ==> q -> insSeq_sound Spec p1 I q1 ->
-    insSeq_sound Spec p I q.
-Proof.
-Admitted.
   
 (*+ Well-formed function proof +*)
 Lemma safety_Sn_safety_n :
