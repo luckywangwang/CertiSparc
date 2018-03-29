@@ -12,7 +12,7 @@ Require Import language.
 
 Set Implicit Arguments.
 Unset Strict Implicit.
-  
+   
 Require Import logic. 
 Require Import soundness.
 Require Import LibTactics.
@@ -207,17 +207,6 @@ Proof.
     }
 Qed.
 
-Lemma sep_reg_dec :
-  forall (s s' : SpReg),
-    {s = s'} + {s <> s'}.
-Proof.
-  intros.
-  destruct s; destruct s'; eauto;
-    try solve [right; intro; tryfalse].
-  destruct a; destruct a0; eauto;
-    try solve [right; intro; tryfalse].
-Qed.
-
 Lemma indom_nor_not :
   forall (tp : Type) (l : tp) m,
     {indom l m} + {~ indom l m}.
@@ -229,6 +218,24 @@ Proof.
   intro.
   simpljoin1.
   tryfalse.
+Qed.
+
+Lemma in_remove_one_ls_in_ls :
+  forall ls x y,
+    In x (remove_one sep_reg_dec y ls) ->
+    In x ls.
+Proof.
+  intro ls.
+  induction ls; intros.
+  -
+    simpls.
+    tryfalse.
+
+  -
+    simpls.
+    destruct (sep_reg_dec y a); subst; eauto.
+    simpl in H.
+    destruct H; eauto.
 Qed.
 
 (*+ Lemmas for Integers +*)
@@ -846,36 +853,75 @@ Proof.
 Qed.
     
 Lemma noDup_exe_dly_stable :
-  forall D R R' D',
-    noDup (getRegs D) ->
+  forall D R R' D' rsp,
+    noDup rsp (getRegs D) ->
     exe_delay R D = (R', D') ->
-    noDup (getRegs D').
+    noDup rsp (getRegs D').
 Proof.
-  intro D.
+  intros.
+  unfolds noDup.
+  generalize dependent R.
+  generalize dependent R'.
+  generalize dependent D'.
+  generalize dependent rsp.
+
   induction D; intros.
   -
     simpl in H0.
     inversion H0; subst.
-    econstructor; eauto.
+    simpl.
+    intro; tryfalse.
+
   -
     destruct a, p.
     simpl in H0.
     destruct d.
     {
-      destruct (exe_delay R D) eqn:Heqe.
+      destruct (exe_delay R D) eqn:Hexe_delay.
       inversion H0; subst.
       simpl in H.
-      inversion H; subst.
-      eauto.
+      destruct (sep_reg_dec rsp s); subst; eauto.
+      {
+        eapply IHD; eauto.
+        clear - H.
+        intro.
+        eapply H.
+        eapply in_remove_one_ls_in_ls; eauto.
+      }
+      {
+        assert (~ In rsp (remove_one sep_reg_dec rsp (getRegs D))).
+        {
+          intro.
+          eapply H.
+          simpl.
+          eauto.
+        }
+
+        eapply IHD in H1; eauto.
+      }
     }
     {
-      destruct (exe_delay R D) eqn:Heqe.
+      destruct (exe_delay R D) eqn:Hexe_delay.
       inversion H0; subst.
-      simpl in H.
-      inversion H; subst.
-      simpl.
-      econstructor; eauto.
-      eapply not_in_exe_dly_stable; eauto.
+      simpls.
+      destruct (sep_reg_dec rsp s); subst.
+      {
+        eapply not_in_exe_dly_stable; eauto.
+      }
+      {
+        assert (~ In rsp (remove_one sep_reg_dec rsp (getRegs D))).
+        {
+          intro.
+          eapply H.
+          simpl; eauto.
+        }
+
+        eapply IHD in H1; eauto.
+        intro.
+        eapply H1.
+        simpl in H2.
+        destruct H2; subst; tryfalse; eauto.
+      }
     }
 Qed.
 
@@ -1207,7 +1253,7 @@ Lemma dlytime_zero_exe_dly :
     (M, (R, F), D) |= 0 @ s |==> w ->
     (R', D') = exe_delay R D ->
     (M, (R', F), D') |= s |=> w.
-Proof.
+Proof. 
   intro D.
   induction D; intros.
   -
@@ -1255,7 +1301,10 @@ Proof.
         { 
           inversion H0; subst.
           simpl in H1.
-          inversion H1; subst.
+          unfold noDup in H1.
+          simpl in H1.
+          destruct (sep_reg_dec s s); tryfalse; eauto.
+          clear e.
           lets Hexe_dly : Heqe.
           eapply reg_not_in_dlybuff_exe_dly_stable in Heqe; eauto.
           subst.
@@ -1269,12 +1318,16 @@ Proof.
           eapply not_in_exe_dly_stable; eauto.
         }
         {
-          inversion H1; subst.
+          simpl in H1.
+          unfold noDup in H1.
+          simpl in H1.
           assert (s <> s0).
-          {
+          { 
             intro.
             subst.
-            eapply dlyitem_in_dlyls_reg_in in H0; eauto.
+            eapply H1.
+            destruct (sep_reg_dec s0 s0); simpl; eauto.
+            eapply dlyitem_in_dlyls_reg_in; eauto.
           }
 
           assert ((empM, (RegMap.set s (Some x) empR, F), D) |= 0 @ s |==> w).
@@ -1290,10 +1343,20 @@ Proof.
             inversion H0; subst; tryfalse.
             exists x.
             repeat (split; eauto).
-            left.
+            left. 
             unfold inDlyBuff.
             simpl in H1.
-            inversion H1; eauto.
+            unfold noDup in H1.
+            simpl in H1.
+            destruct (sep_reg_dec s s0); tryfalse.
+            clear n.
+            simpl; eauto.
+            split; eauto.
+            clear - H1.
+            unfold noDup.
+            intro.
+            eapply H1.
+            simpl; eauto.
             exists x.
             repeat (split; eauto).
             right.
@@ -1366,13 +1429,21 @@ Proof.
         exists x.
         repeat (split; eauto).
         destruct H1.
-        {
+        { 
           unfolds inDlyBuff.
           simpljoin1.
           simpl in H.
           destruct H.
           inversion H.
-          inversion H0; subst; eauto.
+          simpls.
+          unfolds noDup.
+          left.
+          split; eauto.
+          intro.
+          eapply H0.
+          simpl.
+          destruct (sep_reg_dec s s0); simpl; eauto.
+          eapply in_remove_one_ls_in_ls; eauto.
         }
         {
           right.
@@ -1397,7 +1468,10 @@ Proof.
         simpls; simpljoin1.
         destruct H.
         inversion H; tryfalse.
-        inversion H0; subst.
+        unfolds noDup.
+        simpls.
+        destruct (sep_reg_dec s0 s0); tryfalse.
+        clear e.
         eapply dlyitem_in_dlyls_reg_in in H; eauto.
         unfolds regSt.
         simpls.
@@ -1432,18 +1506,30 @@ Qed.
 
 Lemma regdlySt_dlycons_stable :
   forall t t0 s s0 w w0 M R F D,
-    regdlySt t s w (M, (R, F), D) -> ~ In s0 (getRegs D) ->
+    regdlySt t s w (M, (R, F), D) -> s <> s0 ->
     regdlySt t s w (M, (R, F), (t0, s0, w0) :: D).
 Proof.
   intro t.
   induction t; intros.
-  -
+  - 
     simpls.
     unfolds inDlyBuff.
     simpls.
     simpljoin1.
     split; eauto.
-    econstructor; eauto.
+    unfolds noDup.
+    simpls.
+    destruct (sep_reg_dec s s0); subst.
+    { 
+      eapply dlyitem_in_dlyls_reg_in in H.
+      tryfalse.
+    }
+    {
+      intro.
+      eapply H1.
+      simpl in H2.
+      destruct H2; subst; tryfalse; eauto.
+    }
   -
     simpls.
     destruct H.
@@ -1453,7 +1539,14 @@ Proof.
       simpljoin1.
       simpl; eauto.
       split; eauto.
-      econstructor; eauto.
+      simpls.
+      unfolds noDup.
+      simpl.
+      destruct (sep_reg_dec s s0); subst; eauto.
+      intro.
+      eapply H1.
+      simpl in H2.
+      destruct H2; subst; tryfalse; eauto.
     }
     {
       right.
@@ -1485,7 +1578,10 @@ Proof.
       simpl in H.
       destruct (exe_delay (RegMap.set s (Some x) empR) D) eqn:Heqe.
       inversion H; subst.
-      inversion H1; subst.
+      unfold noDup in H1.
+      simpl in H1.
+      destruct (sep_reg_dec s s); tryfalse.
+      clear e.
       lets Ht : Heqe.
       eapply reg_not_in_dlybuff_exe_dly_stable in Heqe; eauto.
       subst.
@@ -1497,16 +1593,20 @@ Proof.
       unfold inDlyBuff.
       simpl; eauto.
       split; eauto.
-      econstructor; eauto.
-      eapply not_in_exe_dly_stable; eauto.
-      eapply noDup_exe_dly_stable; eauto.
+      unfold noDup.
+      intro.
+      simpl in H2.
+      destruct (sep_reg_dec s s); tryfalse.
+      clear e.
+      eapply not_in_exe_dly_stable in H1; eauto.
 
       left.
       unfold inDlyBuff.
       split; simpl; eauto.
-      econstructor; eauto.
+      unfold noDup.
+      simpl.
+      destruct (sep_reg_dec s s); tryfalse.
       eapply not_in_exe_dly_stable; eauto.
-      eapply noDup_exe_dly_stable; eauto.
     }
     {
       simpl in H.
@@ -1517,15 +1617,29 @@ Proof.
         symmetry in Heqe.
         lets Ht : Heqe.
         eapply IHD with (t := t) (w := w) (F := F) in Heqe; eauto.
-        Focus 2.
+        Focus 2. 
         unfold inDlyBuff.
         simpl in H1.
-        inversion H1; subst; eauto.
+        unfold noDup in H1. 
         eapply dlytime_gt_zero_exe_still in Ht; eauto.
-        clear - Heqe Ht.
+        simpl in H1.
+        destruct (sep_reg_dec s s0); subst.
+        split; eauto.
+        simpl.
+        unfold noDup.
+        intro.
+        eapply H1.
+        eapply in_remove_one_ls_in_ls; eauto.
+        repeat (split; eauto).
+        simpl.
+        unfold noDup.
+        intro.
+        eapply H1.
+        simpl; eauto.
         simpl in Heqe.
         simpljoin1.
-        destruct H1.
+        simpl in H1. 
+        destruct H4.
         {
           simpl.
           destruct (sep_reg_dec s s0).
@@ -1533,33 +1647,31 @@ Proof.
             subst.
             exists w0.
             repeat (split; eauto).
-            unfold set_R.
-            unfold is_indom.
-            unfolds RegMap.set.
-            destruct_rneq.
-            eapply functional_extensionality; eauto.
-            intros.
-            destruct_rneq.
+            rewrite indom_setR_eq_RegMap_set; eauto.
+            rewrite regset_twice; eauto.
+            eapply regset_l_l_indom; eauto.
             left.
             eapply regdlySt_dlyls_relevent; eauto.
           }
           {
-            exists x.
+            exists x0.
             repeat (split; eauto).
             unfold set_R.
-            unfold is_indom.
+            unfold is_indom; eauto.
             unfold RegMap.set.
             destruct_rneq.
             left.
             eapply regdlySt_dlyls_relevent; eauto.
           }
         }
-        
-        unfolds regSt.
-        simpls.
-        simpljoin1.
-        eapply dlyitem_in_dlyls_reg_in in Ht; eauto.
-        tryfalse.
+        {
+          unfold regSt in H.
+          simpl in H.
+          simpljoin1.
+          eapply dlytime_gt_zero_exe_still in H0; eauto.
+          eapply dlyitem_in_dlyls_reg_in in H0; eauto.
+          tryfalse.
+        }
       }
       {
         destruct (exe_delay (RegMap.set s (Some x) empR) D) eqn:Heqe.
@@ -1572,7 +1684,9 @@ Proof.
           intro.
           subst.
           simpl in H1.
-          inversion H1; subst.
+          unfold noDup in H1.
+          simpl in H1.
+          destruct (sep_reg_dec s0 s0); tryfalse.
           eapply dlyitem_in_dlyls_reg_in in H0; eauto.
         }
 
@@ -1582,19 +1696,23 @@ Proof.
         clear - H0 H1.
         unfold inDlyBuff.
         simpl in H1.
-        inversion H1; eauto.
+        simpls; eauto.
+        split; eauto.
+        unfolds noDup.
+        intro.
+        eapply H1.
+        simpl.
+        destruct (sep_reg_dec s s0); subst; simpl; eauto.
+        eapply in_remove_one_ls_in_ls; eauto.
 
         simpl in H1. 
-        inversion H1; subst. 
-        clear - Heqe H2 H5 Ht.
         simpls.
         simpljoin1.
         exists x0.
         repeat (split; eauto).
-        destruct H1.
+        destruct H5.
         left.
         eapply regdlySt_dlycons_stable; eauto.
-        eapply not_in_exe_dly_stable; eauto.
         right.
         clear - H H2.
         unfolds regSt.
@@ -1622,7 +1740,9 @@ Proof.
     destruct H.
     inversion H; eauto.
     simpl in H0.
-    inversion H0; subst.
+    unfold noDup in H0.
+    simpl in H0.
+    destruct (sep_reg_dec s0 s0); tryfalse.
     eapply dlyitem_in_dlyls_reg_in in H; eauto.
     tryfalse.
   - 
@@ -1635,7 +1755,9 @@ Proof.
       destruct H.
       inversion H; tryfalse.
       simpl in H0.
-      inversion H0; subst.
+      unfold noDup in H0.
+      simpl in H0.
+      destruct (sep_reg_dec s0 s0); tryfalse.
       eapply dlyitem_in_dlyls_reg_in in H; eauto.
       tryfalse.
     }
@@ -1647,7 +1769,7 @@ Qed.
 Lemma regdlySt_noDup :
   forall t s w M R F D,
     regdlySt t s w (M, (R, F), D) ->
-    noDup (getRegs D).
+    noDup s (getRegs D).
 Proof.
   intro t.
   induction t; intros.
@@ -1672,12 +1794,14 @@ Lemma regdlySt_cons_notin :
 Proof.
   intro t.
   induction t; intros.
-  -
+  - 
     simpl in H.
     unfolds inDlyBuff.
     simpls.
     simpljoin1.
-    inversion H0; subst.
+    unfold noDup in H0.
+    simpl in H0.
+    destruct (sep_reg_dec s s); tryfalse.
     eauto.
   -
     simpls.
@@ -1686,16 +1810,20 @@ Proof.
       unfolds inDlyBuff.
       simpls.
       simpljoin1.
-      inversion H0; subst.
+      unfold noDup in H0.
+      simpl in H0.
+      destruct (sep_reg_dec s s); tryfalse.
       eauto.
     }
     {
       eapply regdlySt_noDup in H; eauto.
       simpl in H.
-      inversion H; eauto.
+      unfold noDup in H.
+      simpl in H.
+      destruct (sep_reg_dec s s); tryfalse.
+      eauto.
     }
 Qed.
-
 
 Lemma regdlySt_noteq_cons_remove :
   forall t t' s s' w w' M R F D,
@@ -1714,7 +1842,14 @@ Proof.
     inversion H; subst.
     tryfalse.
     simpl in H1.
-    inversion H1; eauto.
+    simpls.
+    split; eauto.
+    unfolds noDup.
+    intro.
+    eapply H1.
+    simpls.
+    destruct (sep_reg_dec s s'); tryfalse; eauto.
+    simpl; eauto.
   -
     simpls.
     destruct H.
@@ -1726,41 +1861,15 @@ Proof.
       inversion H; subst.
       tryfalse.
       left.
-      inversion H1; subst; eauto.
-    }
-    {
-      eauto.
-    }
-Qed.
-
-Lemma regdlySt_cons_noteq_stable :
-  forall t s w s0 d w0 M R F D,
-    regdlySt t s w (M, (R, F), D) -> s <> s0 -> ~ In s0 (getRegs D) ->
-    regdlySt t s w (M, (R, F), (d, s0, w0) :: D).
-Proof.
-  intro t.
-  induction t; intros.
-  -
-    simpls.
-    unfolds inDlyBuff.
-    simpljoin1.
-    simpl.
-    split; eauto.
-    econstructor; eauto.
-  -
-    simpls.
-    destruct H.
-    {
-      left.
-      unfolds inDlyBuff.
-      simpls.
+      unfolds noDup.
       split; eauto.
-      simpljoin1; eauto.
-      econstructor; eauto.
-      simpljoin1; eauto.
+      intro.
+      eapply H1.
+      simpl.
+      destruct (sep_reg_dec s s'); tryfalse; eauto.
+      simpl; eauto.
     }
     {
-      right.
       eauto.
     }
 Qed.
@@ -1770,6 +1879,8 @@ Lemma regdlySt_cons_same :
     noDup (s :: getRegs D) ->
     regdlySt t s w (M, (R, F), (t, s, w) :: D).
 Proof.
+
+  >>>>>>>>>>>>>>>>>>>>
   intros.
   destruct t.
   {
@@ -1833,6 +1944,9 @@ Lemma regdlySt_notin_subst_sable :
     noDup (s0 :: getRegs D') ->
     regdlySt t s0 w (M, (R, F), (d, s0, w0) :: D').
 Proof.
+
+  >>>>>>>>>>>>>>>>>
+  
   intro t.
   induction t; intros.
   -

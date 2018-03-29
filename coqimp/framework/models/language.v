@@ -203,7 +203,7 @@ Inductive R__ : Memory * RegFile -> ins -> Memory * RegFile -> Prop :=
     R rs = Some v1 -> eval_opexp R oexp = Some v2 ->
     indom rd R -> indom n R -> indom z R -> v = v1 &ᵢ v2 ->
     set_Rs R ((Rr rd, v) :: (Rpsr n, get_range 31 31 v) :: (Rpsr z, iszero v) :: nil) = R' ->
-    R__ (M, R) (subcc rs oexp rd) (M, R')
+    R__ (M, R) (andcc rs oexp rd) (M, R')
 
 | Or_step : forall M (R R' : RegFile) oexp (rs rd : GenReg) v1 v2,
     R rs = Some v1 -> eval_opexp R oexp = Some v2 ->

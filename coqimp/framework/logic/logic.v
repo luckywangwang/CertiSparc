@@ -10,6 +10,8 @@ Set Asymmetric Patterns.
 Require Import state. 
 Require Import language.
 
+Require Import LibTactics.
+
 Set Implicit Arguments.
 Unset Strict Implicit.
 
@@ -93,13 +95,29 @@ Definition regInDlyBuff (rn : RegName) (D : DelayList) :=
   | Rsp rsp => In rsp (getRegs D)
   end.
 
-Inductive noDup (A : Type) : list A -> Prop :=
-| NoDup_nil : noDup nil
-| NoDup_cons : forall x l,
-    ~ In x l -> noDup l -> noDup (x :: l).
+Lemma sep_reg_dec :
+  forall (s s' : SpReg),
+    {s = s'} + {s <> s'}.
+Proof.
+  intros.
+  destruct s; destruct s'; eauto;
+    try solve [right; intro; tryfalse].
+  destruct a; destruct a0; eauto;
+    try solve [right; intro; tryfalse].
+Qed.
+
+Fixpoint remove_one {A : Type} (eq_dec : forall (x y : A), {x = y} + {x <> y})
+         (a : A) (l : list A) :=
+  match l with
+  | x :: l => if eq_dec a x then l else x :: remove_one eq_dec a l
+  | nil => nil
+  end.
+
+Definition noDup (rn : SpReg) (l : list SpReg) : Prop :=
+  ~ In rn (remove_one sep_reg_dec rn l).
 
 Definition inDlyBuff (d : DelayItem) (D : DelayList) :=
-  In d D /\ noDup (getRegs D).
+  In d D /\ noDup (snd (fst d)) (getRegs D).
 
 (* $ rn = v hold if the value v locates in memory with address R(rn) *)
 Definition regSt (rn : RegName) (v : Word) (s : State) :=

@@ -126,28 +126,6 @@ Proof.
 Qed.
 
 (*+ Lemmas for register state +*)
-Lemma reg_vl_change :
-  forall M R F D rn v v1 p,
-    (M, (R, F), D) |= rn |=> v ** p ->
-    (M, (set_R R rn v1, F), D) |= rn |=> v1 ** p.
-Proof.
-  intros.
-  sep_star_split_tac.
-  simpls.
-  unfolds regSt.
-  simpls.
-  simpljoin1.
-  exists (empM, (set_R (RegMap.set rn (Some v) empR) rn v1, f0), d0)
-    (m0, (r0, f0), d0).
-  simpl.
-  repeat (split; eauto).
-  eapply disjoint_setR_still1; eauto.
-  rewrite indom_setR_merge_eq1; eauto.
-  eapply regset_l_l_indom; eauto.
-  rewrite indom_setR_eq_RegMap_set; eauto.
-  rewrite regset_twice; eauto.
-  eapply regset_l_l_indom; eauto.
-Qed.
     
 (*+ Lemmas for Safety Instruction Sequence +*)
 Lemma safety_ins_seq_post_weak :
