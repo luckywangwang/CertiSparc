@@ -168,7 +168,7 @@ Inductive R__ : Memory * RegFile -> ins -> Memory * RegFile -> Prop :=
 | Ld_step : forall aexp (ri : GenReg) M R R' addr v,
     eval_addrexp R aexp = Some addr -> word_aligned addr = true ->
     M addr = Some v -> indom ri R -> set_R R ri v = R' ->
-    R__ (M, R) (ld aexp ri) (M, R)
+    R__ (M, R) (ld aexp ri) (M, R')
 
 | ST_step : forall (ri : GenReg) aexp M M' R addr v,
     eval_addrexp R aexp = Some addr -> word_aligned addr = true ->

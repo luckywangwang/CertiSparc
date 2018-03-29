@@ -28,10 +28,6 @@ Require Import Coq.Logic.FunctionalExtensionality.
 Open Scope nat.
 Open Scope code_scope.
 Open Scope mem_scope.
-  
-(*+ Lemmas for instruction +*)
-
-(*+ Lemmas for Sep Star +*)
     
 
 (*+ Well-formed CodeHeap Proof +*)

@@ -1591,10 +1591,68 @@ Proof.
     eapply H3 in H15.
     simpljoin1.
     repeat (split; eauto).
-    
+    eapply H1 in Hp.
+    clear - Hp H32 H33.
+    sep_star_split_tac.
+    simpls.
+    unfolds regSt.
+    simpls.
+    simpljoin1.
+    unfold merge in *.
+    unfolds RegMap.set.
+    destruct_rneq_H.
   }
   {
-    
+    intros.
+    lets Hz : H12. 
+    eapply dly_reduce_asrt_stable in Hz; eauto.
+    lets Hp : Hz.
+    inversion H20; get_ins_diff_false.  
+    eapply H1 in Hz.
+    clear - Hz H9 H32.
+    sep_star_split_tac.
+    simpls.
+    unfolds regSt.
+    simpls.
+    simpljoin1.
+    unfold merge in *.
+    unfolds RegMap.set.
+    destruct_rneq_H.
+    eapply H1 in Hz.
+    assert (bv = v).
+    {
+      clear - Hz H32.
+      sep_star_split_tac.
+      simpls.
+      unfolds regSt.
+      simpls.
+      simpljoin1.
+      unfold merge in *.
+      unfolds RegMap.set.
+      destruct_rneq_H.
+      inversion H32; subst.
+      eauto.
+    }
+    subst.
+    inversion H25; get_ins_diff_false.
+    eapply dly_reduce_asrt_stable in H14; eauto.
+    eapply H2 in H14; eauto.
+    simpljoin1.
+    eapply ins_exec_deterministic in H26; eauto.
+    subst.
+    unfold insSeq_sound in H4.
+    eapply H4; eauto.
+    clear - H17.
+    rewrite Int.add_assoc; eauto.
+    clear - H11 Hz H32 H33.
+    simpl.
+    repeat (split; eauto).
+    unfold Int.eq.
+    destruct (zeq (Int.unsigned v) (Int.unsigned $ 0)); eauto.
+    eapply z_eq_to_int_eq in e; eauto.
+    do 2 rewrite Int.repr_unsigned in e; eauto.
+    subst.
+    tryfalse.
   }
 Qed.
   
@@ -1675,6 +1733,14 @@ Proof.
 
   -
     eapply ins_rule_sound in H1.
-    
+    eapply wf_seq_bne_rule; eauto.
 
->>>>>>>>>>>>>>>>>>>>>>>
+  -
+    eapply wf_seq_frame_rule; eauto.
+
+  -
+    eapply wf_seq_ex_intro_rule; eauto.
+
+  -
+    eapply wf_seq_conseq_rule; eauto.
+Qed.

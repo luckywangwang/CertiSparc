@@ -2,7 +2,7 @@ Require Import Coqlib.
 Require Import Maps. 
 Require Import LibTactics.
 
-Require Import Integers.
+Require Import Integers. 
 Open Scope Z_scope.  
 Import ListNotations. 
 
@@ -13,7 +13,7 @@ Require Import language.
 
 Set Implicit Arguments.
 Unset Strict Implicit.
-     
+      
 Require Import logic. 
 Require Import soundness.
  
@@ -24,8 +24,130 @@ Require Import Coq.Logic.FunctionalExtensionality.
 Open Scope nat.
 Open Scope code_scope.
 
-(*+ Some Lemma +*)
-    
+(*+ Lemmas for Memory Model +*)
+Lemma memset_l_l_indom :
+  forall rn v m,
+    indom rn (MemMap.set rn (Some v) m).
+Proof.
+  intros.
+  unfold indom.
+  exists v.
+  unfolds MemMap.set.
+  destruct_addreq.
+Qed.
+
+Lemma memset_twice :
+  forall (A : Type) l (v v1 : A) m,
+    MemMap.set l (Some v) (MemMap.set l (Some v1) m) =
+    MemMap.set l (Some v) m.
+Proof.
+  intros.
+  eapply functional_extensionality.
+  intro.
+  unfolds MemMap.set.
+  destruct_addreq.
+Qed.
+
+Lemma indom_memset_merge_eq :
+  forall M m l v,
+    indom l M ->
+    MemMap.set l (Some v) (merge M m) = merge (MemMap.set l (Some v) M) m.
+Proof.
+  intros.
+  unfold MemMap.set, merge in *.
+  eapply functional_extensionality.
+  intro.
+  unfold indom in *.
+  simpljoin1. 
+  destruct_addreq.
+Qed.
+
+Lemma disj_indom_memset_still :
+  forall M1 M2 l v,
+    disjoint M1 M2 ->
+    indom l M1 ->
+    disjoint (MemMap.set l (Some v) M1) M2.
+Proof.
+  intros.
+  unfold disjoint in *.
+  intros.
+  specialize (H x).
+  destruct (M1 x) eqn:Heqe1; eauto.
+  {
+    destruct (M2 x) eqn:Heqe2; tryfalse.
+    unfold MemMap.set.
+    destruct_addreq.
+    rewrite Heqe1; eauto.
+  }
+  {
+    destruct (M2 x) eqn:Heqe2.
+    {
+      unfold MemMap.set.
+      destruct_addreq; subst.
+      unfold indom in *.
+      simpljoin1.
+      tryfalse.
+      rewrite Heqe1; eauto.
+    }
+    {
+      unfold MemMap.set.
+      destruct_addreq.
+      rewrite Heqe1; eauto.
+    }
+  }
+Qed.
+
+Lemma MemSet_same_addr_disj_stable :
+  forall l v v' M M',
+    disjoint (MemMap.set l (Some v') M) M' ->
+    disjoint (MemMap.set l (Some v) M) M'.
+Proof.
+  intros.
+  unfold disjoint.
+  intros.
+  unfold disjoint in H.
+  specialize (H x).
+
+  unfolds MemMap.set.
+  destruct_addreq.
+Qed.
+
+(*+ Lemmas for Register State +*)
+Lemma disj_indom_regset_still :
+  forall R1 R2 rn v,
+    disjoint R1 R2 ->
+    indom rn R1 ->
+    disjoint (RegMap.set rn (Some v) R1) R2.
+Proof.
+  intros.
+  unfold disjoint in *.
+  intros.
+  specialize (H x).
+  destruct (R1 x) eqn:Heqe1; eauto.
+  {
+    destruct (R2 x) eqn:Heqe2; tryfalse.
+    unfold RegMap.set.
+    destruct_rneq.
+    rewrite Heqe1; eauto.
+  }
+  {
+    destruct (R2 x) eqn:Heqe2.
+    {
+      unfold RegMap.set.
+      destruct_rneq; subst.
+      unfold indom in *.
+      simpljoin1.
+      tryfalse.
+      rewrite Heqe1; eauto.
+    }
+    {
+      unfold RegMap.set.
+      destruct_rneq.
+      rewrite Heqe1; eauto.
+    }
+  }
+Qed.
+  
 (*+ Soundness Proof of instruction +*)
 
 Lemma ld_rule_sound : 
@@ -34,14 +156,169 @@ Lemma ld_rule_sound :
     p ==> l |-> v ** rd |=> v' ** q ->
     ins_sound p (l |-> v ** rd |=> v ** q) (ld aexp rd).
 Proof.
-  Admitted.
+  intros.
+  unfold ins_sound.
+  intros.
+  lets Haexp : H1.
+  eapply H in Haexp.
+  eapply H0 in H1.
+  sep_star_split_tac.
+  simpl in H4, H5.
+  simpljoin1.
+  exists (m ⊎ (m1 ⊎ m2), (r ⊎ ((RegMap.set rd (Some v) r1) ⊎ r2), f2), d2).
+  split; eauto.
+
+  eapply NormalIns; eauto.
+  eapply Ld_step with (addr := l) (v := v); eauto.
+  simpl in Haexp.
+  simpljoin1; eauto.
+  simpl in Haexp.
+  simpljoin1; eauto.
+  clear - H1.
+  simpl in H1.
+  simpljoin1.
+  eapply get_vl_merge_still; eauto.
+  unfold MemMap.set.
+  destruct_addreq.
+  clear - H2.
+  eapply indom_merge_still2; eauto.
+  eapply indom_merge_still; eauto.
+  simpls.
+  unfolds regSt.
+  simpls.
+  simpljoin1.
+  eapply regset_l_l_indom; eauto.
+  rewrite indom_setR_merge_eq2; eauto.
+  rewrite indom_setR_merge_eq1; eauto.
+  rewrite indom_setR_eq_RegMap_set; eauto.
+  clear - H2.
+  simpls.
+  unfolds regSt.
+  simpls.
+  simpljoin1.
+  eapply regset_l_l_indom; eauto.
+  clear - H2.
+  simpls.
+  unfolds regSt.
+  simpls.
+  simpljoin1.
+  eapply regset_l_l_indom; eauto.
+  clear - H1.
+  simpls.
+  simpljoin1.
+  intro.
+  unfold indom in *.
+  simpljoin1.
+  unfolds empR.
+  tryfalse.
+  simpl.
+  do 2 eexists.
+  repeat (split; eauto).
+  Focus 2.
+  do 2 eexists.
+  repeat (split; eauto).
+  instantiate (2 := (empM, (RegMap.set rd (Some v) r1, f2), d2)).
+  simpl. 
+  repeat (split; eauto).
+  clear - H2 H4. 
+  simpls.
+  unfolds regSt.
+  simpls.
+  simpljoin1.
+  eauto.
+  eapply disj_indom_regset_still; eauto.
+  clear - H2.
+  simpls.
+  unfolds regSt.
+  simpls.
+  simpljoin1.
+  eapply regset_l_l_indom; eauto.
+  simpls.
+  clear - H2.
+  unfolds regSt.
+  simpls.
+  simpljoin1.
+  rewrite regset_twice; eauto.
+  simpl; eauto.
+  simpl.
+  simpl in H2.
+  unfolds regSt.
+  simpl in H2.
+  simpljoin1.
+  repeat (split; eauto).
+  rewrite regset_twice; eauto.
+  clear - H6.
+  eapply disj_sep_merge_still; eauto.
+  eapply disj_merge_disj_sep1 in H6; eauto.
+  eapply disj_sym in H6.
+  eapply disj_sym.
+  eapply RegSet_same_addr_disj_stable; eauto.
+  eapply disj_merge_disj_sep2 in H6; eauto.
+Qed.
 
 Lemma st_rule_sound :
   forall l v (rs : GenReg) v1 p aexp,
     l |-> v ** rs |=> v1 ** p ==> aexp ==ₓ l ->
     ins_sound (l |-> v ** rs |=> v1 ** p) (l |-> v1 ** rs |=> v1 ** p) (st rs aexp).
 Proof.
-  Admitted.
+  intros.
+  unfold ins_sound.
+  intros.
+  destruct_state s.
+  lets Haexp : H0.
+  eapply H in Haexp.
+  sep_star_split_tac.
+  simpl in H3, H4.
+  simpljoin1.
+  simpl in Haexp.
+  simpljoin1.
+  exists (MemMap.set l (Some v1) m0 ⊎ (m2 ⊎ m3), (r0 ⊎ (r2 ⊎ r3), f3), d3).
+  split; eauto.
+
+  eapply NormalIns; eauto.
+  eapply ST_step with (v := v1); eauto.
+  eapply get_vl_merge_still2; eauto.
+  eapply get_vl_merge_still; eauto.
+  clear - H1.
+  simpls.
+  unfolds regSt.
+  simpls.
+  simpljoin1.
+  unfold RegMap.set.
+  destruct_rneq.
+  eapply indom_merge_still; eauto.
+  clear - H0.
+  simpls.
+  simpljoin1.
+  eapply memset_l_l_indom; eauto.
+  rewrite indom_memset_merge_eq; eauto.
+  clear - H0.
+  simpls.
+  simpljoin1.
+  eapply memset_l_l_indom; eauto.
+  simpl.
+  do 2 eexists.
+  repeat (split; eauto).
+  Focus 4.
+  do 2 eexists.
+  repeat (split; eauto).
+  instantiate (1 := (MemMap.set l (Some v1) m0, (r0, f3), d3)).
+  simpl.
+  repeat (split; eauto).
+  simpl in H0.
+  simpljoin1.
+  rewrite memset_twice; eauto.
+  eapply MemSet_same_addr_disj_stable; eauto.
+  simpl.
+  clear - H0.
+  simpls.
+  simpljoin1.
+  rewrite memset_twice; eauto.
+  simpl.
+  clear - H0.
+  simpls.
+  simpljoin1; eauto.
+Qed.
 
 Lemma add_rule_sound :
   forall p (rs rd : GenReg) v1 v2 v oexp q,
@@ -49,7 +326,68 @@ Lemma add_rule_sound :
     p ==> rd |=> v ** q ->
     ins_sound p (rd |=> v1 +ᵢ v2 ** q) (add rs oexp rd).
 Proof.
-  Admitted.
+  intros.
+  unfold ins_sound.
+  intros.
+  lets Hoexp : H1.
+  lets Hrd : H1.
+  eapply H in Hoexp.
+  eapply H0 in Hrd.
+  simpl in Hoexp.
+  destruct_state s.
+  simpl in Hoexp.
+  sep_star_split_tac.
+  simpl in H6.
+  simpljoin1.
+  exists (m0 ⊎ m1, (RegMap.set rd (Some (v1 +ᵢ v2)) r0 ⊎ r1, f1), d1).
+  split; eauto.
+  eapply NormalIns; eauto.
+  eapply Add_step; eauto.
+  eapply indom_merge_still; eauto.
+  clear - H4.
+  simpls.
+  unfolds regSt.
+  simpls.
+  simpljoin1.
+  eapply regset_l_l_indom; eauto.
+  rewrite indom_setR_merge_eq1; eauto.
+  rewrite indom_setR_eq_RegMap_set; eauto.
+  clear - H4.
+  simpls.
+  unfolds regSt.
+  simpls.
+  simpljoin1.
+  eapply regset_l_l_indom; eauto.
+  clear - H4.
+  simpls.
+  unfolds regSt.
+  simpls.
+  simpljoin1.
+  eapply regset_l_l_indom; eauto.
+  simpl.
+  exists (m0, (RegMap.set rd (Some v1 +ᵢ v2) r0, f1), d1) (m1, (r1, f1), d1).
+  repeat (split; eauto).
+  clear - H4 H3.
+  simpls.
+  unfolds regSt.
+  simpls.
+  simpljoin1.
+  rewrite regset_twice; eauto.
+  eapply RegSet_same_addr_disj_stable; eauto.
+  simpl.
+  clear - H4.
+  simpls.
+  unfolds regSt.
+  simpls.
+  simpljoin1.
+  rewrite regset_twice; eauto.
+  simpl.
+  clear - H4.
+  simpls.
+  unfolds regSt.
+  simpls.
+  simpljoin1.
+Qed.
 
 Lemma sub_rule_sound :
   forall p (rs rd : GenReg) v1 v2 v oexp q,
@@ -57,7 +395,68 @@ Lemma sub_rule_sound :
     p ==> rd |=> v ** q ->
     ins_sound p (rd |=> v1 -ᵢ v2 ** q) (sub rs oexp rd).
 Proof.
-  Admitted.
+  intros.
+  unfold ins_sound.
+  intros.
+  lets Hoexp : H1.
+  lets Hrd : H1.
+  eapply H in Hoexp.
+  eapply H0 in Hrd.
+  simpl in Hoexp.
+  destruct_state s.
+  simpl in Hoexp.
+  sep_star_split_tac.
+  simpl in H6.
+  simpljoin1.
+  exists (m0 ⊎ m1, (RegMap.set rd (Some (v1 -ᵢ v2)) r0 ⊎ r1, f1), d1).
+  split; eauto.
+  eapply NormalIns; eauto.
+  eapply Sub_step; eauto.
+  eapply indom_merge_still; eauto.
+  clear - H4.
+  simpls.
+  unfolds regSt.
+  simpls.
+  simpljoin1.
+  eapply regset_l_l_indom; eauto.
+  rewrite indom_setR_merge_eq1; eauto.
+  rewrite indom_setR_eq_RegMap_set; eauto.
+  clear - H4.
+  simpls.
+  unfolds regSt.
+  simpls.
+  simpljoin1.
+  eapply regset_l_l_indom; eauto.
+  clear - H4.
+  simpls.
+  unfolds regSt.
+  simpls.
+  simpljoin1.
+  eapply regset_l_l_indom; eauto.
+  simpl.
+  exists (m0, (RegMap.set rd (Some v1 -ᵢ v2) r0, f1), d1) (m1, (r1, f1), d1).
+  repeat (split; eauto).
+  clear - H4 H3.
+  simpls.
+  unfolds regSt.
+  simpls.
+  simpljoin1.
+  rewrite regset_twice; eauto.
+  eapply RegSet_same_addr_disj_stable; eauto.
+  simpl.
+  clear - H4.
+  simpls.
+  unfolds regSt.
+  simpls.
+  simpljoin1.
+  rewrite regset_twice; eauto.
+  simpl.
+  clear - H4.
+  simpls.
+  unfolds regSt.
+  simpls.
+  simpljoin1.
+Qed.
 
 Lemma subcc_rule_sound :
   forall p oexp (r1 r2 : GenReg) v1 v2 v vr vn vz q,
@@ -66,7 +465,43 @@ Lemma subcc_rule_sound :
     ins_sound p (r2 |=> v ** n |=> get_range 31 31 v ** z |=> iszero v ** q)
               (subcc r1 oexp r2).
 Proof.
-  Admitted.
+  intros.
+  unfold ins_sound.
+  intros.
+  lets Hoexp : H2.
+  eapply H in Hoexp.
+  eapply H1 in H2.
+  destruct_state s.
+  simpl in Hoexp.
+  simpljoin1.
+  clear H H1.
+  sep_star_split_tac.
+  simpl in H7, H2, H5.
+  simpljoin1.
+  exists (m0 ⊎ (m2 ⊎ (m4 ⊎ m5)),
+     (RegMap.set r2 (Some (v1 -ᵢ v2)) r0 ⊎
+                 (RegMap.set n (Some (get_range 31 31 v1 -ᵢ v2)) r4 ⊎
+                             (RegMap.set z (Some (iszero v1 -ᵢ v2)) r6 ⊎ r7)), f5), d5).
+  repeat (split; eauto).
+  eapply NormalIns; eauto.
+  eapply Subcc_step; eauto.
+  clear - H1.
+  eapply indom_merge_still; eauto.
+  simpl in H1.
+  unfolds regSt.
+  simpls.
+  simpljoin1.
+  eapply regset_l_l_indom; eauto.
+  eapply indom_merge_still2; eauto.
+  eapply indom_merge_still; eauto.
+  clear - H.
+  simpls.
+  unfolds regSt.
+  simpls.
+  simpljoin1.
+  eapply regset_l_l_indom; eauto.
+  
+  
 
 Lemma and_rule_sound :
   forall p (rs rd : GenReg) v1 v2 v oexp q,
@@ -74,7 +509,68 @@ Lemma and_rule_sound :
     p ==> rd |=> v ** q ->
     ins_sound p (rd |=> v1 &ᵢ v2 ** q) (and rs oexp rd).
 Proof.
-  Admitted.
+  intros.
+  unfold ins_sound.
+  intros.
+  lets Hoexp : H1.
+  lets Hrd : H1.
+  eapply H in Hoexp.
+  eapply H0 in Hrd.
+  simpl in Hoexp.
+  destruct_state s.
+  simpl in Hoexp.
+  sep_star_split_tac.
+  simpl in H6.
+  simpljoin1.
+  exists (m0 ⊎ m1, (RegMap.set rd (Some (v1 &ᵢ v2)) r0 ⊎ r1, f1), d1).
+  split; eauto.
+  eapply NormalIns; eauto.
+  eapply And_step; eauto.
+  eapply indom_merge_still; eauto.
+  clear - H4.
+  simpls.
+  unfolds regSt.
+  simpls.
+  simpljoin1.
+  eapply regset_l_l_indom; eauto.
+  rewrite indom_setR_merge_eq1; eauto.
+  rewrite indom_setR_eq_RegMap_set; eauto.
+  clear - H4.
+  simpls.
+  unfolds regSt.
+  simpls.
+  simpljoin1.
+  eapply regset_l_l_indom; eauto.
+  clear - H4.
+  simpls.
+  unfolds regSt.
+  simpls.
+  simpljoin1.
+  eapply regset_l_l_indom; eauto.
+  simpl.
+  exists (m0, (RegMap.set rd (Some v1 &ᵢ v2) r0, f1), d1) (m1, (r1, f1), d1).
+  repeat (split; eauto).
+  clear - H4 H3.
+  simpls.
+  unfolds regSt.
+  simpls.
+  simpljoin1.
+  rewrite regset_twice; eauto.
+  eapply RegSet_same_addr_disj_stable; eauto.
+  simpl.
+  clear - H4.
+  simpls.
+  unfolds regSt.
+  simpls.
+  simpljoin1.
+  rewrite regset_twice; eauto.
+  simpl.
+  clear - H4.
+  simpls.
+  unfolds regSt.
+  simpls.
+  simpljoin1.
+Qed.
 
 Lemma andcc_rule_sound :
   forall p oexp (r1 r2 : GenReg) v1 v2 v vr vn vz q,
