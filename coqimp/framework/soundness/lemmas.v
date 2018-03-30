@@ -36,10 +36,10 @@ Fixpoint getRs (vl : list (RegName * Word)) :=
   | (rn, w) :: vl' => rn :: getRs vl'
   end.
 
-Definition Fmr (R : RegFile) :=
-  R r8 :: R r9 :: R r10 :: R r11 :: R r12 :: R r13 :: R r14 :: R r15 ::
-    R r16 :: R r17 :: R r18 :: R r19 :: R r20 :: R r21 :: R r22 :: R r23 ::
-    R r24 :: R r25 :: R r26 :: R r27 :: R r28 :: R r29 :: R r30 :: R r31 :: nil.
+Definition Fmr :=
+  r8 :: r9 :: r10 :: r11 :: r12 :: r13 :: r14 :: r15 ::
+    r16 :: r17 :: r18 :: r19 :: r20 :: r21 :: r22 :: r23 ::
+    r24 :: r25 :: r26 :: r27 :: r28 :: r29 :: r30 :: r31 :: nil.
 
 (*+ Some Tactic +*)
 (*********)

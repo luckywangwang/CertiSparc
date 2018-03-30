@@ -226,7 +226,7 @@ Definition set_frame R (rr0 rr1 rr2 rr3 rr4 rr5 rr6 rr7 : GenReg) (fm : Frame) :
 (* Operation to write a window *)
 Definition set_window R (fm1 fm2 fm3 : Frame) :=
   let R1 := set_frame R r8 r9 r10 r11 r12 r13 r14 r15 fm1 in
-  let R2 := set_frame R r16 r17 r18 r19 r20 r21 r22 r23 fm2 in
+  let R2 := set_frame R1 r16 r17 r18 r19 r20 r21 r22 r23 fm2 in
   set_frame R2 r24 r25 r26 r27 r28 r29 r30 r31 fm3.
 
 Definition N := $ 8.
