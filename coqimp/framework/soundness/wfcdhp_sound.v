@@ -18,7 +18,7 @@ Require Import logic.
 Require Import soundness.
    
 Require Import lemmas.
-
+Require Import lemmas_ins.
 Require Import inssound.
 
 Require Import wf_seq_sound.
@@ -31,6 +31,22 @@ Open Scope mem_scope.
     
 
 (*+ Well-formed CodeHeap Proof +*)
+
+Theorem cdhp_rule_sound :
+  forall C Spec Spec',
+    wf_cdhp Spec C Spec' ->
+    cdhp_sound Spec C Spec'.
+Proof.
+  intros.
+  unfolds wf_cdhp, cdhp_sound.
+  intros.
+  eapply H with (L := L) in H0.
+  simpljoin1.
+  renames x to I.
+  exists I.
+  split; eauto.
+  eapply wf_seq_sound in H3; eauto.
+Qed.
 
 Definition ins_sound_partial (p q : asrt) (i : ins) :=
   forall s s', s |= p -> (Q__ s (cntrans i) s') -> s' |= q.
