@@ -7,7 +7,7 @@ Open Scope Z_scope.
 Import ListNotations.
   
 Set Asymmetric Patterns.  
-      
+       
 Require Import state.    
 Require Import language. 
 
@@ -763,6 +763,310 @@ Proof.
       simpl; eauto.
       simpl; eauto.
     }
+Qed.
+
+Lemma safety_ins_seq_post_disj1 :
+  forall I q1 q2 pc npc Spec C S,
+    LookupC C pc npc I ->
+    safety_insSeq C S pc npc q1 Spec ->
+    safety_insSeq C S pc npc (q1 \\// q2) Spec.
+Proof.
+  intro I.
+  induction I; intros.
+
+  - (** i *)
+    inversion H; subst.
+    renames l to pc.
+    inversion H0; get_ins_diff_false.
+    clear H1.
+    eapply i_seq; eauto.
+    intros.
+    lets Hq1 : H1.
+    eapply H3 in Hq1; eauto.
+    inversion H1; subst.
+    inversion H14; get_ins_diff_false.
+    eauto.
+
+  - (** J1 *)
+    inversion H; subst.
+    renames l to pc, l0 to npc.
+    inversion H0; get_ins_diff_false.
+    eapply jmpl_seq; eauto.
+    intros.
+    lets Hq1 : H4.
+    eapply H3 with (S1 := S1) in Hq1; eauto.
+    simpljoin1.
+    renames x to fp, x0 to fq, x1 to L, x2 to r.
+    exists fp fq L r.
+    repeat (split; eauto).
+    intros.
+    eapply H9 in H1; simpl; eauto.
+
+  - (** J2 *)
+    inversion H; subst.
+    renames l to pc, l0 to npc.
+    inversion H0; get_ins_diff_false.
+    clear H1.
+    eapply jmpl_seq; eauto.
+    intros.
+    lets Hq1 : H1.
+    eapply H3 with (S1 := S1) in Hq1; eauto.
+    simpljoin1.
+    renames x to fp, x0 to fq, x1 to L, x2 to r.
+    exists fp fq L r.
+    repeat (split; eauto).
+    intros.
+    eapply H8 in H12; eauto.
+    simpl; eauto.
+
+  - (** call *)
+    inversion H; subst.
+    renames l to pc.
+    inversion H0; get_ins_diff_false.
+    eapply call_seq; eauto.
+    intros.
+    lets Hq1 : H4.
+    eapply H3 with (S1 := S1) in Hq1; eauto.
+    simpljoin1.
+    renames x to fp, x0 to fq, x1 to L, x2 to r.
+    exists fp fq L r.
+    repeat (split; eauto).
+    intros.
+    eapply H14 in H1; eauto.
+    eapply IHI; eauto.
+    clear - H12.
+    do 2 rewrite Int.add_assoc in H12; eauto.
+
+  - (** retl *)
+    inversion H; subst.
+    renames l to pc, l0 to npc.
+    inversion H0; get_ins_diff_false.
+    eapply ret_seq; eauto.
+    intros.
+    lets Hq1 : H4.
+    eapply H3 with (S1 := S1) in Hq1; eauto.
+    simpljoin1.
+    split; simpl; eauto.
+
+  - (** be *)
+    inversion H; subst.
+    renames l to pc, l0 to npc.
+    inversion H0; get_ins_diff_false.
+    eapply be_seq; eauto.
+    intros.
+    lets Hq1 : H4.
+    eapply H3 with (S1 := S1) in Hq1; eauto.
+    simpljoin1.
+    exists x.
+    repeat (split; eauto).
+    intro.
+    eapply H8 in H1.
+    simpljoin1.
+    exists x6 x7 x8 x9.
+    repeat (split; eauto).
+    intros.
+    simpl; eauto.
+    intro.
+    lets Hx : H1.
+    eapply H9 in H1.
+    eapply IHI; eauto.
+    inversion H4; subst.
+    inversion H21; get_ins_diff_false.
+    simpl in H6.
+    eapply regz_exe_delay_stable2 in H30; eauto.
+    rewrite H6 in H30.
+    inversion H30; subst.
+    tryfalse.
+    inversion H5; subst.
+    inversion H27; get_ins_diff_false.
+    clear - H11.
+    rewrite Int.add_assoc; eauto.
+
+  - (** bne *)
+    inversion H; subst.
+    renames l to pc, l0 to npc.
+    inversion H0; get_ins_diff_false.
+    eapply bne_seq; eauto.
+    intros.
+    lets Hq1 : H4.
+    eapply H3 with (S1 := S1) in Hq1; eauto.
+    simpljoin1.
+    exists x.
+    repeat (split; eauto).
+    intros.
+    lets Hx : H1.
+    eapply H8 in H1; eauto.
+    simpljoin1.
+    exists x6 x7 x8 x9.
+    repeat (split; eauto).
+    intros; simpl; eauto.
+    intros.
+    lets Hx : H1.
+    eapply H9 in H1; eauto.
+    eapply IHI; eauto.
+    inversion H4; subst.
+    inversion H21; get_ins_diff_false.
+    simpl in H6.
+    eapply regz_exe_delay_stable2 in H30; eauto.
+    rewrite H6 in H30.
+    inversion H30; subst.
+    tryfalse.
+    inversion H5; subst.
+    inversion H27; get_ins_diff_false.
+    clear - H11.
+    rewrite Int.add_assoc; eauto.
+Qed.
+
+Lemma safety_ins_seq_post_disj2 :
+  forall I q1 q2 pc npc Spec C S,
+    LookupC C pc npc I ->
+    safety_insSeq C S pc npc q2 Spec ->
+    safety_insSeq C S pc npc (q1 \\// q2) Spec.
+Proof.
+  intro I.
+  induction I; intros.
+
+  - (** i *)
+    inversion H; subst.
+    renames l to pc.
+    inversion H0; get_ins_diff_false.
+    clear H1.
+    eapply i_seq; eauto.
+    intros.
+    lets Hq1 : H1.
+    eapply H3 in Hq1; eauto.
+    inversion H1; subst.
+    inversion H14; get_ins_diff_false.
+    eauto.
+
+  - (** J1 *)
+    inversion H; subst.
+    renames l to pc, l0 to npc.
+    inversion H0; get_ins_diff_false.
+    eapply jmpl_seq; eauto.
+    intros.
+    lets Hq1 : H4.
+    eapply H3 with (S1 := S1) in Hq1; eauto.
+    simpljoin1.
+    renames x to fp, x0 to fq, x1 to L, x2 to r.
+    exists fp fq L r.
+    repeat (split; eauto).
+    intros.
+    eapply H9 in H1; simpl; eauto.
+
+  - (** J2 *)
+    inversion H; subst.
+    renames l to pc, l0 to npc.
+    inversion H0; get_ins_diff_false.
+    clear H1.
+    eapply jmpl_seq; eauto.
+    intros.
+    lets Hq1 : H1.
+    eapply H3 with (S1 := S1) in Hq1; eauto.
+    simpljoin1.
+    renames x to fp, x0 to fq, x1 to L, x2 to r.
+    exists fp fq L r.
+    repeat (split; eauto).
+    intros.
+    eapply H8 in H12; eauto.
+    simpl; eauto.
+
+  - (** call *)
+    inversion H; subst.
+    renames l to pc.
+    inversion H0; get_ins_diff_false.
+    eapply call_seq; eauto.
+    intros.
+    lets Hq1 : H4.
+    eapply H3 with (S1 := S1) in Hq1; eauto.
+    simpljoin1.
+    renames x to fp, x0 to fq, x1 to L, x2 to r.
+    exists fp fq L r.
+    repeat (split; eauto).
+    intros.
+    eapply H14 in H1; eauto.
+    eapply IHI; eauto.
+    clear - H12.
+    do 2 rewrite Int.add_assoc in H12; eauto.
+
+  - (** retl *)
+    inversion H; subst.
+    renames l to pc, l0 to npc.
+    inversion H0; get_ins_diff_false.
+    eapply ret_seq; eauto.
+    intros.
+    lets Hq1 : H4.
+    eapply H3 with (S1 := S1) in Hq1; eauto.
+    simpljoin1.
+    split; simpl; eauto.
+
+  - (** be *)
+    inversion H; subst.
+    renames l to pc, l0 to npc.
+    inversion H0; get_ins_diff_false.
+    eapply be_seq; eauto.
+    intros.
+    lets Hq1 : H4.
+    eapply H3 with (S1 := S1) in Hq1; eauto.
+    simpljoin1.
+    exists x.
+    repeat (split; eauto).
+    intro.
+    eapply H8 in H1.
+    simpljoin1.
+    exists x6 x7 x8 x9.
+    repeat (split; eauto).
+    intros.
+    simpl; eauto.
+    intro.
+    lets Hx : H1.
+    eapply H9 in H1.
+    eapply IHI; eauto.
+    inversion H4; subst.
+    inversion H21; get_ins_diff_false.
+    simpl in H6.
+    eapply regz_exe_delay_stable2 in H30; eauto.
+    rewrite H6 in H30.
+    inversion H30; subst.
+    tryfalse.
+    inversion H5; subst.
+    inversion H27; get_ins_diff_false.
+    clear - H11.
+    rewrite Int.add_assoc; eauto.
+
+  - (** bne *)
+    inversion H; subst.
+    renames l to pc, l0 to npc.
+    inversion H0; get_ins_diff_false.
+    eapply bne_seq; eauto.
+    intros.
+    lets Hq1 : H4.
+    eapply H3 with (S1 := S1) in Hq1; eauto.
+    simpljoin1.
+    exists x.
+    repeat (split; eauto).
+    intros.
+    lets Hx : H1.
+    eapply H8 in H1; eauto.
+    simpljoin1.
+    exists x6 x7 x8 x9.
+    repeat (split; eauto).
+    intros; simpl; eauto.
+    intros.
+    lets Hx : H1.
+    eapply H9 in H1; eauto.
+    eapply IHI; eauto.
+    inversion H4; subst.
+    inversion H21; get_ins_diff_false.
+    simpl in H6.
+    eapply regz_exe_delay_stable2 in H30; eauto.
+    rewrite H6 in H30.
+    inversion H30; subst.
+    tryfalse.
+    inversion H5; subst.
+    inversion H27; get_ins_diff_false.
+    clear - H11.
+    rewrite Int.add_assoc; eauto.
 Qed.
     
 (*+ Instruction Sequence Rule Sound +*)
@@ -1678,6 +1982,21 @@ Proof.
   unfolds insSeq_sound.
   eauto.
 Qed.
+
+Theorem wf_seq_disj_rule :
+  forall p1 p2 q1 q2 I Spec,
+    insSeq_sound Spec p1 I q1 -> insSeq_sound Spec p2 I q2 ->
+    insSeq_sound Spec (p1 \\// p2) I (q1 \\// q2).
+Proof.
+  intros.
+  unfolds insSeq_sound.
+  intros.
+  simpl in H2.
+  simpljoin1. 
+  destruct H2; eauto.
+  eapply safety_ins_seq_post_disj1; eauto.
+  eapply safety_ins_seq_post_disj2; eauto.
+Qed.
   
 Theorem wf_seq_sound :
   forall Spec p q I,
@@ -1722,4 +2041,7 @@ Proof.
 
   -
     eapply wf_seq_conseq_rule; eauto.
+
+  -
+    eapply wf_seq_disj_rule; eauto.
 Qed.
