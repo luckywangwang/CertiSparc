@@ -263,6 +263,10 @@ Inductive wf_ins : asrt -> ins -> asrt -> Prop :=
     rsp |=> v ** p ==> ((Or rs) ==ₑ v1 //\\ oexp ==ₑ v2) ->
     wf_ins (rsp |=> v ** p) (wr rs oexp rsp) ((3 @ rsp |==> (v1 xor v2)) ** p)
 
+| getcwp_rule : forall p F p1 id v' (rd : GenReg),
+    p ==> {| id, F |} ** rd |=> v' ** p1 ->
+    wf_ins p (getcwp rd) ({| id, F |} ** rd |=> id ** p1)
+
 | save_rule : forall p p1 q (rs rd : GenReg) id id' F fm1 fm2 fmo fml fmi v1 v2 v v' oexp,
     p ==> ((Or rs) ==ₑ v1 //\\ oexp ==ₑ v2) ->
     p ==> {| id, F ++ (fm1 :: fm2 :: nil) |} ** (Regs fmo fml fmi) ** p1 ->

@@ -2648,6 +2648,14 @@ Proof.
     rewrite H5 in H15.
     inversion H15; subst.
     eauto.
+
+  - (* getcwp *)
+    inversion H; inversion H0; subst.
+    inversion H6; subst.
+    inversion H3; inversion H7; subst.
+    rewrite H9 in H17.
+    inversion H17; subst.
+    eauto.
 Qed.
 
 Lemma ins_frm_property :
@@ -2853,6 +2861,20 @@ Proof.
     exists (m, (r, f), set_delay s0 v1 xor v2 d).
     simpl.
     repeat (split; eauto).
+
+  - (* getcwp *)
+    inversion H0; subst.
+    inversion H3.
+    destruct s2.
+    destruct p.
+    destruct r.
+    simpl in H.
+    simpljoin1.
+    exists (merge M' m, (merge (set_R R g v) r, f), d).
+    exists (m, (r, f), d).
+    simpls.
+    repeat (split; eauto).
+    eapply disjoint_setR_still1; eauto.
 Qed.
 
 Lemma ins_safety_property :
@@ -3170,6 +3192,22 @@ Proof.
     eapply indom_merge_still; eauto.
     eapply dlyfrmfree_notin_changeDly_still; eauto.
     eapply indom_m1_disj_notin_m2 with (m1 := R); eauto.
+
+  - (* getcwp *)
+    inversion H0; subst.
+    inversion H8.
+    destruct s2, p, r0.
+    destruct s2', p, r1.
+    simpls.
+    simpljoin1. 
+    exists (merge M' m0, (merge (set_R R g v) r1, f0), d0).
+    exists (m0, (r1, f0), d0).
+    repeat (split; simpl; eauto).
+    eapply NormalIns.
+    eapply GetCwp_step; eauto.
+    eapply get_vl_merge_still; eauto.
+    eapply indom_merge_still; eauto.
+    rewrite indom_setR_merge_eq1; eauto.
 Qed.
     
 Lemma program_step_safety_property :

@@ -983,6 +983,77 @@ Proof.
   eauto.
 Qed.
 
+Lemma getcwp_rule_sound :
+  forall p id F (rd : GenReg) v' p1,
+    p ==> {|id, F|} ** rd |=> v' ** p1 ->
+    ins_sound p ({|id, F|} ** rd |=> id ** p1) (getcwp rd).
+Proof.
+  intros.
+  unfold ins_sound.
+  intros.
+  eapply H in H0.
+  sep_star_split_tac.
+  simpl in H3, H4.
+  simpljoin1.
+  exists (m ⊎ (m1 ⊎ m2), (r ⊎ (set_R r1 rd id ⊎ r2), f2), d2).
+  repeat (split; eauto).
+  eapply NormalIns; eauto.
+  eapply GetCwp_step; eauto. 
+  eapply get_vl_merge_still; eauto.
+  instantiate (1 := id).
+  clear - H0.
+  simpls.
+  unfolds regSt.
+  simpls.
+  simpljoin1.
+  unfold RegMap.set.
+  destruct_rneq.
+  eapply indom_merge_still2; eauto.
+  eapply indom_merge_still; eauto.
+  clear - H1.
+  simpls.
+  unfolds regSt.
+  simpls.
+  simpljoin1.
+  eapply regset_l_l_indom; eauto.
+  rewrite indom_setR_merge_eq2; eauto.
+  rewrite indom_setR_merge_eq1; eauto.
+  clear - H1.
+  simpls.
+  unfolds regSt.
+  simpls.
+  simpljoin1.
+  eapply regset_l_l_indom; eauto.
+  clear - H0.
+  simpls.
+  unfolds regSt.
+  simpls.
+  simpljoin1.
+  intro.
+  unfold indom in H.
+  simpljoin1.
+  unfolds RegMap.set.
+  destruct_rneq_H.
+  eapply disj_sep_star_merge; eauto.
+  eapply disj_sep_star_merge; eauto.
+  clear - H1.
+  simpls.
+  unfolds regSt.
+  simpls.
+  simpljoin1.
+  repeat (split; eauto).
+  rewrite indom_setR_eq_RegMap_set; eauto.
+  rewrite regset_twice; eauto.
+  eapply regset_l_l_indom; eauto.
+  eapply disjoint_setR_still1; eauto.
+  eapply disj_sep_merge_still; eauto.
+  eapply disj_merge_disj_sep1 in H5.
+  eapply disj_sym in H5.
+  eapply disj_sym.
+  eapply disjoint_setR_still1; eauto.
+  eapply disj_merge_disj_sep2 in H5; eauto.
+Qed.
+  
 Lemma save_rule_sound :
   forall p q (rs rd : GenReg) v1 v2 v v' id id' F fm1 fm2 fmo fml fmi p1 oexp,
     p ==> Or rs ==ₑ v1 //\\ oexp ==ₑ v2 ->
@@ -1672,6 +1743,9 @@ Proof.
  
   - (* wr *)
     eapply wr_rule_sound; eauto.
+
+  - (* getcwp *)
+    eapply getcwp_rule_sound; eauto.
 
   - (* save *)
     eapply save_rule_sound; eauto.

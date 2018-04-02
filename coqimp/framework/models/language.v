@@ -25,7 +25,8 @@ Inductive ins: Type :=
 | save : GenReg -> OpExp -> GenReg -> ins
 | restore : GenReg -> OpExp -> GenReg -> ins
 | rd : SpReg -> GenReg -> ins
-| wr : GenReg -> OpExp -> SpReg -> ins.
+| wr : GenReg -> OpExp -> SpReg -> ins
+| getcwp : GenReg -> ins.
 
 (* Command *)
 Inductive command: Type :=
@@ -212,7 +213,11 @@ Inductive R__ : Memory * RegFile -> ins -> Memory * RegFile -> Prop :=
 
 | Rd_step : forall M (R R' : RegFile) (rsp : SpReg) (ri : GenReg) v,
     R rsp = Some v -> indom ri R -> set_R R ri v = R' ->
-    R__ (M, R) (rd rsp ri) (M, R').
+    R__ (M, R) (rd rsp ri) (M, R')
+
+| GetCwp_step : forall M (R R' : RegFile) (ri : GenReg) v,
+    R cwp = Some v -> indom ri R -> set_R R ri v = R' ->
+    R__ (M, R) (getcwp ri) (M, R').
 
 (* Operation to write a frame *)
 Definition set_frame R (rr0 rr1 rr2 rr3 rr4 rr5 rr6 rr7 : GenReg) (fm : Frame) :=
