@@ -737,12 +737,11 @@ Proof.
       eapply program_step_deterministic in H; eauto.
       simpljoin1.
       eapply program_step_deterministic in H5; eauto.
-      simpljoin1.
+      simpljoin1. 
       exists x7.
       repeat (split; eauto).
       simpl.
-      unfold merge.
-      rewrite H6; eauto.
+      eapply get_R_merge_still; eauto.
       intros.
       eapply H9 in H.
       simpljoin1.
@@ -761,11 +760,15 @@ Proof.
       eapply IHI; eauto.
       inversion H18; subst.
       inversion H33; get_ins_diff_false; subst.
-      eapply regz_exe_delay_stable2 in H36; eauto.
+      rewrite get_R_rn_neq_r0 in H6; eauto.
+      rewrite get_R_rn_neq_r0 in H36; eauto.
+      eapply regz_exe_delay_stable2 in H36; eauto. 
       unfold merge in H36.
       rewrite H6 in H36.
       inversion H36; subst.
       tryfalse.
+      intro; tryfalse.
+      intro; tryfalse.
       inversion H19; subst.
       inversion H41; get_ins_diff_false.
       clear - H15.
@@ -881,13 +884,17 @@ Proof.
     lets Hx : H1.
     eapply H9 in H1.
     eapply IHI; eauto.
-    inversion H4; subst.
+    inversion H4; subst. 
     inversion H21; get_ins_diff_false.
     simpl in H6.
+    rewrite get_R_rn_neq_r0 in H6; eauto.
+    rewrite get_R_rn_neq_r0 in H30; eauto.
     eapply regz_exe_delay_stable2 in H30; eauto.
     rewrite H6 in H30.
     inversion H30; subst.
     tryfalse.
+    intro; tryfalse.
+    intro; tryfalse.
     inversion H5; subst.
     inversion H27; get_ins_diff_false.
     clear - H11.
@@ -918,10 +925,14 @@ Proof.
     inversion H4; subst.
     inversion H21; get_ins_diff_false.
     simpl in H6.
+    rewrite get_R_rn_neq_r0 in H6; eauto.
+    rewrite get_R_rn_neq_r0 in H30; eauto.
     eapply regz_exe_delay_stable2 in H30; eauto.
     rewrite H6 in H30.
     inversion H30; subst.
     tryfalse.
+    intro; tryfalse.
+    intro; tryfalse.
     inversion H5; subst.
     inversion H27; get_ins_diff_false.
     clear - H11.
@@ -1036,10 +1047,14 @@ Proof.
     inversion H4; subst.
     inversion H21; get_ins_diff_false.
     simpl in H6.
+    rewrite get_R_rn_neq_r0 in H6; eauto.
+    rewrite get_R_rn_neq_r0 in H30; eauto.
     eapply regz_exe_delay_stable2 in H30; eauto.
     rewrite H6 in H30.
     inversion H30; subst.
     tryfalse.
+    intro; tryfalse.
+    intro; tryfalse.
     inversion H5; subst.
     inversion H27; get_ins_diff_false.
     clear - H11.
@@ -1070,10 +1085,14 @@ Proof.
     inversion H4; subst.
     inversion H21; get_ins_diff_false.
     simpl in H6.
+    rewrite get_R_rn_neq_r0 in H6; eauto.
+    rewrite get_R_rn_neq_r0 in H30; eauto.
     eapply regz_exe_delay_stable2 in H30; eauto.
     rewrite H6 in H30.
     inversion H30; subst.
     tryfalse.
+    intro; tryfalse.
+    intro; tryfalse.
     inversion H5; subst.
     inversion H27; get_ins_diff_false.
     clear - H11.
