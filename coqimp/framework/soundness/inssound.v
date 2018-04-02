@@ -273,7 +273,7 @@ Lemma sub_rule_sound :
     p ==> Or rs ==ₑ v1 //\\ oexp ==ₑ v2 ->
     p ==> rd |=> v ** q ->
     ins_sound p (rd |=> v1 -ᵢ v2 ** q) (sub rs oexp rd).
-Proof.
+Proof. 
   intros.
   unfold ins_sound.
   intros.
@@ -288,7 +288,7 @@ Proof.
   simpl in H6.
   simpljoin1.
   exists (m0 ⊎ m1, (RegMap.set rd (Some (v1 -ᵢ v2)) r0 ⊎ r1, f1), d1).
-  split; eauto.
+  split; eauto. 
   eapply NormalIns; eauto.
   eapply Sub_step; eauto.
   eapply indom_merge_still; eauto.
@@ -865,19 +865,22 @@ Proof.
 
   simpl in H2, H3.
   simpljoin1.
-
+ 
   exists (m ⊎ (m1 ⊎ m2), (r ⊎ (RegMap.set r1 (Some v) r2 ⊎ r3), f2), d2).
   split; eauto.
   eapply NormalIns; eauto.
   eapply Rd_step with (v := v); eauto.
-  eapply get_vl_merge_still; eauto.
+  eapply get_R_merge_still; eauto.
   clear - H.
   simpls.
   unfolds regSt.
   simpls.
   simpljoin1.
+  rewrite get_R_rn_neq_r0; eauto.
   unfolds RegMap.set.
   destruct_rneq.
+  intro.
+  tryfalse.
   eapply indom_merge_still2; eauto.
   eapply indom_merge_still; eauto.
   clear - H0.
@@ -996,11 +999,14 @@ Proof.
   simpl in H3, H4.
   simpljoin1.
   exists (m ⊎ (m1 ⊎ m2), (r ⊎ (set_R r1 rd id ⊎ r2), f2), d2).
-  repeat (split; eauto).
+  repeat (split; eauto). 
   eapply NormalIns; eauto.
   eapply GetCwp_step; eauto. 
-  eapply get_vl_merge_still; eauto.
+  eapply get_R_merge_still; eauto.
   instantiate (1 := id).
+  rewrite get_R_rn_neq_r0; eauto.
+  Focus 2.
+  intro; tryfalse.
   clear - H0.
   simpls.
   unfolds regSt.
@@ -1203,10 +1209,12 @@ Proof.
   rewrite H28; eauto.
   eapply dom_eq_merge_some_addr_stable; eauto.
   eapply same_m_dom_eq; eauto.
-
+ 
   rewrite H27.
   eapply SSave; eauto.
   {
+    rewrite get_R_rn_neq_r0; eauto.
+    2 : intro; tryfalse.
     eapply get_vl_merge_still2; eauto.
     eapply get_vl_merge_still; eauto.
     clear - H6.
@@ -1218,6 +1226,8 @@ Proof.
     destruct_rneq.
   }
   {
+    rewrite get_R_rn_neq_r0; eauto.
+    2 : intro; tryfalse.
     eapply get_vl_merge_still; eauto.
     unfold RegMap.set.
     destruct_rneq.
@@ -1247,7 +1257,7 @@ Proof.
     eapply H in Ht; eauto.
     simpl in Ht.
     simpljoin1.
-    eapply get_vl_merge_still2; eauto.
+    eapply get_R_merge_still2; eauto.
   }
   {
     instantiate (1 := v2).
@@ -1488,19 +1498,23 @@ Proof.
 
   rewrite H27. 
   eapply RRestore; eauto.
-  {
-    eapply get_vl_merge_still2; eauto.
-    eapply get_vl_merge_still; eauto.
+  { 
+    eapply get_R_merge_still2; eauto.
+    eapply get_R_merge_still; eauto.
     clear - H6.
     simpls.
     unfolds regSt.
     simpls.
     simpljoin1.
+    rewrite get_R_rn_neq_r0; eauto.
+    2 : intro; tryfalse.
     unfold RegMap.set.
     destruct_rneq.
   }
-  {
-    eapply get_vl_merge_still; eauto.
+  { 
+    eapply get_R_merge_still; eauto.
+    rewrite get_R_rn_neq_r0; eauto.
+    2 : intro; tryfalse.
     unfold RegMap.set.
     destruct_rneq.
   }
@@ -1529,7 +1543,7 @@ Proof.
     eapply H in Ht; eauto.
     simpl in Ht.
     simpljoin1.
-    eapply get_vl_merge_still2; eauto.
+    eapply get_R_merge_still2; eauto.
   }
   {
     instantiate (1 := v2).

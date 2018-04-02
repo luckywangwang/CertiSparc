@@ -483,6 +483,19 @@ Qed.
 Definition dom_eq {tp : Type} (M m : tp -> option Word) :=
   (forall l, indom l M -> indom l m) /\ (forall l, indom l m -> indom l M).
 
+Lemma get_R_rn_neq_r0 :
+  forall R rn,
+    rn <> Rr r0 ->
+    get_R R rn = R rn.
+Proof.
+  intros.
+  unfold get_R.
+  destruct (R rn); eauto.
+  destruct rn; eauto.
+  destruct g; eauto.
+  tryfalse.
+Qed.
+  
 Lemma RegSet_same_addr_disj_stable :
   forall (rn : RegName) v v' (R R' : RegFile),
     disjoint (RegMap.set rn (Some v') R) R' ->
@@ -1038,7 +1051,7 @@ Lemma dly_reduce_Aaexp_stable :
   forall D M R R' F D' a a0,
     (M, (R, F), D) |= a ==ₓ a0 -> (R', D') = exe_delay R D ->
     (M, (R', F), D') |= a ==ₓ a0.
-Proof.
+Proof. 
   intros D.
   induction D; intros.
   -
@@ -1066,22 +1079,31 @@ Proof.
       unfolds eval_addrexp.
       destruct a0; eauto.
       split; eauto.
-
+ 
       unfolds eval_opexp.
       destruct o; eauto.
       unfold set_R.
       unfold is_indom.
       destruct (r s) eqn :Heqe; eauto.
+      destruct (RegNameEq.eq g r0); subst.
+      try rewrite e in *.
+      clear - H.
+      unfolds get_R.
+      unfolds RegMap.set.
+      destruct_rneq.
+      rewrite get_R_rn_neq_r0 in H; eauto.
+      rewrite get_R_rn_neq_r0; eauto.
       unfolds RegMap.set.
       destruct_rneq; eauto.
       unfold set_R.
       unfold is_indom.
       destruct (r s) eqn:Heqe; eauto.
       unfold RegMap.set.
-      destruct_rneq; eauto.
+      destruct_rneq; eauto. 
       destruct (r g) eqn:Heqe2; eauto.
       unfolds eval_opexp.
       destruct o; eauto.
+      unfolds get_R.
       destruct_rneq; eauto.
     }
     {
@@ -1117,13 +1139,14 @@ Proof.
       inversion H0; subst.
       eapply IHD with (R' := r) (D' := d) in H1; eauto.
       clear - H1.
-      simpls.
+      simpls. 
       unfolds eval_opexp.
       destruct o; eauto.
       unfolds set_R.
       unfold is_indom.
       destruct (r s); eauto.
       unfolds RegMap.set.
+      unfolds get_R.
       destruct_rneq; eauto.
     }
     {
@@ -2543,8 +2566,20 @@ Proof.
 Qed.
 
 (*+ Lemmas for expression +*)
+Lemma get_R_merge_still :
+  forall R r rn l,
+    get_R R rn = Some l ->
+    get_R (merge R r) rn = Some l.
+Proof.
+  intros.
+  unfolds get_R.
+  unfold merge.
+  destruct (R rn); eauto.
+  tryfalse.
+Qed.
+
 Lemma eval_addrexp_merge_still :
-  forall M m aexp l,
+  forall M m aexp l, 
     eval_addrexp M aexp = Some l ->
     eval_addrexp (merge M m) aexp = Some l.
 Proof.
@@ -2554,23 +2589,22 @@ Proof.
     simpl in H.
     simpl.
     destruct o.
-    +
+    + 
       simpls.
-      unfold merge.
-      rewrite H; eauto.
+      erewrite get_R_merge_still; eauto.
     +
       simpls.
       destruct (($ (-4096)) <=ᵢ w && w <=ᵢ ($ 4095)); eauto.
   -
     simpls.
     destruct (M g) eqn:Heqe.
-    +
+    + 
       unfold merge in *.
       rewrite Heqe; eauto.
       destruct o.
       simpls.
-      destruct (M g0) eqn:Heqe1.
-      eauto.
+      unfolds get_R.
+      destruct (M g0) eqn:Heqe1; eauto.
       tryfalse.
       unfolds eval_opexp.
       destruct (($ (-4096)) <=ᵢ w0 && w0 <=ᵢ ($ 4095)); eauto.
@@ -2588,7 +2622,8 @@ Proof.
   -
     simpls.
     unfold merge in *.
-    rewrite H; eauto.
+    unfolds get_R.
+    destruct (M g); eauto; tryfalse.
   -
     simpls.
     destruct (($ (-4096)) <=ᵢ w && w <=ᵢ ($ 4095)); eauto.

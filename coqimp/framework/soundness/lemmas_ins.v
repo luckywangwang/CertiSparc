@@ -7,7 +7,7 @@ Open Scope Z_scope.
 Import ListNotations. 
  
 Set Asymmetric Patterns.
-   
+    
 Require Import state. 
 Require Import language.
 
@@ -477,6 +477,23 @@ Proof.
 Qed.
 
 (*+ Lemmas for expression +*)
+Lemma get_R_merge_still2 :
+  forall R r l v,
+    disjoint R r -> get_R r l = Some v ->
+    get_R (merge R r) l = Some v.
+Proof.
+  intros.
+  unfolds get_R.
+  unfold merge.
+  destruct (R l) eqn:Heqe; eauto; tryfalse.
+  destruct (r l) eqn:Heqe1; eauto; tryfalse.
+  clear - H Heqe Heqe1.
+  unfold disjoint in *.
+  specialize (H l).
+  rewrite Heqe in H; eauto.
+  rewrite Heqe1 in H; tryfalse.
+Qed.
+
 Lemma eval_opexp_merge_still2 :
   forall R r oexp l,
     eval_opexp r oexp = Some l -> disjoint R r ->
@@ -485,8 +502,8 @@ Proof.
   intros.
   destruct oexp.
   {
-    simpls. 
-    eapply get_vl_merge_still2; eauto.
+    simpls.
+    eapply get_R_merge_still2; eauto.
   }
   {
     simpls.
@@ -919,7 +936,7 @@ Proof.
     }
   }
 Qed.
-
+ 
 Lemma rn_st_v_eval_reg_v :
   forall M R F D rn w p,
     (M, (R, F), D) |= rn |=> w ** p ->
@@ -2692,7 +2709,6 @@ Proof.
     exists (m, (r, f), d). 
     simpl.
     repeat (split; eauto).
-    Search MemMap.set.
     eapply disj_indom_memset_still; eauto.
 
   - (* nop *)
@@ -2948,7 +2964,7 @@ Proof.
     repeat (split; simpl; eauto).
     eapply NormalIns; eauto.
     eapply Nop_step; eauto.
- 
+  
   - (* add *)
     inversion H0; subst.
     inversion H8; subst.
@@ -2965,7 +2981,7 @@ Proof.
     repeat (split; simpl; eauto).
     eapply NormalIns; eauto.
     eapply Add_step; eauto.
-    eapply get_vl_merge_still; eauto.
+    eapply get_R_merge_still; eauto.
     eapply eval_opexp_merge_still; eauto.
     eapply indom_merge_still; eauto.
     rewrite indom_setR_merge_eq1; eauto.
@@ -2986,7 +3002,7 @@ Proof.
     repeat (split; simpl; eauto).
     eapply NormalIns; eauto.
     eapply Sub_step; eauto.
-    eapply get_vl_merge_still; eauto.
+    eapply get_R_merge_still; eauto.
     eapply eval_opexp_merge_still; eauto.
     eapply indom_merge_still; eauto.
     rewrite indom_setR_merge_eq1; eauto.
@@ -3011,7 +3027,7 @@ Proof.
     repeat (split; simpl; eauto).
     eapply NormalIns; eauto.
     eapply Subcc_step; try eapply indom_merge_still; eauto.
-    eapply get_vl_merge_still; eauto.
+    eapply get_R_merge_still; eauto.
     eapply eval_opexp_merge_still; eauto.
     simpl. 
     erewrite indom_setR_merge_eq1; eauto.
@@ -3037,7 +3053,7 @@ Proof.
     repeat (split; simpl; eauto).
     eapply NormalIns; eauto.
     eapply And_step; eauto.
-    eapply get_vl_merge_still; eauto.
+    eapply get_R_merge_still; eauto.
     eapply eval_opexp_merge_still; eauto.
     eapply indom_merge_still; eauto.
     rewrite indom_setR_merge_eq1; eauto.
@@ -3062,7 +3078,7 @@ Proof.
     repeat (split; simpl; eauto).
     eapply NormalIns; eauto.
     eapply Andcc_step; try eapply indom_merge_still; eauto.
-    eapply get_vl_merge_still; eauto.
+    eapply get_R_merge_still; eauto.
     eapply eval_opexp_merge_still; eauto.
     simpl.
     erewrite indom_setR_merge_eq1; eauto.
@@ -3088,7 +3104,7 @@ Proof.
     repeat (split; simpl; eauto).
     eapply NormalIns; eauto.
     eapply Or_step; eauto.
-    eapply get_vl_merge_still; eauto.
+    eapply get_R_merge_still; eauto.
     eapply eval_opexp_merge_still; eauto.
     eapply indom_merge_still; eauto.
     rewrite indom_setR_merge_eq1; eauto.
@@ -3110,7 +3126,7 @@ Proof.
       ).
     exists (m0, (r1, fml :: fmi :: F'), d0).  
     repeat (split; simpl; eauto).
-    eapply SSave; try eapply get_vl_merge_still; eauto.
+    eapply SSave; try eapply get_R_merge_still; eauto.
     eapply fetch_disj_merge_still1; eauto.
     eapply indom_merge_still; eauto.
     eapply eval_opexp_merge_still; eauto.
@@ -3120,7 +3136,9 @@ Proof.
     erewrite fetch_some_set_win_merge_eq; eauto.
     eapply indom_setwin_still; eauto.
     unfold indom.
-    eauto.
+    clear - H9.
+    unfolds get_R.
+    destruct (R cwp); eauto.
     eapply indom_setR_still; eauto.
     eapply indom_setwin_still; eauto.
     eapply dlyfrmfree_changeFrm_stable; eauto.
@@ -3142,7 +3160,7 @@ Proof.
       ).
     exists (m0, (r1, F' ++ fmo :: fml :: nil), d0).
     repeat (split; simpl; eauto).
-    eapply RRestore; try eapply get_vl_merge_still; eauto.
+    eapply RRestore; try eapply get_R_merge_still; eauto.
     eapply fetch_disj_merge_still1; eauto.
     eapply indom_merge_still; eauto.
     eapply eval_opexp_merge_still; eauto.
@@ -3151,7 +3169,10 @@ Proof.
     rewrite <- indom_setR_merge_eq1; eauto. 
     erewrite fetch_some_set_win_merge_eq; eauto.
     eapply indom_setwin_still; eauto.
-    unfold indom; eauto.
+    unfold indom.
+    clear - H9.
+    unfolds get_R.
+    destruct (R cwp); eauto.
     eapply indom_setR_still; eauto.
     eapply indom_setwin_still; eauto.
     eapply dlyfrmfree_changeFrm_stable; eauto.
@@ -3172,7 +3193,7 @@ Proof.
     repeat (split; simpl; eauto).
     eapply NormalIns.
     eapply Rd_step; eauto.
-    eapply get_vl_merge_still; eauto.
+    eapply get_R_merge_still; eauto.
     eapply indom_merge_still; eauto.
     rewrite indom_setR_merge_eq1; eauto.
 
@@ -3187,7 +3208,7 @@ Proof.
     exists (m0, (r1, f0), set_delay s0 v1 xor v2 d).
     repeat (split; simpl; eauto).
     eapply Wr; eauto.
-    eapply get_vl_merge_still; eauto.
+    eapply get_R_merge_still; eauto.
     eapply eval_opexp_merge_still; eauto.
     eapply indom_merge_still; eauto.
     eapply dlyfrmfree_notin_changeDly_still; eauto.
@@ -3205,7 +3226,7 @@ Proof.
     repeat (split; simpl; eauto).
     eapply NormalIns.
     eapply GetCwp_step; eauto.
-    eapply get_vl_merge_still; eauto.
+    eapply get_R_merge_still; eauto.
     eapply indom_merge_still; eauto.
     rewrite indom_setR_merge_eq1; eauto.
 Qed.
@@ -3267,13 +3288,10 @@ Proof.
     rewrite indom_setR_merge_eq1; eauto.
   - (** retl *)
     do 2 eexists.
-    split.
+    split. 
     econstructor; eauto.
     eapply Retl; eauto.
-    clear - H23.
-    unfold merge.
-    rewrite H23; eauto.
-    split; eauto.
+    eapply get_R_merge_still; eauto.
     simpl.
     repeat (split; eauto).
   - (** be-true *)
@@ -3282,9 +3300,7 @@ Proof.
     econstructor; eauto.
     eapply Be_true; eauto.
     eapply eval_addrexp_merge_still; eauto.
-    unfold merge.
-    rewrite H24; eauto.
-    split; eauto.
+    eapply get_R_merge_still; eauto.
     simpls.
     repeat (split; eauto).
   - (** be-false *)
@@ -3293,8 +3309,7 @@ Proof.
     econstructor; eauto.
     eapply Be_false; eauto.
     eapply eval_addrexp_merge_still; eauto.
-    unfold merge.
-    rewrite H24; eauto.
+    eapply get_R_merge_still; eauto.
     split; eauto.
     simpls.
     repeat (split; eauto).
@@ -3304,8 +3319,7 @@ Proof.
     econstructor; eauto.
     eapply Bne_true; eauto.
     eapply eval_addrexp_merge_still; eauto.
-    unfold merge.
-    rewrite H24; eauto.
+    eapply get_R_merge_still; eauto.
     split; eauto.
     simpls.
     repeat (split; eauto).
@@ -3315,8 +3329,7 @@ Proof.
     econstructor; eauto.
     eapply Bne_false; eauto.
     eapply eval_addrexp_merge_still; eauto.
-    unfold merge.
-    rewrite H24; eauto.
+    eapply get_R_merge_still; eauto.
     split; eauto.
     simpls.
     repeat (split; eauto).

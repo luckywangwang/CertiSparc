@@ -208,7 +208,7 @@ Proof.
     simpljoin1; eauto.
     split; eauto.
 
-  - (** be *)
+  - (** be *) 
     inversion H; subst.
     renames l to pc, l0 to npc.
     inversion H0; get_ins_diff_false.
@@ -231,13 +231,17 @@ Proof.
     inversion H2; subst.
     inversion H19; get_ins_diff_false.
     simpl in H3.
+    rewrite get_R_rn_neq_r0 in H3; eauto.
+    rewrite get_R_rn_neq_r0 in H27; eauto.
     eapply regz_exe_delay_stable in H3; eauto.
     rewrite H27 in H3.
     inversion H3; subst.
     tryfalse.
+    intro; tryfalse.
+    intro; tryfalse.
     inversion Hp; subst.
     inversion H24; get_ins_diff_false.
-    eapply IHI; eauto.
+    eapply IHI; eauto. 
     clear - H12.
     rewrite Int.add_assoc.
     eauto.
@@ -265,11 +269,15 @@ Proof.
     eapply H6 in H7.
     inversion H2; subst.
     inversion H19; get_ins_diff_false.
-    simpl in H3.
+    simpl in H3. 
+    rewrite get_R_rn_neq_r0 in H3; eauto.
+    rewrite get_R_rn_neq_r0 in H28; eauto.
     eapply regz_exe_delay_stable in H3; eauto.
     rewrite H28 in H3.
     inversion H3; subst.
     tryfalse.
+    intro; tryfalse.
+    intro; tryfalse.
     inversion Hp; subst.
     inversion H25; get_ins_diff_false.
     eapply IHI; eauto.
@@ -635,12 +643,11 @@ Proof.
       eapply program_step_deterministic in H8; eauto.
       simpljoin1.
       eapply program_step_deterministic in H5; eauto.
-      simpljoin1.
+      simpljoin1. 
       exists x5.
       split; eauto.
       simpl.
-      unfold merge.
-      rewrite H; eauto.
+      eapply get_R_merge_still; eauto.
       split.
       {
         intros.
@@ -660,14 +667,18 @@ Proof.
         lets Hfalse : H5.
         eapply H7 in H5.
         eapply IHI; eauto.
-        inversion H18; subst. 
+        inversion H18; subst.  
         inversion H33; get_ins_diff_false.
+        rewrite get_R_rn_neq_r0 in H; eauto.
+        rewrite get_R_rn_neq_r0 in H36; eauto.
         eapply regz_exe_delay_stable2 in H36; eauto.
-        clear - H H36 H37.
+        clear - H H36 H37. 
         unfold merge in *.
         rewrite H in H36; eauto.
         inversion H36; subst.
-        tryfalse. 
+        tryfalse.
+        intro; tryfalse.
+        intro; tryfalse.
         inversion H19; subst. 
         inversion H40; get_ins_diff_false.
         clear - H15.

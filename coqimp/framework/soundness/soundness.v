@@ -93,7 +93,7 @@ Inductive safety_insSeq : CodeHeap -> State -> Label -> Label -> asrt -> funspec
         P__ C (S, pc, npc) (S1, pc1, npc1) ->
         P__ C (S1, pc1, npc1) (S2, pc2, npc2) ->
         (
-          exists v, getregs S z = Some v /\
+          exists v, get_R (getregs S) z = Some v /\
           (
             v <> ($ 0) ->
             (
@@ -122,7 +122,7 @@ Inductive safety_insSeq : CodeHeap -> State -> Label -> Label -> asrt -> funspec
         P__ C (S, pc, npc) (S1, pc1, npc1) ->
         P__ C (S1, pc1, npc1) (S2, pc2, npc2) ->
         (
-          exists v, getregs S z = Some v /\
+          exists v, get_R (getregs S) z = Some v /\
           (
             v = ($ 0) ->
             (

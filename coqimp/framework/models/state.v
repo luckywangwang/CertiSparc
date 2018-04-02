@@ -183,9 +183,18 @@ Notation "a 'xor' b" := (Int.xor a b)(at level 1) : code_scope.
 
 Open Scope code_scope.
 
+Definition get_R (R : RegFile) (rn : RegName) :=
+  match (R rn) with
+  | Some w => match rn with
+             | Rr r0 => Some ($ 0)
+             | _ => Some w
+             end
+  | None => None
+  end.
+
 Definition eval_opexp (R : RegFile) (a : OpExp) :=
   match a with
-  | Or r => R r
+  | Or r => get_R R r
   | Ow w =>
     if andb (($-4096) <=ᵢ w) (w <=ᵢ ($4095)) then
       Some w
@@ -217,7 +226,8 @@ Definition set_R (R : RegFile) (rn : RegName) (w : Word) :=
 (* fetch *)
 Definition fetch_frame (R : RegFile) (rr0 rr1 rr2 rr3 rr4 rr5 rr6 rr7 : GenReg) :
   option Frame :=
-  match (R rr0), (R rr1), (R rr2), (R rr3), (R rr4), (R rr5), (R rr6), (R rr7) with
+  match (R rr0), (R rr1), (R rr2),
+        (R rr3), (R rr4), (R rr5), (R rr6), (R rr7) with
   | Some w0, Some w1, Some w2, Some w3, Some w4, Some w5, Some w6, Some w7 =>
     Some ([[w0, w1, w2, w3, w4, w5, w6, w7]])
   | _, _, _, _, _, _, _, _ => None
