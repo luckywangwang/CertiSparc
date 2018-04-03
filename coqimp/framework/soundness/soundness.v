@@ -82,8 +82,8 @@ Inductive safety_insSeq : CodeHeap -> State -> Label -> Label -> asrt -> funspec
     ) ->
     safety_insSeq C S pc npc q Spec
 
-| be_seq : forall C S pc npc q aexp Spec,
-    C pc = Some (cbe aexp) ->
+| be_seq : forall C S pc npc q f Spec,
+    C pc = Some (cbe f) ->
     (
       exists S1 S2 pc1 npc1 pc2 npc2,
         P__ C (S, pc, npc) (S1, pc1, npc1) /\
@@ -111,8 +111,8 @@ Inductive safety_insSeq : CodeHeap -> State -> Label -> Label -> asrt -> funspec
     ) ->
     safety_insSeq C S pc npc q Spec
 
-| bne_seq : forall C S pc npc q aexp Spec,
-    C pc = Some (cbne aexp) ->
+| bne_seq : forall C S pc npc q f Spec,
+    C pc = Some (cbne f) ->
     (
       exists S1 S2 pc1 npc1 pc2 npc2,
         P__ C (S, pc, npc) (S1, pc1, npc1) /\
@@ -200,8 +200,8 @@ Inductive safety : nat -> CodeHeap -> State -> Label -> Label -> asrt -> nat -> 
         )
     ) ->
     (
-      forall aexp,
-        C pc = Some (cbe aexp) ->
+      forall f,
+        C pc = Some (cbe f) ->
         (
           (
             exists S1 S2 pc1 npc1 pc2 npc2,
@@ -216,8 +216,8 @@ Inductive safety : nat -> CodeHeap -> State -> Label -> Label -> asrt -> nat -> 
         )
     ) ->
     (
-      forall aexp,
-        C pc = Some (cbne aexp) ->
+      forall f,
+        C pc = Some (cbne f) ->
         (
           (
             exists S1 S2 pc1 npc1 pc2 npc2,

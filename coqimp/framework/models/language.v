@@ -37,8 +37,8 @@ Inductive command: Type :=
 | ccall : Label -> command
 | cjumpl : AddrExp -> GenReg -> command
 | cretl : command
-| cbe : AddrExp -> command
-| cbne : AddrExp -> command.
+| cbe : Label -> command
+| cbne : Label -> command.
 
 (* Instruction Sequence *)
 Inductive InsSeq : Type :=
@@ -49,8 +49,8 @@ Inductive InsSeq : Type :=
        Label -> AddrExp -> GenReg -> InsSeq
 | consCall : Label -> Label -> Label -> ins -> InsSeq -> InsSeq
 | consRetl : Label -> Label -> ins -> InsSeq
-| consBe : Label -> AddrExp -> Label -> ins -> InsSeq -> InsSeq
-| consBne : Label -> AddrExp -> Label -> ins -> InsSeq -> InsSeq.
+| consBe : Label -> Label -> Label -> ins -> InsSeq -> InsSeq
+| consBne : Label -> Label -> Label -> ins -> InsSeq -> InsSeq.
 
 Notation "f1 # i ;; I" := (consSeq f1 i I) (at level 90, right associativity,
                                               format
@@ -102,11 +102,6 @@ Definition code3 : InsSeq :=
 Definition code4 : InsSeq :=
   f1 c> call f3 ;; f2 c> nop ;; f1 r> retl ;; f2 r> nop.
 
-Print code.
-
-Definition code4' : InsSeq :=
-  f1 e> be (Ao (Or r1)) ;; f2 e> nop ;; f1 r> retl ;; f2 r> nop.
-
 Open Scope code_scope.
 
 (*+ Code Heap +*)
@@ -139,15 +134,15 @@ Inductive LookupC : CodeHeap -> Label -> Label -> InsSeq -> Prop :=
       LookupC C (f2 +ᵢ ($ 4)) (f2 +ᵢ ($ 8)) I ->
       LookupC C f1 f2 (f1 c> call f ;; f2 c> i ;; I)
 | lookupBe :
-    forall C f1 f2 i I aexp,
-      C f1 = Some (cbe aexp) -> C f2 = Some (cntrans i) ->
+    forall C f1 f2 i I f,
+      C f1 = Some (cbe f) -> C f2 = Some (cntrans i) ->
       LookupC C (f2 +ᵢ ($ 4)) (f2 +ᵢ ($ 8)) I ->
-      LookupC C f1 f2 (f1 e> be aexp ;; f2 e> i ;; I)
+      LookupC C f1 f2 (f1 e> be f ;; f2 e> i ;; I)
 | lookupBne :
-    forall C f1 f2 i I aexp,
-      C f1 = Some (cbne aexp) -> C f2 = Some (cntrans i) ->
+    forall C f1 f2 i I f,
+      C f1 = Some (cbne f) -> C f2 = Some (cntrans i) ->
       LookupC C (f2 +ᵢ ($ 4)) (f2 +ᵢ ($ 8)) I ->
-      LookupC C f1 f2 (f1 n> bne aexp ;; f2 n> i ;; I).
+      LookupC C f1 f2 (f1 n> bne f ;; f2 n> i ;; I).
 
 (*+ Operational Semantics +*)
 
@@ -319,27 +314,23 @@ Inductive H__ : CodeHeap -> State * Label * Label -> State * Label * Label -> Pr
       H__ C ((M, (R, F), D), pc, npc) ((M, (R, F), D), npc, f +ᵢ ($ 8))
 
 | Be_true :
-    forall C M (R : RegFile) F D pc npc f aexp v,
-      C pc = Some (cbe aexp) -> eval_addrexp R aexp = Some f ->
-      get_R R z = Some v -> v <> ($ 0) -> word_aligned f = true ->
+    forall C M (R : RegFile) F D pc npc f v,
+      C pc = Some (cbe f) -> get_R R z = Some v -> v <> ($ 0) ->
       H__ C ((M, (R, F), D), pc, npc) ((M, (R, F), D), npc, f)
 
 | Be_false :
-    forall C M (R : RegFile) F D pc npc f aexp,
-      C pc = Some (cbe aexp) -> eval_addrexp R aexp = Some f ->
-      get_R R z = Some ($ 0) -> word_aligned f = true ->
+    forall C M (R : RegFile) F D pc npc f,
+      C pc = Some (cbe f) -> get_R R z = Some ($ 0) ->
       H__ C ((M, (R, F), D), pc, npc) ((M, (R, F), D), npc, npc +ᵢ ($ 4))
 
 | Bne_true :
-    forall C M (R : RegFile) F D pc npc f aexp,
-      C pc = Some (cbne aexp) -> eval_addrexp R aexp = Some f ->
-      get_R R z = Some ($ 0) -> word_aligned f = true ->
+    forall C M (R : RegFile) F D pc npc f,
+      C pc = Some (cbne f) -> get_R R z = Some ($ 0) ->
       H__ C ((M, (R, F), D), pc, npc) ((M, (R, F), D), npc, f)
 
 | Bne_false :
-    forall C M (R : RegFile) F D pc npc f aexp v,
-      C pc = Some (cbne aexp) -> eval_addrexp R aexp = Some f ->
-      get_R R z = Some v -> v <> ($ 0) -> word_aligned f = true ->
+    forall C M (R : RegFile) F D pc npc f v,
+      C pc = Some (cbne f) -> get_R R z = Some v -> v <> ($ 0) ->
       H__ C ((M, (R, F), D), pc, npc) ((M, (R, F), D), npc, npc +ᵢ ($ 4)).
 
 Inductive P__ : CodeHeap -> State * Label * Label -> State * Label * Label -> Prop :=

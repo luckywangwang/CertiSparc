@@ -7,7 +7,7 @@ Open Scope Z_scope.
 Import ListNotations.
   
 Set Asymmetric Patterns. 
-      
+       
 Require Import state.    
 Require Import language. 
 
@@ -321,13 +321,13 @@ Proof.
         eapply wf_seq_frame_rule in H17; eauto.
         eapply wf_seq_conseq_rule in H17; eauto.
         unfold insSeq_sound in H17.
-        eapply H17 with (S := (merge m m0, (merge r0 r1, f1), d0)) in H10; eauto.
+        eapply H17 with (S := (merge m m0, (merge r0 r1, f2), d0)) in H10; eauto.
         eapply IHn; eauto.
         intros.
         eapply H3 in H18.
         eapply safety_Sn_safety_n; eauto.
         simpl.
-        exists (m, (r0, f1), d0) (m0, (r1, f1), d0).
+        exists (m, (r0, f2), d0) (m0, (r1, f2), d0).
         simpl.
         repeat (split; eauto).
       }
@@ -362,7 +362,7 @@ Proof.
         unfold insSeq_sound in H17.
         eapply H17; eauto.
         simpl.
-        exists (m, (r0, f1), d0) (m0, (r1, f1), d0).
+        exists (m, (r0, f2), d0) (m0, (r1, f2), d0).
         simpl.
         repeat (split; eauto).
         intros.
@@ -543,7 +543,7 @@ Proof.
         unfold insSeq_sound in H15.
         eapply H15 in H8; eauto.
         simpl.
-        exists (m, (r0, f0), d0) (m0, (r1, f0), d0).
+        exists (m, (r0, f1), d0) (m0, (r1, f1), d0).
         simpl.
         repeat (split; eauto).
       }
@@ -586,7 +586,7 @@ Proof.
         unfold insSeq_sound in H15.
         eapply H15 in H8; eauto.
         simpl.
-        exists (m, (r0, f0), d0) (m0, (r1, f0), d0).
+        exists (m, (r0, f1), d0) (m0, (r1, f1), d0).
         simpl.
         repeat (split; eauto).
       }

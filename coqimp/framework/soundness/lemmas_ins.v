@@ -3428,7 +3428,6 @@ Proof.
     split.
     econstructor; eauto.
     eapply Be_true; eauto.
-    eapply eval_addrexp_merge_still; eauto.
     eapply get_R_merge_still; eauto.
     simpls.
     repeat (split; eauto).
@@ -3437,7 +3436,6 @@ Proof.
     split.
     econstructor; eauto.
     eapply Be_false; eauto.
-    eapply eval_addrexp_merge_still; eauto.
     eapply get_R_merge_still; eauto.
     split; eauto.
     simpls.
@@ -3447,7 +3445,6 @@ Proof.
     split.
     econstructor; eauto.
     eapply Bne_true; eauto.
-    eapply eval_addrexp_merge_still; eauto.
     eapply get_R_merge_still; eauto.
     split; eauto.
     simpls.
@@ -3457,7 +3454,6 @@ Proof.
     split.
     econstructor; eauto.
     eapply Bne_false; eauto.
-    eapply eval_addrexp_merge_still; eauto.
     eapply get_R_merge_still; eauto.
     split; eauto.
     simpls.
@@ -3481,14 +3477,7 @@ Proof.
   -
     rewrite H19 in H23.
     inversion H23; eauto.
-  -
+  - 
     rewrite H19 in H21.
     inversion H21; subst; eauto.
-  -
-    rewrite H19 in H24.
-    inversion H24; tryfalse.
-    eauto.
-  -
-    rewrite H19 in H23.
-    inversion H23; subst; eauto.
 Qed.

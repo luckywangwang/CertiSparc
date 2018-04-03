@@ -130,15 +130,15 @@ Parameter OSTaskCur : Address.
 Parameter OSTaskNew : Address.
 
 (** Label *)
-Parameter Ta0_return : Address.
-Parameter Ta0_Window_OK : Address.
-Parameter Ta0_start_adjust_CWP : Address.
-Parameter Ta0_adjust_CWP : Address.
-Parameter Ta0_Task_Switch_NewContext : Address.
+Definition Ta0_return : Address := ($ 380).
+Definition Ta0_Window_OK : Address := ($ 164).
+Definition Ta0_start_adjust_CWP : Address := ($ 212).
+Definition Ta0_adjust_CWP : Address := ($ 228).
+Definition Ta0_Task_Switch_NewContext : Address := ($ 264).
 
 (** function *)
-Parameter reg_save : Address.
-Parameter reg_restore : Address.
+Definition reg_save : Address := ($ 400).
+Definition reg_restore : Address := ($ 492).
 
 (** Basic Code Block *)
 Definition os_int_ta0_handler : InsSeq :=
@@ -148,13 +148,13 @@ Definition os_int_ta0_handler : InsSeq :=
   ($ 12) # (ld (Ao (Or l4)) l4);;
   ($ 16) # (sett OSTRUE l5);;
   ($ 20) # (subcc l4 (Or l5) g0);;
-  ($ 24) n> bne (Ao (Ow Ta0_return));; ($ 28) n> nop;; 
+  ($ 24) n> bne Ta0_return;; ($ 28) n> nop;; 
   ($ 28) # (or l0 ('0) l4);;
   ($ 32) # (sett ($ 1) l5);;                                                  
   ($ 36) # (sll l5 (Or l4) l5);;
   ($ 40) # (rd Rwim l4);;
   ($ 44) # (andcc l4 (Or l5) g0);;
-  ($ 48) e> be (Ao (Ow Ta0_Window_OK));; ($ 52) e> nop;;
+  ($ 48) e> be Ta0_Window_OK;; ($ 52) e> nop;;
   ($ 56) # (save g0 (Or g0) g0);;
   ($ 60) # (st l0 (Aro sp ('0)));;
   ($ 64) # (st l1 (Aro sp ('4)));;
@@ -189,7 +189,7 @@ Definition os_int_ta0_handler : InsSeq :=
   ($ 180) # (sett OSTaskCur l4);;
   ($ 184) # (ld (Ao (Or l4)) l4);;
   ($ 188) # (subcc l4 ('0) g0);;
-  ($ 192) e> be (Ao (Ow Ta0_start_adjust_CWP));; ($ 196) e> nop;;
+  ($ 192) e> be Ta0_start_adjust_CWP;; ($ 196) e> nop;;
   ($ 200) # (add l4 (Ow OS_CONTEXT_OFFSET) l5);;
   ($ 204) c> call reg_save;; ($ 208) c> nop;;
   ($ 212) # getcwp g4;;
@@ -200,7 +200,7 @@ Definition os_int_ta0_handler : InsSeq :=
   ($ 232) # (srl g4 (Ow (OS_WINDOWS -ᵢ ($ 1))) g4);;
   ($ 236) # (or g4 (Or g5) g4);;
   ($ 240) # (andcc g4 (Or g7) g0);;
-  ($ 244) n> bne (Ao (Ow Ta0_Task_Switch_NewContext));; ($ 248) n> nop;;
+  ($ 244) n> bne Ta0_Task_Switch_NewContext;; ($ 248) n> nop;;
   ($ 252) # (restore g0 (Or g0) g0);;
   consJ1 ($ 256) (Ao (Ow Ta0_adjust_CWP)) g0 ($ 260) nop.
 
