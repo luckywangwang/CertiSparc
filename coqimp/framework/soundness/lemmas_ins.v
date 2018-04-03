@@ -2598,6 +2598,32 @@ Proof.
     inversion H23; subst.
     eauto.
 
+  - (* sll *)
+    inversion H; inversion H0; subst.
+    inversion H6; subst.
+    inversion H3; inversion H7; subst.
+    rewrite H10 in H21.
+    inversion H21; subst.
+    rewrite H12 in H23.
+    inversion H23; subst.
+    eauto.
+
+  - (* srl *)
+    inversion H; inversion H0; subst.
+    inversion H6; subst.
+    inversion H3; inversion H7; subst.
+    rewrite H10 in H21.
+    inversion H21; subst.
+    rewrite H12 in H23.
+    inversion H23; subst.
+    eauto.
+
+  - (* set *)
+    inversion H; inversion H0; subst.
+    inversion H6; subst.
+    inversion H3; inversion H7; subst.
+    eauto.
+
   - (* save *)  
     inversion H; inversion H0; subst.
     inversion H3.
@@ -2811,6 +2837,48 @@ Proof.
     exists (merge M' m, (merge (set_R R g0 v1 |ᵢ v2) r, f), d).
     exists (m, (r, f), d).
     simpl. 
+    repeat (split; eauto).
+    eapply disjoint_setR_still1; eauto.
+
+  - (* sll *)
+    inversion H0; subst.
+    inversion H3; subst.
+    destruct s2.
+    destruct p.
+    destruct r.
+    simpl in H.
+    simpljoin1.
+    exists (merge M' m, (merge (set_R R g0 v1 <<ᵢ (get_range 0 4 v2)) r, f), d).
+    exists (m, (r, f), d).
+    simpl.
+    repeat (split; eauto).
+    eapply disjoint_setR_still1; eauto.
+
+  - (* srl *)
+    inversion H0; subst.
+    inversion H3; subst.
+    destruct s2.
+    destruct p.
+    destruct r.
+    simpl in H.
+    simpljoin1.
+    exists (merge M' m, (merge (set_R R g0 v1 >>ᵢ (get_range 0 4 v2)) r, f), d).
+    exists (m, (r, f), d).
+    simpl.
+    repeat (split; eauto).
+    eapply disjoint_setR_still1; eauto.
+
+  - (* set *)
+    inversion H0; subst.
+    inversion H3; subst.
+    destruct s2.
+    destruct p.
+    destruct r.
+    simpl in H.
+    simpljoin1.
+    exists (merge M' m, (merge (set_R R g w) r, f), d).
+    exists (m, (r, f), d).
+    simpl.
     repeat (split; eauto).
     eapply disjoint_setR_still1; eauto.
 
@@ -3109,6 +3177,67 @@ Proof.
     eapply indom_merge_still; eauto.
     rewrite indom_setR_merge_eq1; eauto.
 
+  - (* sll *)
+    inversion H0; subst.
+    inversion H8; subst.
+    destruct s2, p, r0.
+    simpl in H.
+    simpljoin1.
+    destruct s2', p, r1.
+    simpl in H3. 
+    simpljoin1.
+    simpls.
+    subst.
+    exists (merge M' m0, (merge (set_R R g0 v1 <<ᵢ (get_range 0 4 v2)) r1, f0), d0).
+    exists (m0, (r1, f0), d0).
+    repeat (split; simpl; eauto).
+    eapply NormalIns; eauto.
+    eapply Sll_step; eauto.
+    eapply get_R_merge_still; eauto.
+    eapply eval_opexp_merge_still; eauto.
+    eapply indom_merge_still; eauto.
+    rewrite indom_setR_merge_eq1; eauto.
+
+  - (* srl *)
+    inversion H0; subst.
+    inversion H8; subst.
+    destruct s2, p, r0.
+    simpl in H.
+    simpljoin1.
+    destruct s2', p, r1.
+    simpl in H3. 
+    simpljoin1.
+    simpls.
+    subst.
+    exists (merge M' m0, (merge (set_R R g0 v1 >>ᵢ (get_range 0 4 v2)) r1, f0), d0).
+    exists (m0, (r1, f0), d0).
+    repeat (split; simpl; eauto).
+    eapply NormalIns; eauto.
+    eapply Srl_step; eauto.
+    eapply get_R_merge_still; eauto.
+    eapply eval_opexp_merge_still; eauto.
+    eapply indom_merge_still; eauto.
+    rewrite indom_setR_merge_eq1; eauto.
+
+  - (* set *)
+    inversion H0; subst.
+    inversion H8; subst.
+    destruct s2, p, r0.
+    simpl in H.
+    simpljoin1.
+    destruct s2', p, r1.
+    simpl in H3. 
+    simpljoin1.
+    simpls.
+    subst.
+    exists (merge M' m0, (merge (set_R R g w) r1, f0), d0).
+    exists (m0, (r1, f0), d0).
+    repeat (split; simpl; eauto).
+    eapply NormalIns; eauto.
+    eapply Set_step; eauto.
+    eapply indom_merge_still; eauto.
+    rewrite indom_setR_merge_eq1; eauto.
+    
   - (* Save *)
     inversion H0; subst.
     inversion H8; subst.

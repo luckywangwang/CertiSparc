@@ -246,10 +246,24 @@ Inductive wf_ins : asrt -> ins -> asrt -> Prop :=
     wf_ins p (andcc r1 oexp r2)
            (r2 |=> v ** n |=> (get_range 31 31 v) ** z |=> (iszero v) ** q)
 
+| sll_rule : forall p q oexp (rs rd : GenReg) v1 v2 v,
+    p ==> ((Or rs) ==ₑ v1 //\\ oexp ==ₑ v2) ->
+    p ==> rd |=> v ** q ->
+    wf_ins p (sll rs oexp rd) (rd |=> (v1 <<ᵢ (get_range 0 4 v2)) ** q)
+
+| srl_rule : forall p q oexp (rs rd : GenReg) v1 v2 v,
+    p ==> ((Or rs) ==ₑ v1 //\\ oexp ==ₑ v2) ->
+    p ==> rd |=> v ** q ->
+    wf_ins p (srl rs oexp rd) (rd |=> (v1 >>ᵢ (get_range 0 4 v2)) ** q)
+
 | or_rule : forall p q oexp (rs rd : GenReg) v1 v2 v,
     p ==> ((Or rs) ==ₑ v1 //\\ oexp ==ₑ v2) ->
     p ==> rd |=> v ** q ->
     wf_ins p (or rs oexp rd) (rd |=> (v1 |ᵢ v2) ** q)
+
+| set_rule : forall p q (rd : GenReg) w v,
+    p ==> rd |=> v ** q ->
+    wf_ins p (sett w rd) (rd |=> w ** q)
 
 | nop_rule : forall p q,
     p ==> q ->

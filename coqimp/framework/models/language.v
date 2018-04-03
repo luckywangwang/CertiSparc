@@ -22,6 +22,9 @@ Inductive ins: Type :=
 | and : GenReg -> OpExp -> GenReg -> ins
 | andcc : GenReg -> OpExp -> GenReg -> ins
 | or : GenReg -> OpExp -> GenReg -> ins
+| sll : GenReg -> OpExp -> GenReg -> ins
+| srl : GenReg -> OpExp -> GenReg -> ins
+| sett : Word -> GenReg -> ins
 | save : GenReg -> OpExp -> GenReg -> ins
 | restore : GenReg -> OpExp -> GenReg -> ins
 | rd : SpReg -> GenReg -> ins
@@ -210,6 +213,20 @@ Inductive R__ : Memory * RegFile -> ins -> Memory * RegFile -> Prop :=
     get_R R rs = Some v1 -> eval_opexp R oexp = Some v2 ->
     indom rd R -> set_R R rd (v1 |ᵢ v2) = R' ->
     R__ (M, R) (or rs oexp rd) (M, R')
+
+| Sll_step : forall M (R R' : RegFile) oexp (rs rd : GenReg) v1 v2,
+    get_R R rs = Some v1 -> eval_opexp R oexp = Some v2 ->
+    indom rd R -> set_R R rd (v1 <<ᵢ (get_range 0 4 v2)) = R' ->
+    R__ (M, R) (sll rs oexp rd) (M, R')
+
+| Srl_step : forall M (R R' : RegFile) oexp (rs rd : GenReg) v1 v2,
+    get_R R rs = Some v1 -> eval_opexp R oexp = Some v2 ->
+    indom rd R -> set_R R rd (v1 >>ᵢ (get_range 0 4 v2)) = R' ->
+    R__ (M, R) (srl rs oexp rd) (M, R')
+
+| Set_step : forall M (R R' : RegFile) (rd : GenReg) w,
+    indom rd R -> set_R R rd w = R' ->
+    R__ (M, R) (sett w rd) (M, R')
 
 | Rd_step : forall M (R R' : RegFile) (rsp : SpReg) (ri : GenReg) v,
     get_R R rsp = Some v -> indom ri R -> set_R R ri v = R' ->

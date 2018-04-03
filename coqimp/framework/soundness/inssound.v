@@ -1,5 +1,5 @@
 Require Import Coqlib.  
-Require Import Maps.  
+Require Import Maps.   
 Require Import LibTactics.
 
 Require Import Integers. 
@@ -1632,6 +1632,163 @@ Proof.
   }
 Qed.
 
+Lemma sll_rule_sound :
+  forall p (rs rd : GenReg) v v1 v2 oexp q,
+    p ==> Or rs ==ₑ v1 //\\ oexp ==ₑ v2 ->
+    p ==> rd |=> v ** q ->
+    ins_sound p (rd |=> v1 <<ᵢ (get_range 0 4 v2) ** q) (sll rs oexp rd).
+Proof.
+  unfold ins_sound.
+  intros.
+  lets Hexp : H1.
+  lets Hrd : H1.
+  eapply H in Hexp.
+  eapply H0 in Hrd.
+  sep_star_split_tac.
+  simpl in H6.
+  simpljoin1.
+  exists (m ⊎ m0, (set_R r rd (v1 <<ᵢ (get_range 0 4 v2)) ⊎ r0, f0), d0).
+  repeat (split; eauto).
+  eapply NormalIns; eauto.
+  eapply Sll_step; eauto.
+  instantiate (1 := v1).
+  clear - Hexp.
+  simpl in Hexp.
+  simpljoin1; eauto.
+  instantiate (1 := v2).
+  clear - Hexp.
+  simpl in Hexp.
+  simpljoin1; eauto.
+  clear - H4.
+  simpls.
+  unfolds regSt.
+  simpls.
+  simpljoin1.
+  eapply indom_merge_still; eauto.
+  eapply regset_l_l_indom; eauto.
+  rewrite indom_setR_merge_eq1; eauto.
+  clear - H4.
+  simpls.
+  unfolds regSt.
+  simpls.
+  simpljoin1.
+  eapply regset_l_l_indom; eauto.
+  simpl.
+  exists (m, (set_R r rd v1 <<ᵢ (get_range 0 4 v2), f0), d0).
+  exists (m0, (r0, f0), d0).
+  simpls.
+  repeat (split; eauto).
+  eapply disjoint_setR_still1; eauto.
+  simpl.
+  clear - H4.
+  unfolds regSt.
+  simpls.
+  simpljoin1.
+  rewrite indom_setR_eq_RegMap_set; eauto.
+  rewrite regset_twice; eauto.
+  eapply regset_l_l_indom; eauto.
+  simpl; eauto.
+  clear - H4.
+  unfolds regSt.
+  simpls; eauto.
+  simpljoin1; eauto.
+Qed.
+
+Lemma srl_rule_sound :
+  forall p (rs rd : GenReg) v v1 v2 oexp q,
+    p ==> Or rs ==ₑ v1 //\\ oexp ==ₑ v2 ->
+    p ==> rd |=> v ** q ->
+    ins_sound p (rd |=> v1 >>ᵢ (get_range 0 4 v2) ** q) (srl rs oexp rd).
+Proof.
+  unfold ins_sound.
+  intros.
+  lets Hexp : H1.
+  lets Hrd : H1.
+  eapply H in Hexp.
+  eapply H0 in Hrd.
+  sep_star_split_tac.
+  simpl in H6.
+  simpljoin1.
+  exists (m ⊎ m0, (set_R r rd (v1 >>ᵢ (get_range 0 4 v2)) ⊎ r0, f0), d0).
+  repeat (split; eauto).
+  eapply NormalIns; eauto.
+  eapply Srl_step; eauto.
+  instantiate (1 := v1).
+  clear - Hexp.
+  simpl in Hexp.
+  simpljoin1; eauto.
+  instantiate (1 := v2).
+  clear - Hexp.
+  simpl in Hexp.
+  simpljoin1; eauto.
+  clear - H4.
+  simpls.
+  unfolds regSt.
+  simpls.
+  simpljoin1.
+  eapply indom_merge_still; eauto.
+  eapply regset_l_l_indom; eauto.
+  rewrite indom_setR_merge_eq1; eauto.
+  clear - H4.
+  simpls.
+  unfolds regSt.
+  simpls.
+  simpljoin1.
+  eapply regset_l_l_indom; eauto.
+  simpl.
+  exists (m, (set_R r rd v1 >>ᵢ (get_range 0 4 v2), f0), d0).
+  exists (m0, (r0, f0), d0).
+  simpls.
+  repeat (split; eauto).
+  eapply disjoint_setR_still1; eauto.
+  simpl.
+  clear - H4.
+  unfolds regSt.
+  simpls.
+  simpljoin1.
+  rewrite indom_setR_eq_RegMap_set; eauto.
+  rewrite regset_twice; eauto.
+  eapply regset_l_l_indom; eauto.
+  simpl; eauto.
+  clear - H4.
+  unfolds regSt.
+  simpls; eauto.
+  simpljoin1; eauto.
+Qed.
+
+Lemma set_rule_sound :
+  forall p q (rd : GenReg) v w,
+    p ==> rd |=> v ** q ->
+    ins_sound p (rd |=> w ** q) (sett w rd).
+Proof.
+  unfold ins_sound.
+  intros.
+  eapply H in H0.
+  sep_star_split_tac.
+  simpls.
+  simpljoin1.
+  unfolds regSt.
+  simpls.
+  simpljoin1.
+  exists (empM ⊎ m0,
+     (set_R (RegMap.set rd (Some v) empR) rd w ⊎ r0, f0), d0).
+  repeat (split; eauto).
+  eapply NormalIns; eauto.
+  eapply Set_step; eauto.
+  eapply indom_merge_still; eauto.
+  eapply regset_l_l_indom; eauto.
+  rewrite indom_setR_merge_eq1; eauto.
+  eapply regset_l_l_indom; eauto.
+  exists (empM, (set_R (RegMap.set rd (Some v) empR) rd w, f0), d0).
+  exists (m0, (r0, f0), d0).
+  simpls.
+  repeat (split; eauto).
+  eapply disjoint_setR_still1; eauto.
+  rewrite indom_setR_eq_RegMap_set; eauto.
+  rewrite regset_twice; eauto.
+  eapply regset_l_l_indom; eauto.
+Qed.
+
 Lemma conj_ins_sound : forall p1 p2 q1 q2 i,
     ins_sound p1 q1 i -> ins_sound p2 q2 i -> ins_sound (p1 //\\ p2) (q1 //\\ q2) i.
 Proof.
@@ -1746,8 +1903,17 @@ Proof.
   - (* andcc *)
     eapply andcc_rule_sound; eauto.
 
+  - (* sll *)
+    eapply sll_rule_sound; eauto.
+
+  - (* srl *)
+    eapply srl_rule_sound; eauto.
+      
   - (* or *)
     eapply or_rule_sound; eauto.
+
+  - (* set *)
+    eapply set_rule_sound; eauto.
 
   - (* nop *)
     eapply nop_rule_sound; eauto.
