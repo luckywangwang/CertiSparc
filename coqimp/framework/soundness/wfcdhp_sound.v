@@ -241,6 +241,12 @@ Proof.
       eapply H13 in H7; eauto.
       simpls.
       simpljoin1.
+      rewrite get_R_rn_neq_r0; eauto.
+      2 : intro; tryfalse.
+      rewrite get_R_rn_neq_r0 in H3; eauto.
+      2 : intro; tryfalse.
+      rewrite get_R_rn_neq_r0 in H4; eauto.
+      2 : intro; tryfalse.
       unfold merge.
       rewrite H4; eauto.
       intros.
@@ -446,6 +452,12 @@ Proof.
       eapply H12 in H; eauto.
       simpls.
       simpljoin1.
+      rewrite get_R_rn_neq_r0; eauto.
+      2 : intro; tryfalse.
+      rewrite get_R_rn_neq_r0 in H; eauto.
+      2 : intro; tryfalse.
+      rewrite get_R_rn_neq_r0 in H5; eauto.
+      2 : intro; tryfalse.
       unfold merge. 
       rewrite H5; eauto. 
 

@@ -5,7 +5,7 @@ Require Import LibTactics.
 Require Import Integers.  
 Open Scope Z_scope.    
 Import ListNotations.
-  
+   
 Set Asymmetric Patterns.  
        
 Require Import state.    
@@ -588,8 +588,7 @@ Proof.
       exists x5.
       split; eauto.
       simpl.
-      unfold merge.
-      rewrite H8; eauto.
+      eapply get_R_merge_still; eauto.
       simpl; eauto.
       simpl; eauto.
     }
@@ -1277,9 +1276,11 @@ Proof.
   split; eauto.
   econstructor; eauto.
   eapply Retl; eauto.
-  simpls.
+  simpls. 
   clear - H5 H8.
-  eapply exe_delay_general_reg_stable; eauto.
+  unfolds get_R.
+  eapply exe_delay_general_reg_stable in H8; eauto.
+  rewrite H8; eauto.
   destruct_state x.
   econstructor; eauto.
   eapply NTrans; eauto.
@@ -1308,6 +1309,10 @@ Proof.
   simpljoin1.
   simpls.
   symmetry in Hexe_delay2.
+  rewrite get_R_rn_neq_r0; eauto.
+  2 : intro; tryfalse.
+  rewrite get_R_rn_neq_r0 in H24; eauto.
+  2 : intro; tryfalse.
   eapply exe_delay_general_reg_stable with (r := r15) in Hexe_delay2; eauto.
   eapply Hexe_delay2 in H24.
   rewrite H24 in H7.
@@ -1566,12 +1571,14 @@ Proof.
     simpljoin1.
     unfolds regSt.
     simpls.
-    simpljoin1.
+    simpljoin1. 
     eapply int_eq_true_eq in Heqe.
+    rewrite get_R_rn_neq_r0; eauto.
     unfold merge.
     subst.
     unfold RegMap.set.
     destruct_rneq; eauto.
+    intro; tryfalse.
     eapply H0 in Hp.
     clear - Hp.
     simpls.
@@ -1595,6 +1602,8 @@ Proof.
     unfolds regSt.
     simpls.
     simpljoin1.
+    rewrite get_R_rn_neq_r0; eauto.
+    2 : intro; tryfalse.
     unfold merge.
     unfold RegMap.set.
     destruct_rneq.
@@ -1627,6 +1636,10 @@ Proof.
   unfolds regSt.
   simpls. 
   simpljoin1.
+  rewrite get_R_rn_neq_r0; eauto.
+  2 : intro; tryfalse.
+  rewrite get_R_rn_neq_r0 in H31; eauto.
+  2 : intro; tryfalse.
   lets Hz : H31.
   unfold merge in Hz.
   unfold RegMap.set in Hz.
@@ -1641,6 +1654,10 @@ Proof.
   unfolds regSt.
   simpls.
   simpljoin1.
+  rewrite get_R_rn_neq_r0; eauto.
+  2 : intro; tryfalse.
+  rewrite get_R_rn_neq_r0 in H31; eauto.
+  2 : intro; tryfalse.
   lets Hz : H31.
   unfold RegMap.set in Hz.
   unfold merge in Hz.
@@ -1676,6 +1693,8 @@ Proof.
       unfolds regSt.
       simpls.
       simpljoin1.
+      rewrite get_R_rn_neq_r0 in H32; eauto.
+      2 : intro; tryfalse.
       unfold merge in *.
       unfolds RegMap.set.
       destruct_rneq_H.
@@ -1705,6 +1724,8 @@ Proof.
       unfolds regSt.
       simpls.
       simpljoin1.
+      rewrite get_R_rn_neq_r0 in H32; eauto.
+      2 : intro; tryfalse.
       unfold merge in *.
       unfolds RegMap.set.
       destruct_rneq_H.
@@ -1723,10 +1744,12 @@ Proof.
     simpls.
     unfolds regSt.
     simpls. 
-    simpljoin1.
-    unfold merge in *.
+    simpljoin1. 
+    rewrite get_R_rn_neq_r0 in H32; eauto.
+    unfold merge in *. 
     unfolds RegMap.set.
     destruct_rneq_H.
+    intro; tryfalse.
     inversion H32; subst.
     eapply dly_reduce_asrt_stable in H14; eauto.
     eapply H2 in H14.
@@ -1799,6 +1822,8 @@ Proof.
     unfolds regSt.
     simpls.
     simpljoin1.
+    rewrite get_R_rn_neq_r0; eauto.
+    2 : intro; tryfalse.
     unfold merge.
     unfold RegMap.set.
     destruct_rneq.
@@ -1827,6 +1852,8 @@ Proof.
     unfolds regSt.
     simpls.
     simpljoin1.
+    rewrite get_R_rn_neq_r0; eauto.
+    2 : intro; tryfalse.
     unfold merge.
     unfold RegMap.set.
     destruct_rneq.
@@ -1858,12 +1885,22 @@ Proof.
   simpls. 
   simpljoin1.
   lets Hz : H31.
+  rewrite get_R_rn_neq_r0; eauto.
+  2 : intro; tryfalse.
+  rewrite get_R_rn_neq_r0 in H31; eauto.
+  2 : intro; tryfalse.
+  rewrite get_R_rn_neq_r0 in Hz; eauto.
+  2 : intro; tryfalse.
   unfold merge in Hz.
   unfold RegMap.set in Hz.
   destruct_rneq_H.
   inversion Hz; subst.
   eapply regz_exe_delay_stable2; eauto.
   simpl.
+  rewrite get_R_rn_neq_r0; eauto.
+  2 : intro; tryfalse.
+  rewrite get_R_rn_neq_r0 in H31; eauto.
+  2 : intro; tryfalse.
   eapply H1 in H12.
   clear - Hexe_delay1 H12 H31.
   sep_star_split_tac.
@@ -1911,6 +1948,8 @@ Proof.
     unfolds regSt.
     simpls.
     simpljoin1.
+    rewrite get_R_rn_neq_r0 in H32; eauto.
+    2 : intro; tryfalse.
     unfold merge in *.
     unfolds RegMap.set.
     destruct_rneq_H.
@@ -1928,6 +1967,8 @@ Proof.
     unfolds regSt.
     simpls.
     simpljoin1.
+    rewrite get_R_rn_neq_r0 in H32; eauto.
+    2 : intro; tryfalse.
     unfold merge in *.
     unfolds RegMap.set.
     destruct_rneq_H.
@@ -1940,6 +1981,8 @@ Proof.
       unfolds regSt.
       simpls.
       simpljoin1.
+      rewrite get_R_rn_neq_r0 in H32; eauto.
+      2 : intro; tryfalse.
       unfold merge in *.
       unfolds RegMap.set.
       destruct_rneq_H.
