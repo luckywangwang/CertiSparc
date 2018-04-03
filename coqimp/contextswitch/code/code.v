@@ -130,15 +130,16 @@ Parameter OSTaskCur : Address.
 Parameter OSTaskNew : Address.
 
 (** Label *)
-Definition Ta0_return : Address := ($ 380).
+Definition Ta0_return : Address := ($ 544).
 Definition Ta0_Window_OK : Address := ($ 164).
-Definition Ta0_start_adjust_CWP : Address := ($ 212).
-Definition Ta0_adjust_CWP : Address := ($ 228).
-Definition Ta0_Task_Switch_NewContext : Address := ($ 264).
+Definition Ta0_start_adjust_CWP : Address := ($ 328).
+Definition Ta0_save_usedwindows : Address := ($ 228).
+Definition Ta0_adjust_CWP : Address := ($ 344).
+Definition Ta0_Task_Switch_NewContext : Address := ($ 380).
 
 (** function *)
-Definition reg_save : Address := ($ 400).
-Definition reg_restore : Address := ($ 492).
+Definition reg_save : Address := ($ 564).
+Definition reg_restore : Address := ($ 656).
 
 (** Basic Code Block *)
 Definition os_int_ta0_handler : InsSeq :=
@@ -202,98 +203,131 @@ Definition os_int_ta0_handler : InsSeq :=
   ($ 240) # (andcc g4 (Or g7) g0);;
   ($ 244) n> bne Ta0_Task_Switch_NewContext;; ($ 248) n> nop;;
   ($ 252) # (restore g0 (Or g0) g0);;
-  consJ1 ($ 256) (Ao (Ow Ta0_adjust_CWP)) g0 ($ 260) nop.
+  ($ 256) # (st l0 (Aro sp (Ow OS_CPU_STACK_FRAME_L0_OFFSET)));;
+  ($ 260) # (st l1 (Aro sp (Ow OS_CPU_STACK_FRAME_L1_OFFSET)));;
+  ($ 264) # (st l2 (Aro sp (Ow OS_CPU_STACK_FRAME_L2_OFFSET)));;
+  ($ 268) # (st l3 (Aro sp (Ow OS_CPU_STACK_FRAME_L3_OFFSET)));;
+  ($ 272) # (st l4 (Aro sp (Ow OS_CPU_STACK_FRAME_L4_OFFSET)));;
+  ($ 276) # (st l5 (Aro sp (Ow OS_CPU_STACK_FRAME_L5_OFFSET)));;
+  ($ 280) # (st l6 (Aro sp (Ow OS_CPU_STACK_FRAME_L6_OFFSET)));;
+  ($ 284) # (st l7 (Aro sp (Ow OS_CPU_STACK_FRAME_L7_OFFSET)));;
+  ($ 288) # (st i0 (Aro sp (Ow OS_CPU_STACK_FRAME_I0_OFFSET)));;
+  ($ 292) # (st i1 (Aro sp (Ow OS_CPU_STACK_FRAME_I1_OFFSET)));;
+  ($ 296) # (st i2 (Aro sp (Ow OS_CPU_STACK_FRAME_I2_OFFSET)));;
+  ($ 300) # (st i3 (Aro sp (Ow OS_CPU_STACK_FRAME_I3_OFFSET)));;
+  ($ 304) # (st i4 (Aro sp (Ow OS_CPU_STACK_FRAME_I4_OFFSET)));;
+  ($ 308) # (st i5 (Aro sp (Ow OS_CPU_STACK_FRAME_I5_OFFSET)));;
+  ($ 312) # (st i6 (Aro sp (Ow OS_CPU_STACK_FRAME_I6_OFFSET)));;
+  ($ 316) # (st i7 (Aro sp (Ow OS_CPU_STACK_FRAME_I7_OFFSET)));;
+  consJ1 ($ 320) (Ao (Ow Ta0_save_usedwindows)) g0 ($ 324) nop.
+  
+Definition ta0_start_adjust_cwp :=
+  ($ 328) # (getcwp g4);;
+  ($ 332) # (rd Rwim g7);;
+  ($ 336) # (sett ($ 1) g6);;
+  ($ 340) # (sll g6 (Or g4) g4);;
+  ($ 344) # (sll g4 ('1) g5);;
+  ($ 348) # (srl g4 (Ow (OS_WINDOWS -ᵢ ($ 1))) g4);;
+  ($ 352) # (or g4 (Or g5) g4);;
+  ($ 356) # (andcc g4 (Or g7) g0);;
+  ($ 360) n> bne Ta0_Task_Switch_NewContext;; ($ 364) n> nop;;
+  ($ 368) # (restore g0 (Or g0) g0);;
+  consJ1 ($ 372) (Ao (Ow Ta0_adjust_CWP)) g0 ($ 376) nop.
 
 Definition ta0_task_switch_newcontext :=
-  ($ 264) # (sett OSTaskNew l4);;
-  ($ 268) # (ld (Ao (Or l4)) l4);;
-  ($ 272) # (add l4 (Ow OS_CONTEXT_OFFSET) l5);;
-  ($ 276) c> call reg_restore;; ($ 280) c> nop;;
-  ($ 284) # (sett OSTaskSwitchFlag l4);;
-  ($ 288) # (sett OSFALSE l5);;
-  ($ 292) # (st l5 (Ao (Or l4)));;
-  ($ 296) # (sett OSTaskCur l4);;
-  ($ 300) # (sett OSTaskNew l5);;
-  ($ 304) # (ld (Ao (Or l5)) l5);;
-  ($ 308) # (st l5 (Ao (Or l4)));;
-  ($ 312) # (rd Rwim o4);;
-  ($ 316) # (wr o4 ('0) Rwim);;
-  ($ 320) # nop;;
-  ($ 324) # nop;;
-  ($ 328) # nop;;
-  ($ 332) # (restore g0 (Or g0) g0);;
-  ($ 336) # (ld (Aro sp (Ow OS_CPU_STACK_FRAME_L0_OFFSET)) l0);;
-  ($ 340) # (ld (Aro sp (Ow OS_CPU_STACK_FRAME_L1_OFFSET)) l1);;
-  ($ 344) # (ld (Aro sp (Ow OS_CPU_STACK_FRAME_L2_OFFSET)) l2);;
-  ($ 348) # (ld (Aro sp (Ow OS_CPU_STACK_FRAME_L3_OFFSET)) l3);;
-  ($ 352) # (ld (Aro sp (Ow OS_CPU_STACK_FRAME_L4_OFFSET)) l4);;
-  ($ 356) # (ld (Aro sp (Ow OS_CPU_STACK_FRAME_L5_OFFSET)) l5);;
-  ($ 336) # (ld (Aro sp (Ow OS_CPU_STACK_FRAME_L6_OFFSET)) l6);;
-  ($ 340) # (ld (Aro sp (Ow OS_CPU_STACK_FRAME_L7_OFFSET)) l7);;
-  ($ 344) # (ld (Aro sp (Ow OS_CPU_STACK_FRAME_I0_OFFSET)) i0);;
-  ($ 348) # (ld (Aro sp (Ow OS_CPU_STACK_FRAME_I1_OFFSET)) i1);;
-  ($ 352) # (ld (Aro sp (Ow OS_CPU_STACK_FRAME_I2_OFFSET)) i2);;
-  ($ 356) # (ld (Aro sp (Ow OS_CPU_STACK_FRAME_I3_OFFSET)) i3);;
-  ($ 360) # (ld (Aro sp (Ow OS_CPU_STACK_FRAME_I4_OFFSET)) i4);;
-  ($ 348) # (ld (Aro sp (Ow OS_CPU_STACK_FRAME_I5_OFFSET)) i5);;
-  ($ 352) # (ld (Aro sp (Ow OS_CPU_STACK_FRAME_I6_OFFSET)) i6);;
-  ($ 356) # (ld (Aro sp (Ow OS_CPU_STACK_FRAME_I7_OFFSET)) i7);;
-  ($ 360) # (save g0 (Or g0) g0);;
-  ($ 364) # (sett OSIntNestCnt o4);;
-  ($ 368) # (ld (Ao (Or o4)) o5);;
-  ($ 372) # (sub o5 ('1) o5);;
-  ($ 376) # (st o5 (Ao (Or o4)));;
-  ($ 380) # (getcwp o4);;
-  ($ 384) # (or o4 ('0) o4);;
-  ($ 388) # (restore g0 (Or g0) g0);;
-  ($ 392) r> retl;; ($ 396) r> nop.
+  ($ 380) # (sett OSTaskNew l4);;
+  ($ 384) # (ld (Ao (Or l4)) l4);;
+  ($ 388) # (add l4 (Ow OS_CONTEXT_OFFSET) l5);;
+  ($ 392) c> call reg_restore;; ($ 280) c> nop;;
+  ($ 396) # (sett OSTaskSwitchFlag l4);;
+  ($ 400) # (sett OSFALSE l5);;
+  ($ 404) # (st l5 (Ao (Or l4)));;
+  ($ 408) # (sett OSTaskCur l4);;
+  ($ 412) # (sett OSTaskNew l5);;
+  ($ 416) # (ld (Ao (Or l5)) l5);;
+  ($ 420) # (st l5 (Ao (Or l4)));;
+  ($ 424) # (rd Rwim o4);;
+  ($ 428) # (sll o4 ('1) o5);;
+  ($ 432) # (srl o4 (Ow (OS_WINDOWS -ᵢ ($ 1))) o4);;
+  ($ 436) # (or o4 (Or o5) o4);;
+  ($ 440) # (wr o4 ('0) Rwim);;
+  ($ 444) # nop;;
+  ($ 448) # nop;;
+  ($ 452) # nop;;
+  ($ 456) # (restore g0 (Or g0) g0);;
+  ($ 460) # (ld (Aro sp (Ow OS_CPU_STACK_FRAME_L0_OFFSET)) l0);;
+  ($ 464) # (ld (Aro sp (Ow OS_CPU_STACK_FRAME_L1_OFFSET)) l1);;
+  ($ 468) # (ld (Aro sp (Ow OS_CPU_STACK_FRAME_L2_OFFSET)) l2);;
+  ($ 472) # (ld (Aro sp (Ow OS_CPU_STACK_FRAME_L3_OFFSET)) l3);;
+  ($ 476) # (ld (Aro sp (Ow OS_CPU_STACK_FRAME_L4_OFFSET)) l4);;
+  ($ 480) # (ld (Aro sp (Ow OS_CPU_STACK_FRAME_L5_OFFSET)) l5);;
+  ($ 484) # (ld (Aro sp (Ow OS_CPU_STACK_FRAME_L6_OFFSET)) l6);;
+  ($ 488) # (ld (Aro sp (Ow OS_CPU_STACK_FRAME_L7_OFFSET)) l7);;
+  ($ 492) # (ld (Aro sp (Ow OS_CPU_STACK_FRAME_I0_OFFSET)) i0);;
+  ($ 496) # (ld (Aro sp (Ow OS_CPU_STACK_FRAME_I1_OFFSET)) i1);;
+  ($ 500) # (ld (Aro sp (Ow OS_CPU_STACK_FRAME_I2_OFFSET)) i2);;
+  ($ 504) # (ld (Aro sp (Ow OS_CPU_STACK_FRAME_I3_OFFSET)) i3);;
+  ($ 508) # (ld (Aro sp (Ow OS_CPU_STACK_FRAME_I4_OFFSET)) i4);;
+  ($ 512) # (ld (Aro sp (Ow OS_CPU_STACK_FRAME_I5_OFFSET)) i5);;
+  ($ 516) # (ld (Aro sp (Ow OS_CPU_STACK_FRAME_I6_OFFSET)) i6);;
+  ($ 520) # (ld (Aro sp (Ow OS_CPU_STACK_FRAME_I7_OFFSET)) i7);;
+  ($ 524) # (save g0 (Or g0) g0);;
+  ($ 528) # (sett OSIntNestCnt o4);;
+  ($ 532) # (ld (Ao (Or o4)) o5);;
+  ($ 536) # (sub o5 ('1) o5);;
+  ($ 540) # (st o5 (Ao (Or o4)));;
+  ($ 544) # (getcwp o4);;
+  ($ 548) # (or o4 ('0) o4);;
+  ($ 552) # (restore g0 (Or g0) g0);;
+  ($ 556) r> retl;;
+  ($ 560) r> nop.
 
 Definition regsave :=
-  ($ 400) # (st l0 (Aro l5 (Ow OS_L0_OFFSET)));;
-  ($ 404) # (st l1 (Aro l5 (Ow OS_L1_OFFSET)));;
-  ($ 408) # (st l2 (Aro l5 (Ow OS_L2_OFFSET)));;        
-  ($ 412) # (st l3 (Aro l5 (Ow OS_L3_OFFSET)));;
-  ($ 416) # (st i0 (Aro l5 (Ow OS_I0_OFFSET)));;
-  ($ 420) # (st i1 (Aro l5 (Ow OS_I1_OFFSET)));;
-  ($ 424) # (st i2 (Aro l5 (Ow OS_I2_OFFSET)));;
-  ($ 428) # (st i3 (Aro l5 (Ow OS_I3_OFFSET)));;
-  ($ 432) # (st i4 (Aro l5 (Ow OS_I4_OFFSET)));;
-  ($ 436) # (st i5 (Aro l5 (Ow OS_I5_OFFSET)));;
-  ($ 440) # (st i6 (Aro l5 (Ow OS_I6_OFFSET)));;
-  ($ 444) # (st i7 (Aro l5 (Ow OS_I7_OFFSET)));;
-  ($ 448) # (rd Ry l6);;
-  ($ 452) # (st l6 (Aro l5 (Ow OS_Y_OFFSET)));;
-  ($ 456) # (st g1 (Aro l5 (Ow OS_G1_OFFSET)));;
-  ($ 460) # (st g2 (Aro l5 (Ow OS_G2_OFFSET)));;
-  ($ 464) # (st g3 (Aro l5 (Ow OS_G3_OFFSET)));;
-  ($ 468) # (st g4 (Aro l5 (Ow OS_G4_OFFSET)));;
-  ($ 472) # (st g5 (Aro l5 (Ow OS_G5_OFFSET)));;
-  ($ 476) # (st g6 (Aro l5 (Ow OS_G6_OFFSET)));;
-  ($ 480) # (st g7 (Aro l5 (Ow OS_G7_OFFSET)));;
-  ($ 484) r> retl;;
-  ($ 488) r> nop.
+  ($ 564) # (st l0 (Aro l5 (Ow OS_L0_OFFSET)));;
+  ($ 568) # (st l1 (Aro l5 (Ow OS_L1_OFFSET)));;
+  ($ 572) # (st l2 (Aro l5 (Ow OS_L2_OFFSET)));;        
+  ($ 576) # (st l3 (Aro l5 (Ow OS_L3_OFFSET)));;
+  ($ 580) # (st i0 (Aro l5 (Ow OS_I0_OFFSET)));;
+  ($ 584) # (st i1 (Aro l5 (Ow OS_I1_OFFSET)));;
+  ($ 588) # (st i2 (Aro l5 (Ow OS_I2_OFFSET)));;
+  ($ 592) # (st i3 (Aro l5 (Ow OS_I3_OFFSET)));;
+  ($ 596) # (st i4 (Aro l5 (Ow OS_I4_OFFSET)));;
+  ($ 600) # (st i5 (Aro l5 (Ow OS_I5_OFFSET)));;
+  ($ 604) # (st i6 (Aro l5 (Ow OS_I6_OFFSET)));;
+  ($ 608) # (st i7 (Aro l5 (Ow OS_I7_OFFSET)));;
+  ($ 612) # (rd Ry l6);;
+  ($ 616) # (st l6 (Aro l5 (Ow OS_Y_OFFSET)));;
+  ($ 620) # (st g1 (Aro l5 (Ow OS_G1_OFFSET)));;
+  ($ 624) # (st g2 (Aro l5 (Ow OS_G2_OFFSET)));;
+  ($ 628) # (st g3 (Aro l5 (Ow OS_G3_OFFSET)));;
+  ($ 632) # (st g4 (Aro l5 (Ow OS_G4_OFFSET)));;
+  ($ 636) # (st g5 (Aro l5 (Ow OS_G5_OFFSET)));;
+  ($ 640) # (st g6 (Aro l5 (Ow OS_G6_OFFSET)));;
+  ($ 644) # (st g7 (Aro l5 (Ow OS_G7_OFFSET)));;
+  ($ 648) r> retl;;
+  ($ 652) r> nop.
 
 Definition regstore :=
-  ($ 492) # (ld (Aro l5 (Ow OS_L0_OFFSET)) l0);;
-  ($ 496) # (ld (Aro l5 (Ow OS_L1_OFFSET)) l1);;
-  ($ 500) # (ld (Aro l5 (Ow OS_L2_OFFSET)) l2);;
-  ($ 504) # (ld (Aro l5 (Ow OS_L3_OFFSET)) l3);;
-  ($ 508) # (ld (Aro l5 (Ow OS_I0_OFFSET)) i0);;
-  ($ 512) # (ld (Aro l5 (Ow OS_I1_OFFSET)) i1);;
-  ($ 516) # (ld (Aro l5 (Ow OS_I2_OFFSET)) i2);;
-  ($ 520) # (ld (Aro l5 (Ow OS_I3_OFFSET)) i3);;
-  ($ 524) # (ld (Aro l5 (Ow OS_I4_OFFSET)) i4);;
-  ($ 528) # (ld (Aro l5 (Ow OS_I5_OFFSET)) i5);;
-  ($ 532) # (ld (Aro l5 (Ow OS_I6_OFFSET)) i6);;
-  ($ 536) # (ld (Aro l5 (Ow OS_I7_OFFSET)) i7);;
-  ($ 540) # (ld (Aro l5 (Ow OS_Y_OFFSET)) l6);;
-  ($ 544) # (wr l6 ('0) Ry);;
-  ($ 548) # (ld (Aro l5 (Ow OS_G1_OFFSET)) g1);;
-  ($ 552) # (ld (Aro l5 (Ow OS_G2_OFFSET)) g2);;
-  ($ 556) # (ld (Aro l5 (Ow OS_G3_OFFSET)) g3);;
-  ($ 560) # (ld (Aro l5 (Ow OS_G4_OFFSET)) g4);;
-  ($ 564) # (ld (Aro l5 (Ow OS_G5_OFFSET)) g5);;
-  ($ 568) # (ld (Aro l5 (Ow OS_G6_OFFSET)) g6);;
-  ($ 572) # (ld (Aro l5 (Ow OS_G7_OFFSET)) g7);;
-  ($ 576) r> retl;;
-  ($ 580) r> nop.
+  ($ 656) # (ld (Aro l5 (Ow OS_L0_OFFSET)) l0);;
+  ($ 660) # (ld (Aro l5 (Ow OS_L1_OFFSET)) l1);;
+  ($ 664) # (ld (Aro l5 (Ow OS_L2_OFFSET)) l2);;
+  ($ 668) # (ld (Aro l5 (Ow OS_L3_OFFSET)) l3);;
+  ($ 672) # (ld (Aro l5 (Ow OS_I0_OFFSET)) i0);;
+  ($ 676) # (ld (Aro l5 (Ow OS_I1_OFFSET)) i1);;
+  ($ 680) # (ld (Aro l5 (Ow OS_I2_OFFSET)) i2);;
+  ($ 684) # (ld (Aro l5 (Ow OS_I3_OFFSET)) i3);;
+  ($ 688) # (ld (Aro l5 (Ow OS_I4_OFFSET)) i4);;
+  ($ 692) # (ld (Aro l5 (Ow OS_I5_OFFSET)) i5);;
+  ($ 696) # (ld (Aro l5 (Ow OS_I6_OFFSET)) i6);;
+  ($ 700) # (ld (Aro l5 (Ow OS_I7_OFFSET)) i7);;
+  ($ 704) # (ld (Aro l5 (Ow OS_Y_OFFSET)) l6);;
+  ($ 708) # (wr l6 ('0) Ry);;
+  ($ 712) # (ld (Aro l5 (Ow OS_G1_OFFSET)) g1);;
+  ($ 716) # (ld (Aro l5 (Ow OS_G2_OFFSET)) g2);;
+  ($ 720) # (ld (Aro l5 (Ow OS_G3_OFFSET)) g3);;
+  ($ 724) # (ld (Aro l5 (Ow OS_G4_OFFSET)) g4);;
+  ($ 728) # (ld (Aro l5 (Ow OS_G5_OFFSET)) g5);;
+  ($ 732) # (ld (Aro l5 (Ow OS_G6_OFFSET)) g6);;
+  ($ 736) # (ld (Aro l5 (Ow OS_G7_OFFSET)) g7);;
+  ($ 740) r> retl;;
+  ($ 744) r> nop.
