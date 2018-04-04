@@ -320,7 +320,8 @@ Inductive logicvar : Type :=
 | logic_llv : list Word -> logicvar
 | logic_reg : RegName -> logicvar
 | logic_fm : Frame -> logicvar
-| logic_fmls : FrameList -> logicvar.
+| logic_fmls : FrameList -> logicvar
+| logic_stack : list (Frame * Frame) -> logicvar.
 
 Definition fpre := list logicvar -> asrt.
 Definition fpost := list logicvar -> asrt.
