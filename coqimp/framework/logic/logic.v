@@ -315,13 +315,18 @@ Notation " '|-' '{{' p '}}' i '{{' q '}}' " := (wf_ins p i q) (at level 50).
 
 (*+ Well-formed Sequence +*)
 
+Definition stack_val : Type := Address * list (Frame * Frame).
+Definition ctx_val : Type := Address * (list Word * list Word * list Word * Word).
+
 Inductive logicvar : Type :=
 | logic_lv : Word -> logicvar
 | logic_llv : list Word -> logicvar
 | logic_reg : RegName -> logicvar
 | logic_fm : Frame -> logicvar
 | logic_fmls : FrameList -> logicvar
-| logic_stack : list (Frame * Frame) -> logicvar.
+| logic_flp : list (Frame * Frame) -> logicvar
+| logic_stk : stack_val -> logicvar
+| logic_ctx : ctx_val -> logicvar.
 
 Definition fpre := list logicvar -> asrt.
 Definition fpost := list logicvar -> asrt.
