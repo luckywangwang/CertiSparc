@@ -20,6 +20,7 @@ Require Import lemmas.
 Require Import lemmas_ins.
 
 Require Import code.
+Require Import reg_lemma.
 
 Require Import Coq.Logic.FunctionalExtensionality.
   
@@ -79,13 +80,6 @@ Definition context (ctx : ctx_val) :=
     context' l rl ri rg ry
   end.
 
-Definition GlobalRegs (fm : Frame) :=
-  match fm with
-  | consfm w0 w1 w2 w3 w4 w5 w6 w7 =>
-    r0 |=> w0 ** r1 |=> w1 ** r2 |=> w2 ** r3 |=> w3 ** r4 |=> w4 **
-       r5 |=> w5 ** r6 |=> w6 ** r7 |=> w7
-  end.
-
 Fixpoint nth_val (n : nat) (vl : list Word) {struct vl}:=
   match vl with
     | nil => None
@@ -96,37 +90,6 @@ Fixpoint nth_val (n : nat) (vl : list Word) {struct vl}:=
   end.
 
 (*+ Auxiliary Operation +*)
-Definition update_frame (fm : Frame) (n : nat) (v : Word) :=
-  match fm with
-  | consfm w0 w1 w2 w3 w4 w5 w6 w7 =>
-    match n with
-    | 0 => consfm v w1 w2 w3 w4 w5 w6 w7
-    | 1 => consfm w0 v w2 w3 w4 w5 w6 w7
-    | 2 => consfm w0 w1 v w3 w4 w5 w6 w7
-    | 3 => consfm w0 w1 w2 v w4 w5 w6 w7
-    | 4 => consfm w0 w1 w2 w3 v w5 w6 w7
-    | 5 => consfm w0 w1 w2 w3 w4 v w6 w7
-    | 6 => consfm w0 w1 w2 w3 w4 w5 v w7
-    | 7 => consfm v w1 w2 w3 w4 w5 w6 v
-    | _ => consfm w0 w1 w2 w3 w4 w5 w6 w7
-    end
-  end.
-
-Definition get_frame_nth (fm : Frame) (n : nat) :=
-  match fm with
-  | consfm w0 w1 w2 w3 w4 w5 w6 w7 =>
-    match n with
-    | 0 => Some w0
-    | 1 => Some w1
-    | 2 => Some w2
-    | 3 => Some w3
-    | 4 => Some w4
-    | 5 => Some w5
-    | 6 => Some w6
-    | 7 => Some w7
-    | _ => None
-    end
-  end.
 
 Definition frame_to_list (fm : Frame) :=
   match fm with
@@ -245,12 +208,13 @@ Definition FrameState (id vi : Word) (F : FrameList) :=
 (*+ Specification +*)
 Definition os_int_ta0_handler_pre (vl : list logicvar) :=
   EX fmg fmo fml fmi id F vy vi bv ll
-     ct cctx cstk nt nctx nstk,
+     ct cctx cstk nt nctx nstk vz vn,
   [| vl = logic_fm fmg :: logic_fm fml :: logic_fm fmi :: logic_lv id
           :: logic_fmls F :: logic_lv vy :: logic_lv vi :: logic_lv bv :: logic_lv ll
           :: logic_lv ct :: logic_ctx cctx :: logic_stk cstk
           :: logic_lv nt :: logic_ctx nctx :: logic_stk nstk :: nil |] **
   GlobalRegs fmg ** Regs fmo fml fmi ** FrameState id vi F ** Rsp Ry |=> vy **
+  z |=> vz ** n |=> vn **
   OSTaskCur |-> ct ** OSTaskNew |-> nt ** OSTaskSwitchFlag |-> bv ** OSIntNestCnt |-> ll **
   context cctx ** stack cstk ** [| get_frame_nth fml 0 = Some id |] **
   (
@@ -261,19 +225,20 @@ Definition os_int_ta0_handler_pre (vl : list logicvar) :=
       [| ct <> ($ 0) -> (get_ctx_addr cctx = ct +ᵢ OS_CONTEXT_OFFSET) |] **
       [| get_ctx_addr nctx = nt +ᵢ OS_CONTEXT_OFFSET /\ ctx_pt_stk nctx nstk |] **
       [| (get_ctx_addr cctx = ct +ᵢ OS_CONTEXT_OFFSET) ->
-         stack_frame_constraint cstk (fml :: fmi :: F) id vi |] **
+         stack_frame_constraint cstk (fml :: fmi :: F ++ (fmo :: nil)) id vi |] **
       [| bv = OSTRUE |]
     )
   ).
 
 Definition os_int_ta0_handler_post (vl : list logicvar) :=
   EX fmg fmg' fmo' fml fml' fmi fmi' id id' F F' vy vy' vi vi' bv ll
-     ct cctx cctx' cstk cstk' nt nctx nstk,
+     ct cctx cctx' cstk cstk' nt nctx nstk vz' vn',
   [| vl = logic_fm fmg :: logic_fm fml :: logic_fm fmi :: logic_lv id
           :: logic_fmls F :: logic_lv vy :: logic_lv vi :: logic_lv bv :: logic_lv ll
           :: logic_lv ct :: logic_ctx cctx :: logic_stk cstk
           :: logic_lv nt :: logic_ctx nctx :: logic_stk nstk :: nil |] **
   GlobalRegs fmg' ** Regs fmo' fml' fmi' ** FrameState id' vi' F' ** Rsp Ry |=> vy' **
+  z |=> vz' ** n |=> vn' **
   OSTaskCur |-> ct ** OSTaskNew |-> nt ** OSTaskSwitchFlag |-> OSFALSE ** OSIntNestCnt |-> ll **
   context cctx' ** stack cstk' ** [| get_frame_nth fml' 0 = Some id' |] **
   [| get_ctx_addr cctx = get_ctx_addr cctx' /\ get_stk_addr cstk = get_stk_addr cstk' |] **
@@ -289,7 +254,7 @@ Definition os_int_ta0_handler_post (vl : list logicvar) :=
       [| (get_ctx_addr cctx = ct +ᵢ OS_CONTEXT_OFFSET) ->
          (ctx_pt_stk cctx' cstk' /\ stack_frame_save F cstk' id vi /\
           ctx_win_save cctx fml fmi fmg vy) |] **
-      [| stack_frame_constraint nstk (fml' :: fmi' :: F') id' vi' /\
+      [| stack_frame_constraint nstk (fml' :: fmi' :: F' ++ (fmo' :: nil)) id' vi' /\
          ctx_win_restore nctx fml' fmi' fmg' vy' |] **
       [| bv = OSTRUE |]
     )

@@ -326,7 +326,7 @@ Ltac simpl_sep_liftn_in H t :=
     match type of H with
     | _ |= _ =>
         eapply asrt_lift_nth_stable with (n := n') in H;
-        simpl asrt_get_nth in H; simpl asrt_rm_nth in H;
+        unfold asrt_get_nth in H; unfold asrt_rm_nth in H;
         try eapply astar_emp_elim_l in H;
         try eapply astar_emp_elim_r in H
     | _ => idtac "no assertion"
@@ -340,9 +340,58 @@ Ltac simpl_sep_liftn t :=
     match goal with
     | |- _ |= _ =>
       eapply asrt_lift_nth_stable_rev with (n := n');
-      simpl asrt_get_nth; simpl asrt_rm_nth;
+      unfold asrt_get_nth; unfold asrt_rm_nth;
       try eapply astar_emp_intro_r;
       try eapply astar_emp_intro_l
     | _ => idtac "no assertion"
     end
   end.
+
+Fixpoint asrt_combine_to_line (p1 : asrt) (p2 : asrt) (n : nat) :=
+  match n with
+  | 0%nat => p1 ** p2
+  | S n' =>
+    match p1 with
+    | p1' ** p2' => p1' ** (asrt_combine_to_line p2' p2 n')
+    | _ => p1 ** p2
+    end
+  end.
+
+Lemma asrt_combine_to_line_stable :
+  forall n p1 p2 s,
+    s |= p1 ** p2 ->
+    s |= asrt_combine_to_line p1 p2 n.
+Proof.
+  intro n.
+  induction n; intros.
+  -
+    destruct p1; simpls; eauto.
+  -
+    destruct p1;
+      try solve [simpls; eauto].
+    simpl.
+    sep_star_split_tac.
+    simpl in H1, H3.
+    simpljoin1.
+    exists (m1, (r1, f2), d2) (merge m2 m0, (merge r2 r0, f2), d2).
+    simpl; repeat (split; eauto).
+    eapply disj_sep_merge_still; eauto.
+    eapply disj_sym in H3.
+    eapply disj_merge_disj_sep1 in H3; eauto.
+    eapply disj_sym; eauto.
+    eapply disj_sep_merge_still; eauto.
+    eapply disj_sym in H4; eauto.
+    eapply disj_merge_disj_sep1 in H4; eauto.
+    eapply disj_sym; eauto.
+    do 2 rewrite merge_assoc; eauto.
+    eapply IHn; eauto.
+    simpl.
+    do 2 eexists.
+    simpl; repeat (split; eauto).
+    eapply disj_sym in H3.
+    eapply disj_merge_disj_sep2 in H3; eauto.
+    eapply disj_sym; eauto.
+    eapply disj_sym in H4.
+    eapply disj_merge_disj_sep2 in H4; eauto.
+    eapply disj_sym; eauto.
+Qed.
