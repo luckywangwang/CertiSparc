@@ -348,13 +348,12 @@ Ltac simpl_sep_liftn t :=
   end.
 
 Fixpoint asrt_combine_to_line (p1 : asrt) (p2 : asrt) (n : nat) :=
-  match n with
-  | 0%nat => p1 ** p2
-  | S n' =>
-    match p1 with
-    | p1' ** p2' => p1' ** (asrt_combine_to_line p2' p2 n')
-    | _ => p1 ** p2
-    end
+  match p1 with
+  | p1' ** p2' => match n with
+                 | 0%nat => p1 ** p2
+                 | S n' => p1' ** (asrt_combine_to_line p2' p2 n')
+                 end
+  | _ => p1 ** p2
   end.
 
 Lemma asrt_combine_to_line_stable :
@@ -395,3 +394,223 @@ Proof.
     eapply disj_merge_disj_sep2 in H4; eauto.
     eapply disj_sym; eauto.
 Qed.
+
+Lemma asrt_combine_to_line_stable_rev :
+  forall n p1 p2 s,
+    s |= asrt_combine_to_line p1 p2 n ->
+    s |= p1 ** p2.
+Proof.
+  intro n.
+  induction n; intros.
+  -
+    destruct p1; simpls; eauto.
+  -
+    destruct p1;
+      try solve [simpls; eauto].
+    simpl asrt_combine_to_line in H.
+    eapply astar_assoc_intro; eauto.
+    eapply astar_subst2; eauto.
+Qed.
+
+Inductive asrtTree : Type :=
+| empTree : asrtTree
+| trueTree : asrtTree
+| starTree : asrtTree -> asrtTree -> asrtTree
+| pureTree : Prop -> asrtTree
+| baseTree : asrt -> asrtTree.
+
+Fixpoint toTree Hp :=
+  match Hp with
+    | A ** B => let tA := toTree A in
+                  let tB := toTree B in
+                  starTree tA tB
+    | Aemp => empTree
+    | Atrue => trueTree
+    | [| P |] => pureTree P
+    | _ => baseTree Hp
+  end.
+
+Fixpoint unTree (t:asrtTree) : asrt :=
+  match t with
+    | empTree => Aemp
+    | trueTree => Atrue
+    | starTree A B => unTree A ** unTree B
+    | pureTree P => [| P |]
+    | baseTree A => A
+  end.
+
+Fixpoint asrtTree_to_list' (Hp:asrtTree) (l:list asrtTree) : list asrtTree :=
+  match Hp with
+    | starTree A B => asrtTree_to_list' A (asrtTree_to_list' B l)
+    | _ => Hp::l
+  end.
+
+Definition asrtTree_to_list (Hp:asrtTree) : list asrtTree :=
+  asrtTree_to_list' Hp nil.
+
+Fixpoint asrt_to_list' Hp l :=
+  match Hp with
+    | A ** B => let rl := asrt_to_list' B l in
+                  asrt_to_list' A rl
+    | A => A :: l
+  end.
+Definition asrt_to_list Hp := asrt_to_list' Hp (@nil asrt).
+
+Fixpoint list_to_asrt l :=
+  match l with
+  | nil => Aemp
+  | A :: l' => let ar := list_to_asrt l' in
+              A ** ar
+  end.
+
+Lemma asrt_to_list'_assoc :
+  forall p1 p2 p3 l,
+    asrt_to_list' ((p1 ** p2) ** p3) l =
+    asrt_to_list' (p1 ** p2 ** p3) l.
+Proof.
+  intro p1.
+  induction p1; intros;
+    try solve [simpl; eauto].
+Qed.
+
+Lemma asrt_to_list_app :
+  forall p1 p2,
+    asrt_to_list (p1 ** p2) = asrt_to_list p1 ++ asrt_to_list p2.
+Proof. 
+  intros.
+  unfold asrt_to_list.
+  generalize dependent p2.
+  induction p1; intros;
+    try solve [simpls; eauto]. 
+  -
+    assert (asrt_to_list' ((p1_1 ** p1_2) ** p2) [] =
+            asrt_to_list' (p1_1 ** p1_2 ** p2) []).
+    {
+      rewrite asrt_to_list'_assoc; eauto.
+    }
+    rewrite H.
+    rewrite IHp1_1; eauto.
+    rewrite IHp1_2; eauto.
+    rewrite IHp1_1; eauto.
+    rewrite app_assoc; eauto.
+Qed.
+    
+Lemma list_asrt_app :
+  forall l1 l2 s,
+    s |= list_to_asrt l1 ** list_to_asrt l2 ->
+    s |= list_to_asrt (l1 ++ l2).
+Proof.
+  intro l1.
+  induction l1; intros.
+  -
+    simpls list_to_asrt.
+    eapply astar_emp_elim_l; eauto.
+  -
+    simpls list_to_asrt.
+    eapply astar_assoc_elim in H.
+    eapply astar_subst2; eauto.
+Qed.
+
+Lemma list_asrt_app_rev :
+  forall l1 l2 s,
+    s |= list_to_asrt (l1 ++ l2) ->
+    s |= list_to_asrt l1 ** list_to_asrt l2.
+Proof.
+  intro l1.
+  induction l1; intros.
+  -
+    simpls list_to_asrt.
+    eapply astar_emp_intro_l; eauto.
+  -
+    simpls list_to_asrt.
+    eapply astar_assoc_intro; eauto.
+    eapply astar_subst2; eauto.
+Qed.
+    
+Lemma l2a_a2l_stable' :
+  forall p1 p2 l1 l2 s,
+    s |= list_to_asrt (asrt_to_list' p1 l1) ** list_to_asrt (asrt_to_list' p2 l2) ->
+    s |= list_to_asrt (asrt_to_list' p1 l1 ++ asrt_to_list' p2 l2).
+Proof.
+  intro p1.
+  induction p1; intros;
+    simpl asrt_to_list' in *; simpl list_to_asrt in *;
+      try solve [eapply astar_assoc_elim in H; eapply astar_subst2; eauto;
+                try intros; eapply list_asrt_app; eauto].
+  -
+    eapply IHp1_1 in H; eauto.
+  -
+    eapply astar_assoc_elim in H0.
+    eapply astar_subst2; eauto.
+    intros.
+    eapply list_asrt_app; eauto.
+  -
+    eapply astar_assoc_elim in H0.
+    eapply astar_subst2; eauto.
+    intros.
+    eapply list_asrt_app; eauto.
+Qed.
+
+Lemma l2a_a2l_stable'_rev :
+  forall p1 p2 l1 l2 s,
+    s |= list_to_asrt (asrt_to_list' p1 l1 ++ asrt_to_list' p2 l2) ->
+    s |= list_to_asrt (asrt_to_list' p1 l1) ** list_to_asrt (asrt_to_list' p2 l2).
+Proof.
+  intro p1.
+  induction p1; intros;
+    simpl asrt_to_list' in *; simpl list_to_asrt in *;
+      try solve [eapply astar_assoc_intro; eapply astar_subst2; eauto;
+                 try intros; eapply list_asrt_app_rev; eauto].
+  eapply IHp1_1; eauto.
+Qed.
+    
+Lemma asrt_to_ls_stable :
+  forall p s,
+    s |= p ->
+    s |= list_to_asrt (asrt_to_list p).
+Proof.
+  intro p.
+  induction p; intros;
+    try solve [simpl list_to_asrt;
+               simpl asrt_to_list;
+               eapply astar_emp_intro_r; eauto].
+  eapply astar_subst1 in H; eauto.
+  eapply astar_subst2 in H; eauto.
+  rewrite asrt_to_list_app.
+  clear IHp1 IHp2.
+  unfolds asrt_to_list.
+  eapply l2a_a2l_stable'; eauto.
+Qed.
+
+Lemma asrt_to_ls_stable_rev :
+  forall p s,
+    s |= list_to_asrt (asrt_to_list p) ->
+    s |= p.
+Proof.
+  intro p.
+  induction p; intros;
+    try solve [simpls list_to_asrt; simpls asrt_to_list;
+               eapply astar_emp_elim_r; eauto].
+  eapply astar_subst1; eauto.
+  eapply astar_subst2; eauto.
+  rewrite asrt_to_list_app in H.
+  clear IHp1 IHp2.
+  unfolds asrt_to_list.
+  eapply l2a_a2l_stable'_rev; eauto.
+Qed.
+
+Ltac asrt_to_ls :=
+  match goal with
+  | |- _ |= _ =>
+    eapply asrt_to_ls_stable_rev;
+    simpl asrt_to_list; simpl list_to_asrt
+  | _ => idtac
+  end.
+
+Ltac asrt_to_ls_in H :=
+  match type of H with
+  | _ |= _ =>
+    eapply asrt_to_ls_stable in H;
+    simpl asrt_to_list in H; simpl list_to_asrt in H
+  | _ => idtac
+  end.
