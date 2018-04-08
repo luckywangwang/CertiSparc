@@ -1521,7 +1521,7 @@ Lemma wf_seq_be_rule :
     (p ↓) ==> z |=> bv ** Atrue ->
     ins_sound ((p ↓) ↓) p' i ->
     (bv =ᵢ ($ 0) = false -> p' ==> fp L ** r /\ fq L ** r ==> q) ->
-    insSeq_sound Spec (p' //\\ [|bv =ᵢ ($ 0) = true|]) I q ->
+    (bv =ᵢ ($ 0) = true -> insSeq_sound Spec p' I q) ->
     insSeq_sound Spec p (f1 e> be f;; f2 e> i;;I) q.
 Proof. 
   introv H Hr.
@@ -1737,10 +1737,8 @@ Proof.
     subst.  
     clear - H3 H16 H9 H10.
     unfolds insSeq_sound.
-    eapply H3; eauto.
+    eapply H3; eauto. 
     rewrite Int.add_assoc; eauto.
-    simpl.
-    split; eauto.
   }
 Qed.
 
@@ -1750,7 +1748,7 @@ Lemma wf_seq_bne_rule :
     (p ↓) ==> z |=> bv ** Atrue ->
     ins_sound ((p ↓) ↓) p' i ->
     (bv =ᵢ ($ 0) = true -> p' ==> fp L ** r /\ fq L ** r ==> q) ->
-    insSeq_sound Spec (p' //\\ [|bv =ᵢ ($ 0) = false|]) I q ->
+    (bv =ᵢ ($ 0) = false -> insSeq_sound Spec p' I q) ->
     insSeq_sound Spec p (f1 n> bne f;; f2 n> i;;I) q.
 Proof.
   introv H Hr.
@@ -1953,20 +1951,16 @@ Proof.
     eapply H1 in H13; eauto.
     simpljoin1.
     eapply ins_exec_deterministic in H25; eauto.
-    subst.
+    subst. 
     unfold insSeq_sound in H3.
     eapply H3; eauto.
-    clear - H16.
-    rewrite Int.add_assoc; eauto.
     clear - H10 Hz H30 H31.
-    simpl.
-    repeat (split; eauto).
     unfold Int.eq.
     destruct (zeq (Int.unsigned v) (Int.unsigned $ 0)); eauto.
-    eapply z_eq_to_int_eq in e; eauto.
-    do 2 rewrite Int.repr_unsigned in e; eauto.
-    subst.
-    tryfalse.
+    eapply z_eq_to_int_eq in e; eauto. 
+    do 2 rewrite Int.repr_unsigned in e; tryfalse.
+    clear - H16.
+    rewrite Int.add_assoc; eauto.
   }
 Qed.
   
@@ -2028,6 +2022,22 @@ Proof.
   eapply safety_ins_seq_post_disj1; eauto.
   eapply safety_ins_seq_post_disj2; eauto.
 Qed.
+
+Lemma wf_seq_pure_intro_rule :
+  forall p q (pu : Prop) I Spec,
+    (pu -> insSeq_sound Spec p I q) ->
+    insSeq_sound Spec ([| pu |] ** p) I q.
+Proof.
+  intros.
+  unfolds insSeq_sound.
+  intros.
+  sep_star_split_tac.
+  simpl in H5.
+  simpljoin1.
+  simpl in H1.
+  simpljoin1.
+  rewrite empM_merge_still_l; eauto.
+Qed.
   
 Theorem wf_seq_sound :
   forall Spec p q I,
@@ -2075,4 +2085,7 @@ Proof.
 
   -
     eapply wf_seq_disj_rule; eauto.
+
+  -
+    eapply wf_seq_pure_intro_rule; eauto.
 Qed.

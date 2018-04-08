@@ -2222,6 +2222,45 @@ Proof.
   }
 Qed.
 
+Lemma dly_reduce_pure_stable :
+  forall D M R R' F D' pu,
+    (M, (R, F), D) |= [| pu |] ->
+    (R', D') = exe_delay R D ->
+    (M, (R', F), D') |= [| pu |].
+Proof.
+  intro D.
+  induction D; intros.
+  -
+    simpls; simpljoin1; eauto.
+  -
+    destruct a, p.
+    assert ((M, (R, F), D) |= [| pu |]).
+    {
+      clear - H.
+      simpls.
+      simpljoin1.
+      split; eauto.
+    }
+    simpl in H0.
+    destruct d.
+    {
+      destruct (exe_delay R D) eqn:Heqe.
+      inversion H0; subst.
+      symmetry in Heqe.
+      eapply IHD in Heqe; eauto.
+      clear - Heqe.
+      simpls.
+      simpljoin1.
+      repeat (split; eauto).
+    }
+    {
+      destruct (exe_delay R D) eqn:Heqe.
+      inversion H0; subst.
+      symmetry in Heqe.
+      eapply IHD in Heqe; eauto.
+    }
+Qed.
+    
 Lemma Afrmlist_exe_delay_stable :
   forall D D' M R R' F w f,
     (M, (R, F), D) |= {|w, f|} ->
@@ -2374,7 +2413,7 @@ Proof.
 
   - (* APure *)
     simpl TimReduce.
-    simpls; eauto.
+    eapply dly_reduce_pure_stable; eauto.
  
   - (* AframeList *)
     simpl TimReduce.
@@ -2506,7 +2545,7 @@ Lemma dly_frm_free_exe_delay_stable :
     exe_delay R D = (R', D') ->
     (M, (R', F), D') |= p.
 Proof.
-  intro p.
+  intro p. 
   induction p; intros;
     try solve [simpls; eauto; tryfalse].
   eapply dly_reduce_Aemp_stable; eauto.
@@ -2514,6 +2553,7 @@ Proof.
   eapply dly_reduce_Aaexp_stable; eauto.
   eapply dly_reduce_Aoexp_stable; eauto.
   eapply dly_reduce_reg_stable; eauto.
+  eapply dly_reduce_pure_stable; eauto.
   simpls.
   simpljoin1.
   eauto.

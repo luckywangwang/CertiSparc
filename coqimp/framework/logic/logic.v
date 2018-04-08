@@ -152,7 +152,7 @@ Fixpoint sat (s : State) (p : asrt) {struct p} : Prop :=
   | Aregdly t rsp v =>
     exists v', getregs s = RegMap.set rsp (Some v') empR /\ getmem s = empM /\
           (regdlySt t rsp v s \/ regSt rsp v s)
-  | Apure p => p
+  | Apure p => p /\ getmem s = empM /\ getregs s = empR
   | Aframe id F => regSt cwp id s /\ getframelst s = F
   | Atrue => True
   | Afalse => False
@@ -389,14 +389,14 @@ Inductive wf_seq : funspec -> asrt -> InsSeq -> asrt -> Prop :=
 | Be_rule : forall p p' q r f1 f2 f bv fp fq L i I Spec,
     Spec (f, f +ᵢ ($ 4)) = Some (fp, fq) ->
     |- {{ p ↓↓ }} i {{ p' }} -> (p ↓) ==> z |=> bv ** Atrue ->
-    wf_seq Spec ( p' //\\ [| bv =ᵢ ($ 0) = true |] ) I q -> DlyFrameFree r ->
+    (bv =ᵢ ($ 0) = true -> wf_seq Spec p' I q) -> DlyFrameFree r ->
     ((bv =ᵢ ($ 0) = false) -> ((p' ==> fp L ** r) /\ (fq L ** r ==> q))) ->
     wf_seq Spec p (f1 e> be f ;; f2 e> i ;; I) q
 
 | Bne_rule : forall p p' q r f1 f2 f bv fp fq L i I Spec,
     Spec (f, f +ᵢ ($ 4)) = Some (fp, fq) ->
     |- {{ p ↓↓ }} i {{ p' }} -> (p ↓) ==> z |=> bv ** Atrue ->
-    wf_seq Spec ( p' //\\ [| bv =ᵢ ($ 0) = false |] ) I q -> DlyFrameFree r ->
+    (bv =ᵢ ($ 0) = false -> wf_seq Spec p' I q) -> DlyFrameFree r ->
     ((bv =ᵢ ($ 0) = true) -> ((p' ==> fp L ** r) /\ (fq L ** r ==> q))) ->
     wf_seq Spec p (f1 n> bne f ;; f2 n> i ;; I) q
 
@@ -414,7 +414,11 @@ Inductive wf_seq : funspec -> asrt -> InsSeq -> asrt -> Prop :=
 
 | Seq_disj_rule : forall p1 p2 q1 q2 I Spec,
     wf_seq Spec p1 I q1 -> wf_seq Spec p2 I q2 ->
-    wf_seq Spec (p1 \\// p2) I (q1 \\// q2).
+    wf_seq Spec (p1 \\// p2) I (q1 \\// q2)
+
+| Pure_intro_rule : forall p q (pu : Prop) I Spec,
+    (pu -> wf_seq Spec p I q) ->
+    wf_seq Spec ([| pu |] ** p) I q.
 
 Notation " Spec '|-' '{{' p '}}' I '{{' q '}}' " :=
   (wf_seq Spec p I q) (at level 55).

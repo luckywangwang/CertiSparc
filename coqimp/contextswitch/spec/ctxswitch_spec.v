@@ -20,7 +20,6 @@ Require Import lemmas.
 Require Import lemmas_ins.
 
 Require Import code.
-Require Import reg_lemma.
 
 Require Import Coq.Logic.FunctionalExtensionality.
   
@@ -80,6 +79,13 @@ Definition context (ctx : ctx_val) :=
     context' l rl ri rg ry
   end.
 
+Definition GlobalRegs (fm : Frame) :=
+  match fm with
+  | consfm w0 w1 w2 w3 w4 w5 w6 w7 =>
+    r0 |=> w0 ** r1 |=> w1 ** r2 |=> w2 ** r3 |=> w3 ** r4 |=> w4 **
+       r5 |=> w5 ** r6 |=> w6 ** r7 |=> w7
+  end.
+
 Fixpoint nth_val (n : nat) (vl : list Word) {struct vl}:=
   match vl with
     | nil => None
@@ -90,6 +96,37 @@ Fixpoint nth_val (n : nat) (vl : list Word) {struct vl}:=
   end.
 
 (*+ Auxiliary Operation +*)
+Definition update_frame (fm : Frame) (n : nat) (v : Word) :=
+  match fm with
+  | consfm w0 w1 w2 w3 w4 w5 w6 w7 =>
+    match n with
+    | 0 => consfm v w1 w2 w3 w4 w5 w6 w7
+    | 1 => consfm w0 v w2 w3 w4 w5 w6 w7
+    | 2 => consfm w0 w1 v w3 w4 w5 w6 w7
+    | 3 => consfm w0 w1 w2 v w4 w5 w6 w7
+    | 4 => consfm w0 w1 w2 w3 v w5 w6 w7
+    | 5 => consfm w0 w1 w2 w3 w4 v w6 w7
+    | 6 => consfm w0 w1 w2 w3 w4 w5 v w7
+    | 7 => consfm v w1 w2 w3 w4 w5 w6 v
+    | _ => consfm w0 w1 w2 w3 w4 w5 w6 w7
+    end
+  end.
+
+Definition get_frame_nth (fm : Frame) (n : nat) :=
+  match fm with
+  | consfm w0 w1 w2 w3 w4 w5 w6 w7 =>
+    match n with
+    | 0 => Some w0
+    | 1 => Some w1
+    | 2 => Some w2
+    | 3 => Some w3
+    | 4 => Some w4
+    | 5 => Some w5
+    | 6 => Some w6
+    | 7 => Some w7
+    | _ => None
+    end
+  end.
 
 Definition frame_to_list (fm : Frame) :=
   match fm with
@@ -259,3 +296,19 @@ Definition os_int_ta0_handler_post (vl : list logicvar) :=
       [| bv = OSTRUE |]
     )
   ).
+
+Fixpoint convert_spec (ls : list (Address * Address * funspec)) :
+  Address * Address -> option funspec :=
+  match ls with
+  | nil => fun _ : Address * Address => None
+  | (f1, f2, spec) :: ls' =>
+    fun f : Address * Address =>
+      let (f1', f2') := f in
+      if AddrEq.eq f1 f1' then
+        if AddrEq.eq f2 f2' then
+          Some spec
+        else
+          convert_spec ls' f
+      else
+        convert_spec ls' f
+  end.
