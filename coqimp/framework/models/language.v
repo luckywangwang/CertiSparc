@@ -171,7 +171,7 @@ Inductive R__ : Memory * RegFile -> ins -> Memory * RegFile -> Prop :=
 
 | ST_step : forall (ri : GenReg) aexp M M' R addr v,
     eval_addrexp R aexp = Some addr -> word_aligned addr = true ->
-    R ri = Some v -> indom addr M -> MemMap.set addr (Some v) M = M' ->
+    get_R R ri = Some v -> indom addr M -> MemMap.set addr (Some v) M = M' ->
     R__ (M, R) (st ri aexp) (M', R)
 
 | Nop_step : forall M R,

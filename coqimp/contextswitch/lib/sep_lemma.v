@@ -614,3 +614,12 @@ Ltac asrt_to_ls_in H :=
     simpl asrt_to_list in H; simpl list_to_asrt in H
   | _ => idtac
   end.
+
+Ltac sep_cancel1 m n :=
+  let H' := fresh in
+  match goal with
+  | H : ?s |= _ |- ?s |= _ =>
+    simpl_sep_liftn_in H m; simpl_sep_liftn n;
+    eapply astar_subst2; [eauto | introv H'; clear H]
+  | _ => idtac
+  end.

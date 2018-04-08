@@ -143,7 +143,8 @@ Definition state_union (s1 s2 s : State) :=
 Fixpoint sat (s : State) (p : asrt) {struct p} : Prop :=
   match p with
   | Aemp => getmem s = empM /\ getregs s = empR
-  | Amapsto l v => getmem s = MemMap.set l (Some v) empM /\ getregs s = empR
+  | Amapsto l v => getmem s = MemMap.set l (Some v) empM /\
+                  getregs s = empR /\ word_aligned l = true
   | Aaexpevl aexp addr => eval_addrexp (getregs s) aexp = Some addr /\
                           word_aligned addr = true
   | Aoexpevl oexp v => eval_opexp (getregs s) oexp = Some v
@@ -215,9 +216,9 @@ Inductive wf_ins : asrt -> ins -> asrt -> Prop :=
     wf_ins p (ld aexp rd) (l |-> v ** rd |=> v ** q)
 
 | st_rule : forall p aexp l v v1 (rs : GenReg),
-    l |-> v ** rs |=> v1 ** p ==> aexp ==ₓ l ->
-    wf_ins (l |-> v ** rs |=> v1 ** p) (st rs aexp)
-           (l |-> v1 ** rs |=> v1 ** p)
+    l |-> v  ** p ==> ((Or rs) ==ₑ v1 //\\ aexp ==ₓ l) ->
+    wf_ins (l |-> v  ** p) (st rs aexp)
+           (l |-> v1 ** p)
 
 | add_rule : forall p q oexp (rs rd : GenReg) v1 v2 v,
     p ==> ((Or rs) ==ₑ v1 //\\ oexp ==ₑ v2) ->

@@ -736,6 +736,26 @@ Proof.
   }
 Qed.
 
+Lemma get_R_set_neq_stable :
+  forall R rn1 rn2 v1 v2,
+    get_R R rn1 = Some v1 -> rn1 <> rn2 ->
+    get_R (set_R R rn2 v2) rn1 = Some v1.
+Proof.
+  intros.
+  unfolds get_R.
+  unfold set_R.
+  unfold is_indom.
+  destruct (R rn1) eqn:Heqe1;
+    destruct (R rn2) eqn:Heqe2; eauto.
+  unfold RegMap.set.
+  destruct_rneq.
+  rewrite Heqe1; eauto.
+  rewrite Heqe1; eauto.
+  unfold RegMap.set.
+  destruct_rneq.
+  rewrite Heqe1; eauto.
+Qed.
+
 (*+ Lemmas about Sep Star +*)
 Lemma sep_star_split :
   forall s p1 p2,
@@ -1074,37 +1094,35 @@ Proof.
       inversion H0; subst.   
       eapply IHD with (R' := r) (D' := d) in H1; eauto.
       clear - H1.
-      simpls.
+      simpls. 
       simpljoin1.
       unfolds eval_addrexp.
       destruct a0; eauto.
       split; eauto.
- 
+  
       unfolds eval_opexp.
-      destruct o; eauto.
+      destruct o; eauto. 
       unfold set_R.
       unfold is_indom.
       destruct (r s) eqn :Heqe; eauto.
-      destruct (RegNameEq.eq g r0); subst.
-      try rewrite e in *.
-      clear - H.
-      unfolds get_R.
-      unfolds RegMap.set.
-      destruct_rneq.
-      rewrite get_R_rn_neq_r0 in H; eauto.
-      rewrite get_R_rn_neq_r0; eauto.
-      unfolds RegMap.set.
-      destruct_rneq; eauto.
-      unfold set_R.
-      unfold is_indom.
-      destruct (r s) eqn:Heqe; eauto.
+      unfold get_R.
       unfold RegMap.set.
-      destruct_rneq; eauto. 
-      destruct (r g) eqn:Heqe2; eauto.
-      unfolds eval_opexp.
-      destruct o; eauto.
-      unfolds get_R.
-      destruct_rneq; eauto.
+      destruct_rneq.
+      split; eauto.
+      destruct (get_R r g) eqn:Heqe.
+      {
+        erewrite get_R_set_neq_stable; eauto.
+        2 : intro; tryfalse.
+        destruct o; simpls.
+        destruct (get_R r g0) eqn:Heqe1.
+        erewrite get_R_set_neq_stable; eauto.
+        intro; tryfalse.
+        tryfalse.
+        eauto.
+      }
+      {
+        tryfalse.
+      }
     }
     {
       destruct (exe_delay R D) eqn:Heqe; subst.
@@ -2595,19 +2613,19 @@ Proof.
     +
       simpls.
       destruct (($ (-4096)) <=ᵢ w && w <=ᵢ ($ 4095)); eauto.
-  -
+  - 
     simpls.
-    destruct (M g) eqn:Heqe.
-    + 
-      unfold merge in *.
-      rewrite Heqe; eauto.
+    destruct (get_R M g) eqn:Heqe.
+    +
+      erewrite get_R_merge_still; eauto.
       destruct o.
       simpls.
-      unfolds get_R.
-      destruct (M g0) eqn:Heqe1; eauto.
+      destruct (get_R M g0) eqn:Heqe1.
+      inversion H; subst.
+      erewrite get_R_merge_still; eauto.
       tryfalse.
-      unfolds eval_opexp.
-      destruct (($ (-4096)) <=ᵢ w0 && w0 <=ᵢ ($ 4095)); eauto.
+      simpls.
+      eauto.
     +
       tryfalse.
 Qed.

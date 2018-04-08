@@ -137,8 +137,8 @@ Qed.
 
 Lemma st_rule_sound :
   forall l v (rs : GenReg) v1 p aexp,
-    l |-> v ** rs |=> v1 ** p ==> aexp ==ₓ l ->
-    ins_sound (l |-> v ** rs |=> v1 ** p) (l |-> v1 ** rs |=> v1 ** p) (st rs aexp).
+    l |-> v ** p ==> Or rs ==ₑ v1 //\\ aexp ==ₓ l ->
+    ins_sound (l |-> v ** p) (l |-> v1 ** p) (st rs aexp).
 Proof.
   intros.
   unfold ins_sound.
@@ -147,24 +147,15 @@ Proof.
   lets Haexp : H0.
   eapply H in Haexp.
   sep_star_split_tac.
-  simpl in H3, H4.
+  simpl in H4.
   simpljoin1.
   simpl in Haexp.
   simpljoin1.
-  exists (MemMap.set l (Some v1) m0 ⊎ (m2 ⊎ m3), (r0 ⊎ (r2 ⊎ r3), f3), d3).
+  exists (MemMap.set l (Some v1) m0 ⊎ m1, (r0 ⊎ r1, f1), d1).
   split; eauto.
 
-  eapply NormalIns; eauto.
+  eapply NormalIns; eauto. 
   eapply ST_step with (v := v1); eauto.
-  eapply get_vl_merge_still2; eauto.
-  eapply get_vl_merge_still; eauto.
-  clear - H1.
-  simpls.
-  unfolds regSt.
-  simpls.
-  simpljoin1.
-  unfold RegMap.set.
-  destruct_rneq.
   eapply indom_merge_still; eauto.
   clear - H0.
   simpls.
@@ -175,13 +166,10 @@ Proof.
   simpls.
   simpljoin1.
   eapply memset_l_l_indom; eauto.
-  simpl.
+  simpl. 
   do 2 eexists.
   repeat (split; eauto).
-  Focus 4.
-  do 2 eexists.
-  repeat (split; eauto).
-  instantiate (1 := (MemMap.set l (Some v1) m0, (r0, f3), d3)).
+  instantiate (1 := (MemMap.set l (Some v1) m0, (r0, f1), d1)).
   simpl.
   repeat (split; eauto).
   simpl in H0.

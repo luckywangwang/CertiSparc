@@ -206,7 +206,7 @@ Definition eval_addrexp (R : RegFile) (b : AddrExp) :=
   match b with
   | Ao a => eval_opexp R a
   | Aro r a =>
-    match R r with
+    match get_R R r with
     | Some w1 =>
       match (eval_opexp R a) with
       | Some w2 => Some (w1 +ᵢ w2)

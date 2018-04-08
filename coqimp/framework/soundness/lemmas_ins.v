@@ -3012,7 +3012,7 @@ Proof.
     eapply NormalIns; eauto.
     eapply ST_step; eauto.
     eapply eval_addrexp_merge_still; eauto.
-    eapply get_vl_merge_still; eauto.
+    eapply get_R_merge_still; eauto.
     eapply indom_merge_still; eauto.
     rewrite indom_memset_merge_eq; eauto.
 
