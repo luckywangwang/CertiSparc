@@ -19,6 +19,9 @@ Require Import logic.
 Require Import lemmas.
 Require Import lemmas_ins.
 
+Require Import sep_lemma.
+Require Import reg_lemma.
+
 Require Import code.
 
 Require Import Coq.Logic.FunctionalExtensionality.
@@ -77,13 +80,6 @@ Definition context (ctx : ctx_val) :=
   match ctx with
   | (l, (rl, ri, rg, ry)) =>
     context' l rl ri rg ry
-  end.
-
-Definition GlobalRegs (fm : Frame) :=
-  match fm with
-  | consfm w0 w1 w2 w3 w4 w5 w6 w7 =>
-    r0 |=> w0 ** r1 |=> w1 ** r2 |=> w2 ** r3 |=> w3 ** r4 |=> w4 **
-       r5 |=> w5 ** r6 |=> w6 ** r7 |=> w7
   end.
 
 Fixpoint nth_val (n : nat) (vl : list Word) {struct vl}:=
@@ -255,7 +251,7 @@ Definition os_int_ta0_handler_pre (vl : list logicvar) :=
   OSTaskCur |-> ct ** OSTaskNew |-> nt ** OSTaskSwitchFlag |-> bv ** OSIntNestCnt |-> ll **
   context cctx ** stack cstk ** [| get_frame_nth fml 0 = Some id |] **
   (
-    [| bv = OSFALSE|]
+    [| bv = OSFALSE|] ** Atrue
       \\//
     (
       context nctx ** stack nstk **
@@ -283,7 +279,7 @@ Definition os_int_ta0_handler_post (vl : list logicvar) :=
     (
       [| bv = OSFALSE /\
          fmg' = fmg /\ fml' = fml /\ fmi' = fmi /\ id' = id /\ vi' = vi /\ F = F' /\
-         vy' = vy /\ cctx = cctx' /\ cstk = cstk' |]
+         vy' = vy /\ cctx = cctx' /\ cstk = cstk' |] ** Atrue
     )
       \\//
     (
@@ -297,8 +293,20 @@ Definition os_int_ta0_handler_post (vl : list logicvar) :=
     )
   ).
 
-Fixpoint convert_spec (ls : list (Address * Address * funspec)) :
-  Address * Address -> option funspec :=
+Definition os_ta0_return_pre (vl : list logicvar) :=
+  EX fmg fmo fml fmi F vi id,
+  [| vl = logic_fm fmg :: logic_fm fml :: logic_fm fmi :: logic_lv id
+          :: logic_fmls F :: logic_lv vi :: nil |] **
+  GenRegs (fmg, fmo, fml, fmi) ** FrameState id vi F.
+
+Definition os_ta0_return_post (vl : list logicvar) :=
+  EX fmg fmo fml fmi F vi id,
+  [| vl = logic_fm fmg :: logic_fm fml :: logic_fm fmi :: logic_lv id
+          :: logic_fmls F :: logic_lv vi :: nil |] **
+  GenRegs (upd_genreg (fmg, fmo, fml, fmi) l0 id) ** FrameState id vi F.
+                                                   
+Fixpoint convert_spec (ls : list (Address * Address * fspec)) :
+  funspec :=
   match ls with
   | nil => fun _ : Address * Address => None
   | (f1, f2, spec) :: ls' =>
@@ -312,3 +320,4 @@ Fixpoint convert_spec (ls : list (Address * Address * funspec)) :
       else
         convert_spec ls' f
   end.
+

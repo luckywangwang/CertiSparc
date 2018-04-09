@@ -277,10 +277,9 @@ Definition ta0_task_switch_newcontext :=
   ($ 536) # (sub o5 ('1) o5);;
   ($ 540) # (st o5 (Ao (Or o4)));;
   ($ 544) # (getcwp o4);;
-  ($ 548) # (or o4 ('0) o4);;
-  ($ 552) # (restore g0 (Or g0) g0);;
-  ($ 556) r> retl;;
-  ($ 560) r> nop.
+  ($ 548) # (or o4 ('0) l0);;
+  ($ 552) r> retl;;
+  ($ 556) r> nop.
 
 Definition regsave :=
   ($ 564) # (st l0 (Aro l5 (Ow OS_L0_OFFSET)));;
