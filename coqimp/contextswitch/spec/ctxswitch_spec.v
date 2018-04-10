@@ -3,7 +3,7 @@ Require Import Maps.
 Require Import LibTactics.  
         
 Require Import Integers.  
-Open Scope Z_scope.    
+Open Scope Z_scope.     
 Import ListNotations.
   
 Set Asymmetric Patterns.  
@@ -231,7 +231,7 @@ Definition ctx_win_match (ctx : ctx_val) (fml fmi fmg : Frame) (vy : Word) :=
   match ctx with
   | (ca, (cl, ci, cg, cy)) =>
     cl = get_list_pre (frame_to_list fml) 3 /\ ci = frame_to_list fmi /\
-    cg = frame_to_list fmg /\ cy = vy
+    tl cg = tl (frame_to_list fmg) /\ cy = vy
   end.
 
 Definition ctx_win_save (ctx : ctx_val) (fml fmi fmg : Frame) (vy : Word) :=
@@ -248,7 +248,7 @@ Definition ctx_pt_stk (ctx : ctx_val) (stk : stack_val) : Prop :=
   
 Definition FrameState (id vi : Word) (F : FrameList) :=
   {| id, F |} ** Rsp Rwim |=> (($ 1) <<ᵢ vi) ** [| length F = 13|] **
-  [| ($ 0) <=ᵢ id = true /\ id <=ᵢ ($ 7) = true /\ ($ 0) <=ᵢ vi = true /\ vi <=ᵢ ($ 7) = true |].
+  [| ($ 0) <=ᵤᵢ id <=ᵤᵢ ($ 7) /\ ($ 0) <=ᵤᵢ vi <=ᵤᵢ ($ 7) |].
 
 (*+ Specification +*)
 Definition os_int_ta0_handler_pre (vl : list logicvar) :=
@@ -303,7 +303,8 @@ Definition os_int_ta0_handler_post (vl : list logicvar) :=
       context nctx ** stack nstk **
       [| (get_ctx_addr cctx = ct +ᵢ OS_CONTEXT_OFFSET) ->
          (ctx_pt_stk cctx' cstk' /\ stack_frame_save F cstk' id vi /\
-          ctx_win_save cctx fml fmi fmg vy) |] **
+          ctx_win_save cctx (update_frame (update_frame fml 1 ((get_frame_nth' fml 1) +ᵢ ($ 4))) 2
+                             ((get_frame_nth' fml 2) +ᵢ ($ 4))) fmi fmg vy) |] **
       [| stack_frame_constraint nstk (fml' :: fmi' :: F' ++ (fmo' :: nil)) id' vi' /\
          ctx_win_restore nctx fml' fmi' fmg' vy' |]
     )
@@ -337,3 +338,39 @@ Fixpoint convert_spec (ls : list (Address * Address * fspec)) :
         convert_spec ls' f
   end.
 
+
+Definition ta0_window_ok_pre (vl : list logicvar) :=
+  EX fmg fmo fml fmi id F vy vi ll
+     ct cctx cstk nt nctx nstk vz vn,
+  [| vl = logic_fm fmg :: logic_fm fml :: logic_fm fmi :: logic_lv id
+          :: logic_fmls F :: logic_lv vy :: logic_lv vi :: logic_lv ll
+          :: logic_lv ct :: logic_ctx cctx :: logic_stk cstk
+          :: logic_lv nt :: logic_ctx nctx :: logic_stk nstk :: nil |] **
+  GlobalRegs fmg ** Regs fmo fml fmi ** FrameState id vi F ** Rsp Ry |=> vy **
+  z |=> vz ** n |=> vn **
+  OSTaskCur |-> ct ** OSTaskNew |-> nt ** OSTaskSwitchFlag |-> OSTRUE ** OSIntNestCnt |-> ll **
+  context cctx ** stack cstk ** [| get_frame_nth fml 0 = Some id |] ** [| id <> vi |] ** 
+  context nctx ** stack nstk **
+  [| ct <> ($ 0) -> (get_ctx_addr cctx = ct +ᵢ OS_CONTEXT_OFFSET) |] **
+  [| get_ctx_addr nctx = nt +ᵢ OS_CONTEXT_OFFSET /\ ctx_pt_stk nctx nstk |] **
+  [| (get_ctx_addr cctx = ct +ᵢ OS_CONTEXT_OFFSET) ->
+     stack_frame_constraint cstk (fml :: fmi :: F ++ (fmo :: nil)) id vi |].
+
+Definition ta0_window_ok_post (vl : list logicvar) :=
+  EX fmg fmg' fmo' fml fml' fmi fmi' id id' F F' vy vy' vi vi' ll
+     ct cctx cctx' cstk cstk' nt nctx nstk vz' vn',
+  [| vl = logic_fm fmg :: logic_fm fml :: logic_fm fmi :: logic_lv id
+          :: logic_fmls F :: logic_lv vy :: logic_lv vi :: logic_lv ll
+          :: logic_lv ct :: logic_ctx cctx :: logic_stk cstk
+          :: logic_lv nt :: logic_ctx nctx :: logic_stk nstk :: nil |] **
+  GlobalRegs fmg' ** Regs fmo' fml' fmi' ** FrameState id' vi' F' ** Rsp Ry |=> vy' **
+  z |=> vz' ** n |=> vn' **
+  OSTaskCur |-> ct ** OSTaskNew |-> nt ** OSTaskSwitchFlag |-> OSFALSE ** OSIntNestCnt |-> ll **
+  context cctx' ** stack cstk' ** [| get_frame_nth fml' 0 = Some id' |] **
+  [| get_ctx_addr cctx = get_ctx_addr cctx' /\ get_stk_addr cstk = get_stk_addr cstk' |] **
+  context nctx ** stack nstk **
+  [| (get_ctx_addr cctx = ct +ᵢ OS_CONTEXT_OFFSET) ->
+     (ctx_pt_stk cctx' cstk' /\ stack_frame_save F cstk' id vi /\
+      ctx_win_save cctx fml fmi fmg vy) |] **
+  [| stack_frame_constraint nstk (fml' :: fmi' :: F' ++ (fmo' :: nil)) id' vi' /\
+         ctx_win_restore nctx fml' fmi' fmg' vy' |].

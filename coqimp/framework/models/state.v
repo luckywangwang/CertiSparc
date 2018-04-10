@@ -181,6 +181,33 @@ Notation "a !=ᵢ b" := (negb(Int.eq a b))(at level 1) : code_scope.
 Notation "a 'modu' b" := (Int.modu a b)(at level 1) : code_scope.
 Notation "a 'xor' b" := (Int.xor a b)(at level 1) : code_scope.
 
+Definition int_le a b :=
+  Int.lt a b || Int.eq a b.
+Notation "A <ᵢ B <ᵢ C" := (Int.lt A B && Int.lt B C = true)
+                            (at level 2, B at next level) : code_scope. 
+Notation "A <ᵢ B <=ᵢ C" := (Int.lt A B && int_le B C = true)
+                             (at level 2, B at next level) : code_scope.
+Notation "A <=ᵢ B <ᵢ C" := (int_le A B && Int.lt B C = true)
+                             (at level 2, B at next level) : code_scope.        
+Notation "A <=ᵢ B <=ᵢ C" := (int_le A B && int_le B C = true)
+                              (at level 2, B at next level) : code_scope.
+
+Definition int_leu a b :=
+  Int.ltu a b || Int.eq a b.
+
+Notation "A <ᵤᵢ B <ᵤᵢ C" := (Int.ltu A B && Int.ltu B C = true)
+                              (at level 2, B at next level) : code_scope.
+Notation "A <ᵤᵢ B <=ᵤᵢ C" := (Int.ltu A B && int_leu B C = true)
+                               (at level 2, B at next level) : code_scope.
+Notation "A <=ᵤᵢ B <ᵤᵢ C" := (int_leu A B && Int.ltu B C = true)
+                               (at level 2, B at next level) : code_scope.        
+Notation "A <=ᵤᵢ B <=ᵤᵢ C" := (int_leu A B && int_leu B C = true)
+                                (at level 2, B at next level) : code_scope.
+Notation "A <ᵤᵢ B" := (Int.ltu A B = true)
+                        (at level 2, no associativity) : code_scope.
+Notation "A <=ᵤᵢ B" := (int_leu A B = true)
+                         (at level 2, no associativity) : code_scope.
+
 Open Scope code_scope.
 
 Definition get_R (R : RegFile) (rn : RegName) :=

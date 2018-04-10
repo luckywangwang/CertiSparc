@@ -1535,3 +1535,65 @@ Proof.
     eapply GenRegs_upd_combine_one; eauto.
   }
 Qed.
+
+Theorem rd_rule_reg :
+  forall (rsp : SpReg) v (rr : GenReg) p grst,
+    |- {{ GenRegs grst ** rsp |=> v ** p }}
+        rd rsp rr
+      {{ GenRegs (upd_genreg grst rr v) ** rsp |=> v ** p }}.
+Proof.
+  intros.
+  eapply ins_conseq_rule with
+  (p1 := rsp |=> v ** rr |=> get_genreg_val' grst rr ** GenRegs_rm_one grst rr ** p).
+  Focus 2.
+  eapply rd_rule; eauto.
+  introv Hs.
+  sep_cancel1 2 1.
+  eapply GenRegs_split_one; eauto.
+  introv Hs.
+  sep_cancel1 1 2.
+  eapply GenRegs_upd_combine_one; eauto.
+Qed.
+
+Theorem wr_rule_reg :
+  forall oexp (rs : GenReg) v1 v2 v grst (rsp : SpReg) p,
+    get_genreg_val grst rs = v1 ->
+    eval_opexp_reg grst oexp = Some v2 ->
+    |- {{ GenRegs grst ** rsp |=> v ** p }}
+        wr rs oexp rsp
+      {{ GenRegs grst ** 3 @ rsp |==> v1 xor v2 ** p }}.
+Proof.
+  intros. 
+  eapply ins_conseq_rule with (p1 := rsp |=> v ** GenRegs grst ** p).
+  Focus 2.
+  eapply wr_rule; eauto.
+  instantiate (2 := v1).
+  instantiate (1 := v2).
+  introv Hs.
+  simpl_sep_liftn_in Hs 2.
+  simpl.
+  split.
+  
+    subst.
+    sep_star_split_tac.
+    simpl in H3, H4.
+    simpljoin1.
+    simpl.
+    eapply get_R_merge_still; eauto.
+    eapply getR_eq_get_genreg_val; eauto.
+  
+  
+    sep_star_split_tac.
+    simpl in H4, H5.
+    simpljoin1.
+    simpl.
+    eapply eval_opexp_merge_still; eauto.
+    eapply eval_opexp_reg_eq_eval_opexp; eauto.
+
+  introv Hs.
+  sep_cancel1 1 2.
+  eauto.
+  introv Hs.
+  sep_cancel1 2 1.
+  eauto.
+Qed.
