@@ -1,9 +1,9 @@
-Require Import Coqlib.                 
-Require Import Maps.         
+Require Import Coqlib.                   
+Require Import Maps.          
 Require Import LibTactics.   
         
 Require Import Integers.  
-Open Scope Z_scope.      
+Open Scope Z_scope.       
 Import ListNotations.  
   
 Set Asymmetric Patterns.  
@@ -13,7 +13,7 @@ Require Import language.
  
 Set Implicit Arguments.    
 Unset Strict Implicit. 
-              
+               
 Require Import logic.
     
 Require Import lemmas.
@@ -107,6 +107,20 @@ Proof.
   rewrite save_reg_TimeReduce'; eauto.
 Qed.
 
+Theorem Context_TimeReduce' :
+  forall ctx,
+    (context ctx) ↓ = context ctx.
+Proof.
+  intros.
+  unfold context.
+  destruct ctx.
+  destruct p.
+  destruct p.
+  destruct p.
+  unfold context'.
+  repeat (rewrite save_reg_TimeReduce; eauto).
+Qed.
+
 Theorem Context_TimeReduce :
   forall ctx p,
     (context ctx ** p) ↓ = context ctx ** (p ↓).
@@ -147,6 +161,16 @@ Proof.
     simpl.
     do 2 rewrite stack_seg_TimeReduce; eauto.
     rewrite IHlfp; eauto.
+Qed.
+
+Lemma Stk_TimeReduce1 :
+  forall stk,
+    stack stk ↓ = stack stk.
+Proof.
+  intros.
+  unfold stack.
+  destruct stk.
+  rewrite Stk_TimeReduce'; eauto.
 Qed.
 
 Theorem Stk_TimeReduce :
@@ -195,8 +219,19 @@ Proof.
   intros; eauto.
 Qed.
 
+Theorem astar_TimReduce :
+  forall p q,
+    (p ** q) ↓ = (p ↓) ** (q ↓).
+Proof.
+  intros; simpl; eauto.
+Qed.
+
 Ltac TimReduce_simpl :=
   match goal with
+  | |- context [(context ?ctx) ↓] =>
+    rewrite Context_TimeReduce'; TimReduce_simpl
+  | |- context [(stack ?stk) ↓] =>
+    rewrite Stk_TimeReduce1; TimReduce_simpl
   | |- context [(GenRegs ?grst ** ?p) ↓] =>
     rewrite GenRegs_TimeReduce; TimReduce_simpl
   | |- context [(FrameState ?id ?vi ?F ** ?p) ↓] =>
@@ -219,6 +254,8 @@ Ltac TimReduce_simpl :=
     rewrite conj_TimeReduce; TimReduce_simpl
   | |- context [(?p1 \\// ?p2) ↓] =>
     rewrite disj_TimeReduce; TimReduce_simpl
+  | |- context [(?p1 ** ?p2) ↓] =>
+    rewrite astar_TimReduce; TimReduce_simpl
   | _ => simpl TimReduce
   end.
 
@@ -252,7 +289,158 @@ Ltac TimReduce_simpl_in H :=
     end
   end.
 
+(*+ Lemmas about DlyFrameFree +*)
+Lemma Atrue_DlyFrameFree :
+  forall p,
+    DlyFrameFree p -> DlyFrameFree (Atrue ** p).
+Proof.
+  intros.
+  simpl; eauto.
+Qed.
+
+Lemma Afalse_DlyFrameFree :
+  forall p,
+    DlyFrameFree p -> DlyFrameFree (Afalse ** p).
+Proof.
+  intros.
+  simpl; eauto.
+Qed.
+
+Lemma RegSt_DlyFrameFree :
+  forall rn v p,
+    DlyFrameFree p -> DlyFrameFree (rn |=> v ** p).
+Proof.
+  intros.
+  simpl; eauto.
+Qed.
+
+Lemma MapSto_DlyFrameFree :
+  forall l v p,
+    DlyFrameFree p -> DlyFrameFree (l |-> v ** p).
+Proof.
+  intros.
+  simpl; eauto.
+Qed.
+
+Lemma astar_DlyFrameFree :
+  forall p1 p2,
+    DlyFrameFree p1 -> DlyFrameFree p2 -> DlyFrameFree (p1 ** p2).
+Proof.
+  intros.
+  simpl; eauto.
+Qed.
+
+Lemma save_reg_DlyFrameFree' :
+  forall n l vl,
+    DlyFrameFree (save_reg l n vl).
+Proof.
+  intro n.
+  induction n; intros.
+  -
+    simpls; eauto.
+    destruct vl; eauto.
+    simpl; eauto.
+    simpl; eauto.
+  -
+    destruct vl; simpl; eauto.
+Qed.
+  
+Lemma save_reg_DlyFrameFree :
+  forall n l vl p,
+    DlyFrameFree p ->
+    DlyFrameFree (save_reg l n vl ** p).
+Proof.
+  intros.
+  eapply astar_DlyFrameFree; eauto.
+  eapply save_reg_DlyFrameFree'.
+Qed.
+
+Lemma Context_DlyFrameFree' :
+  forall l rl ri rg ry,
+    DlyFrameFree (context' l rl ri rg ry).
+Proof.
+  intros.
+  unfold context'.
+  do 3 (eapply save_reg_DlyFrameFree; eauto).
+  simpl; eauto.
+Qed.
+
+Lemma Context_DlyFrameFree :
+  forall ctx p,
+    DlyFrameFree p -> DlyFrameFree (context ctx ** p).
+Proof.
+  intros.
+  unfold context.
+  destruct ctx.
+  destruct p0.
+  destruct p0.
+  destruct p0.
+  eapply astar_DlyFrameFree; eauto.
+  eapply Context_DlyFrameFree'; eauto.
+Qed.
+
+Lemma Stack_DlyFrameFree' :
+  forall lfp l,
+    DlyFrameFree (stack' l lfp).
+Proof.
+  intro lfp.
+  induction lfp; intros.
+  -
+    simpls; eauto.
+  -
+    destruct a.
+    simpl.
+    repeat (split; eauto).
+    destruct f.
+    simpl.
+    repeat (split; eauto).
+    destruct f0.
+    simpl.
+    repeat (split; eauto).
+Qed.
+
+Lemma Stack_DlyFrameFree :
+  forall stk p,
+    DlyFrameFree p -> DlyFrameFree (stack stk ** p).
+Proof.
+  intros.
+  unfold stack.
+  destruct stk; eauto.
+  eapply astar_DlyFrameFree; eauto.
+  eapply Stack_DlyFrameFree'; eauto.
+Qed.
+  
+Ltac DlyFrameFree_elim :=
+  match goal with
+  | |- DlyFrameFree (Atrue ** ?p) =>
+    eapply Atrue_DlyFrameFree; DlyFrameFree_elim
+  | |- DlyFrameFree (Afalse ** ?p) =>
+    eapply Afalse_DlyFrameFree; DlyFrameFree_elim
+  | |- DlyFrameFree (?rn |=> ?v ** ?p) =>
+    eapply RegSt_DlyFrameFree; DlyFrameFree_elim
+  | |- DlyFrameFree (?l |-> ?v ** ?p) =>
+    eapply MapSto_DlyFrameFree; DlyFrameFree_elim
+  | |- DlyFrameFree (context ?ctx ** ?p) =>
+    eapply Context_DlyFrameFree; DlyFrameFree_elim
+  | |- DlyFrameFree (stack ?stk ** ?p) =>
+    eapply Stack_DlyFrameFree; DlyFrameFree_elim
+  | _ =>
+    try solve [simpl; eauto]
+  end.
+
 (*+ Lemmas about Integers +*)
+Lemma in_range0 :
+  ($ (-4096)) <=ᵢ ($ 0) && ($ 0) <=ᵢ ($ 4095) = true.
+Proof.
+  unfold orb.
+  unfold Int.lt.
+  unfold Int.eq.
+  destruct (zlt (Int.signed $ (-4096)) (Int.signed $ 0)) eqn:Heqe;
+    destruct (zeq (Int.unsigned $ (-4096)) (Int.unsigned $ 0)) eqn:Heqe1;
+    destruct (zlt (Int.signed $ 0) (Int.signed $ 4095)) eqn:Heqe2;
+    destruct (zeq (Int.unsigned $ 0) (Int.unsigned $ 4095)) eqn:Heqe3; eauto; tryfalse.
+Qed.
+
 Lemma in_range4 :
   ($ (-4096)) <=ᵢ ($ 4) && ($ 4) <=ᵢ ($ 4095) = true.
 Proof.
@@ -378,7 +566,7 @@ Proof.
     }
     rewrite Hnzero.
 
-    (** bne Ta0_return; nop *)
+    (** bne Ta0_return; nop *) 
     eapply Bne_rule; eauto.
     {
         eval_spec.
@@ -400,7 +588,7 @@ Proof.
     Focus 2.
     introv Htrue.
     split.
-    {
+    
       introv Hs.
       TimReduce_simpl_in Hs.
       unfold os_ta0_return_pre. 
@@ -413,12 +601,12 @@ Proof.
       simpl_sep_liftn_in H 5.
       eauto.
       eauto.
-    }
-    {
+    
+     
       introv Hs.
       unfold os_ta0_return_post in Hs.
-      sep_ex_intro.
       sep_ex_elim_in Hs.
+      sep_ex_intro.
       eapply astar_assoc_elim in Hs.
       eapply sep_pure_l_elim in Hs.
       destruct Hs as [Hlg Hs].
@@ -437,8 +625,73 @@ Proof.
       sep_cancel1 3 3.
       sep_cancel1 3 3.
       sep_cancel1 3 3.
-      
-    }
+      simpl_sep_liftn 5.
+      eapply sep_disj_l_intro; eauto.
+      left. 
+      simpl_sep_liftn 2.
+      simpl_sep_liftn 3.
+      eapply GenRegs_split_Regs_Global. 
+      sep_cancel1 1 1.
+      eapply astar_assoc_intro.
+      eapply sep_pure_l_intro.
+      repeat (split; simpl; eauto).
+      simpl_sep_liftn 2.
+      simpl_sep_liftn 3.
+      repeat (eapply sep_pure_l_intro; eauto).
+
+    DlyFrameFree_elim.
   }
-    
+
+  eapply backward_rule.
+  introv Hs.
+  eapply astar_assoc_elim in Hs.
+  eauto.
+  eapply Pure_intro_rule.
+  introv Hbv.
+  hoare_lift_pre 2.
+  (** bne Ta0_return;; nop *)
+  eapply Bne_rule.
+  {
+    eval_spec.
+  }
+  {
+    eapply nop_rule; eauto.
+  }
+  {
+    introv Hs.
+    TimReduce_simpl_in Hs.
+    sep_cancel1 4 1.
+    simpl; eauto.
+  }
+
+  Focus 2.
+  instantiate (1 := Atrue).
+  simpl; eauto.
+
+  Focus 2.
+  introv Hcontr; subst bv.
+  rewrite Int.sub_idem in Hcontr.
+  unfold Int.zero in Hcontr.
+  unfold iszero in Hcontr. 
+  destruct (Int.eq_dec $ 0 $ 0); tryfalse.
+
+  introv Hiszero.
+  subst bv. 
+  TimReduce_simpl.
+
+  (** or l0 0 l4 *)
+  eapply seq_rule.
+  TimReduce_simpl.
+  eapply or_rule_reg; eauto.
+  simpl.
+  rewrite in_range0; eauto.
+  simpl upd_genreg.
+  rewrite Int.or_zero.
+
+  (** set 1 l5 *)
+  eapply seq_rule.
+  TimReduce_simpl.
+  eapply set_rule_reg; eauto.
+  simpl upd_genreg.
+  
   >>>>>>>>>>>>>>>

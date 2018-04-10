@@ -381,3 +381,44 @@ Ltac sep_ex_elim_in H :=
     eapply adisj_r_aexists_elim in H; destruct H as [?x H]; sep_ex_elim_in H
   | _ => idtac
   end.
+
+Theorem sep_disj_l_intro :
+  forall p1 p2 p s,
+    s |= p1 ** p \/ s |= p2 ** p ->
+    s |= (p1 \\// p2) ** p.
+Proof.
+  intros.
+  simpls.
+  destruct H; simpljoin1; eauto.
+  exists x x0.
+  repeat (split; eauto).
+  exists x x0.
+  repeat (split; eauto).
+Qed.
+
+Theorem sep_disj_r_intro :
+  forall p1 p2 p s,
+    s |= p ** p1 \/ s |= p ** p2 ->
+    s |= p ** (p1 \\// p2).
+Proof.
+  intros.
+  simpls.
+  destruct H; simpljoin1; eauto.
+  exists x x0.
+  repeat (split; eauto).
+  exists x x0.
+  repeat (split; eauto).
+Qed.
+
+Lemma hoare_pure_gen' : forall P Q (pu:Prop) Spec I,
+    (forall S, S |= P -> pu) ->
+    Spec |- {{ [| pu |] ** P }} I {{ Q }} ->
+    Spec |- {{ P }} I {{ Q }}.
+Proof.
+  intros.
+  eapply backward_rule with (p := ([| pu |] ** P)); eauto.
+  intros.
+  lets Ht : H1.
+  eapply H in Ht.
+  eapply sep_pure_l_intro; eauto.
+Qed.

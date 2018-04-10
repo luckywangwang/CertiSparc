@@ -137,6 +137,18 @@ Definition list_to_frame (ls : list Word) :=
   | _ => None
   end.
 
+Definition get_global_valid (fm : Frame) :=
+  match fm with
+  | consfm w0 w1 w2 w3 w4 w5 w6 w7 =>
+    w1 :: w2 :: w3 :: w4 :: w5 :: w6 :: w7 :: nil
+  end.
+
+Definition get_local_valid (fm : Frame) :=
+  match fm with
+  | consfm w0 w1 w2 w3 w4 w5 w6 w7 =>
+    w0 :: w1 :: w2 :: w3 :: nil
+  end.
+
 Fixpoint get_list_pre {A : Type} (ls : list A) (n : nat) :=
   match n with
   | 0 => nil
@@ -254,12 +266,12 @@ Definition os_int_ta0_handler_pre (vl : list logicvar) :=
     [| bv = OSFALSE|] ** Atrue
       \\//
     (
+      [| bv = OSTRUE |] **    
       context nctx ** stack nstk **
       [| ct <> ($ 0) -> (get_ctx_addr cctx = ct +ᵢ OS_CONTEXT_OFFSET) |] **
       [| get_ctx_addr nctx = nt +ᵢ OS_CONTEXT_OFFSET /\ ctx_pt_stk nctx nstk |] **
       [| (get_ctx_addr cctx = ct +ᵢ OS_CONTEXT_OFFSET) ->
-         stack_frame_constraint cstk (fml :: fmi :: F ++ (fmo :: nil)) id vi |] **
-      [| bv = OSTRUE |]
+         stack_frame_constraint cstk (fml :: fmi :: F ++ (fmo :: nil)) id vi |]
     )
   ).
 
@@ -278,18 +290,22 @@ Definition os_int_ta0_handler_post (vl : list logicvar) :=
   (
     (
       [| bv = OSFALSE /\
-         fmg' = fmg /\ fml' = fml /\ fmi' = fmi /\ id' = id /\ vi' = vi /\ F = F' /\
+         get_global_valid fmg' = get_global_valid fmg /\
+         get_local_valid fml' =
+         get_local_valid (update_frame (update_frame fml 1 ((get_frame_nth' fml 1) +ᵢ ($ 4))) 2
+                             ((get_frame_nth' fml 2) +ᵢ ($ 4))) /\
+         fmi' = fmi /\ id' = id /\ vi' = vi /\ F = F' /\
          vy' = vy /\ cctx = cctx' /\ cstk = cstk' |] ** Atrue
     )
       \\//
     (
+      [| bv = OSTRUE |] **
       context nctx ** stack nstk **
       [| (get_ctx_addr cctx = ct +ᵢ OS_CONTEXT_OFFSET) ->
          (ctx_pt_stk cctx' cstk' /\ stack_frame_save F cstk' id vi /\
           ctx_win_save cctx fml fmi fmg vy) |] **
       [| stack_frame_constraint nstk (fml' :: fmi' :: F' ++ (fmo' :: nil)) id' vi' /\
-         ctx_win_restore nctx fml' fmi' fmg' vy' |] **
-      [| bv = OSTRUE |]
+         ctx_win_restore nctx fml' fmi' fmg' vy' |]
     )
   ).
 

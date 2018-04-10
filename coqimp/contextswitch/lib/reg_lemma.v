@@ -879,7 +879,20 @@ Proof.
   sep_cancel1 1 1.
   eauto.
 Qed.
-  
+
+Lemma GenRegs_split_Regs_Global :
+  forall fmg fmo fml fmi p s,
+    s |= GenRegs (fmg, fmo, fml, fmi) ** p ->
+    s |= Regs fmo fml fmi ** GlobalRegs fmg ** p.
+Proof.
+  intros.
+  unfold GenRegs in H.
+  eapply astar_assoc_elim in H.
+  sep_cancel1 1 2.
+  unfold Regs.
+  eauto.
+Qed.
+ 
 Theorem add_rule_reg :
   forall grst rs rd p oexp v1 v2,
     get_genreg_val grst rs = v1 -> eval_opexp_reg grst oexp = Some v2 ->
