@@ -196,11 +196,11 @@ Inductive stack_frame_constraint' :
       stack_frame_constraint' l id F lfp vi
 
 | frame_valid :
-    forall l id F lfp vi fml fmi F' fml' fmi' lfp',
-      post_cwp id <> vi -> F = fml :: fmi :: F' -> lfp = (fml', fmi') :: lfp' ->
+    forall l id F lfp vi fml fmi fml' fmi',
+      post_cwp id <> vi ->
       get_frame_nth fmi 6 = Some l -> 
-      stack_frame_constraint' (l -ᵢ ($ 64)) (post_cwp id) F' lfp' vi ->
-      stack_frame_constraint' l id F lfp vi.
+      stack_frame_constraint' (l -ᵢ ($ 64)) (post_cwp id) F lfp vi ->
+      stack_frame_constraint' l id (fml :: fmi :: F) ((fml', fmi') :: lfp) vi.
 
 Definition stack_frame_constraint (stk : stack_val) F id vi :=
   stack_frame_constraint' (get_stk_addr stk) id F (get_stk_cont stk) vi. 
@@ -270,8 +270,7 @@ Definition os_int_ta0_handler_pre (vl : list logicvar) :=
       context nctx ** stack nstk **
       [| ct <> ($ 0) -> (get_ctx_addr cctx = ct +ᵢ OS_CONTEXT_OFFSET) |] **
       [| get_ctx_addr nctx = nt +ᵢ OS_CONTEXT_OFFSET /\ ctx_pt_stk nctx nstk |] **
-      [| (get_ctx_addr cctx = ct +ᵢ OS_CONTEXT_OFFSET) ->
-         stack_frame_constraint cstk (fml :: fmi :: F ++ (fmo :: nil)) id vi |]
+      [| stack_frame_constraint cstk (fml :: fmi :: F ++ (fmo :: nil)) id vi |]
     )
   ).
 
@@ -353,8 +352,7 @@ Definition ta0_window_ok_pre (vl : list logicvar) :=
   context nctx ** stack nstk **
   [| ct <> ($ 0) -> (get_ctx_addr cctx = ct +ᵢ OS_CONTEXT_OFFSET) |] **
   [| get_ctx_addr nctx = nt +ᵢ OS_CONTEXT_OFFSET /\ ctx_pt_stk nctx nstk |] **
-  [| (get_ctx_addr cctx = ct +ᵢ OS_CONTEXT_OFFSET) ->
-     stack_frame_constraint cstk (fml :: fmi :: F ++ (fmo :: nil)) id vi |].
+  [| stack_frame_constraint cstk (fml :: fmi :: F ++ (fmo :: nil)) id vi |].
 
 Definition ta0_window_ok_post (vl : list logicvar) :=
   EX fmg fmg' fmo' fml fml' fmi fmi' id id' F F' vy vy' vi vi' ll
