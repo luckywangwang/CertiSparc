@@ -103,7 +103,7 @@ Definition update_frame (fm : Frame) (n : nat) (v : Word) :=
     | 4 => consfm w0 w1 w2 w3 v w5 w6 w7
     | 5 => consfm w0 w1 w2 w3 w4 v w6 w7
     | 6 => consfm w0 w1 w2 w3 w4 w5 v w7
-    | 7 => consfm v w1 w2 w3 w4 w5 w6 v
+    | 7 => consfm w0 w1 w2 w3 w4 w5 w6 v
     | _ => consfm w0 w1 w2 w3 w4 w5 w6 w7
     end
   end.
