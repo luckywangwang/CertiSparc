@@ -2306,7 +2306,7 @@ Lemma stk_bottom_pre_pt :
     stack_frame_constraint' l id (F ++ fm1 :: fm2 :: fm3 :: nil) lfp id ->
     get_frame_nth fm1 6 = Some l' -> s |= stack' l lfp ** p ->
     s |= EX lfp1 lfp2 fm' fm'', stack' l lfp1 ** stack_frame l' fm' fm''
-         ** stack' (l' -ᵢ ($ 64)) lfp2 ** [| length lfp1 = 6 |] ** p.
+         ** stack' (l' -ᵢ ($ 64)) lfp2 ** [| length lfp1 = 6 /\ l' = l -ᵢ ($ (64 * 6)) |] ** p.
 Proof.  
   intros.
   do 14 (try destruct F; simpl in H; tryfalse).
@@ -2378,6 +2378,9 @@ Proof.
   sep_cancel1 1 2.
   simpl_sep_liftn 2.
   eapply sep_pure_l_intro; eauto.
+  split; simpl; eauto.
+  repeat (rewrite Int.sub_add_opp; eauto).
+  repeat (rewrite Int.add_assoc; eauto).
   eapply astar_emp_intro_l; eauto.
   eapply post_8_eq in H0.
   eapply H8 in H0.
