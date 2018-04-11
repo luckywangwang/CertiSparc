@@ -486,6 +486,18 @@ Proof.
     destruct (zeq (Int.unsigned $ 0) (Int.unsigned $ 4095)) eqn:Heqe3; eauto; tryfalse.
 Qed.
 
+Lemma in_range1 :
+  ($ (-4096)) <=ᵢ ($ 1) && ($ 1) <=ᵢ ($ 4095) = true.
+Proof.
+  unfold orb.
+  unfold Int.lt.
+  unfold Int.eq.
+  destruct (zlt (Int.signed $ (-4096)) (Int.signed $ 1)) eqn:Heqe;
+    destruct (zeq (Int.unsigned $ (-4096)) (Int.unsigned $ 1)) eqn:Heqe1;
+    destruct (zlt (Int.signed $ 1) (Int.signed $ 4095)) eqn:Heqe2;
+    destruct (zeq (Int.unsigned $ 1) (Int.unsigned $ 4095)) eqn:Heqe3; eauto; tryfalse.
+Qed.
+
 Lemma in_range4 :
   ($ (-4096)) <=ᵢ ($ 4) && ($ 4) <=ᵢ ($ 4095) = true.
 Proof.
@@ -496,6 +508,18 @@ Proof.
     destruct (zeq (Int.unsigned $ (-4096)) (Int.unsigned $ 4)) eqn:Heqe1;
     destruct (zlt (Int.signed $ 4) (Int.signed $ 4095)) eqn:Heqe2;
     destruct (zeq (Int.unsigned $ 4) (Int.unsigned $ 4095)) eqn:Heqe3; eauto; tryfalse.
+Qed.
+
+Lemma in_range7 :
+  ($ (-4096)) <=ᵢ ($ 7) && ($ 7) <=ᵢ ($ 4095) = true.
+Proof.
+  unfold orb.
+  unfold Int.lt.
+  unfold Int.eq.
+  destruct (zlt (Int.signed $ (-4096)) (Int.signed $ 7)) eqn:Heqe;
+    destruct (zeq (Int.unsigned $ (-4096)) (Int.unsigned $ 7)) eqn:Heqe1;
+    destruct (zlt (Int.signed $ 7) (Int.signed $ 4095)) eqn:Heqe2;
+    destruct (zeq (Int.unsigned $ 7) (Int.unsigned $ 4095)) eqn:Heqe3; eauto; tryfalse.
 Qed.
 
 Lemma in_range8 :
@@ -568,6 +592,102 @@ Proof.
     destruct (zeq (Int.unsigned $ (-4096)) (Int.unsigned $ 28)) eqn:Heqe1;
     destruct (zlt (Int.signed $ 28) (Int.signed $ 4095)) eqn:Heqe2;
     destruct (zeq (Int.unsigned $ 28) (Int.unsigned $ 4095)) eqn:Heqe3; eauto; tryfalse.
+Qed.
+
+Lemma in_range32 :
+  ($ (-4096)) <=ᵢ ($ 32) && ($ 32) <=ᵢ ($ 4095) = true.
+Proof.
+  unfold orb.
+  unfold Int.lt.
+  unfold Int.eq.
+  destruct (zlt (Int.signed $ (-4096)) (Int.signed $ 32)) eqn:Heqe;
+    destruct (zeq (Int.unsigned $ (-4096)) (Int.unsigned $ 32)) eqn:Heqe1;
+    destruct (zlt (Int.signed $ 32) (Int.signed $ 4095)) eqn:Heqe2;
+    destruct (zeq (Int.unsigned $ 32) (Int.unsigned $ 4095)) eqn:Heqe3; eauto; tryfalse.
+Qed.
+
+Lemma in_range36 :
+  ($ (-4096)) <=ᵢ ($ 36) && ($ 36) <=ᵢ ($ 4095) = true.
+Proof.
+  unfold orb.
+  unfold Int.lt.
+  unfold Int.eq.
+  destruct (zlt (Int.signed $ (-4096)) (Int.signed $ 36)) eqn:Heqe;
+    destruct (zeq (Int.unsigned $ (-4096)) (Int.unsigned $ 36)) eqn:Heqe1;
+    destruct (zlt (Int.signed $ 36) (Int.signed $ 4095)) eqn:Heqe2;
+    destruct (zeq (Int.unsigned $ 36) (Int.unsigned $ 4095)) eqn:Heqe3; eauto; tryfalse.
+Qed.
+
+Lemma in_range40 :
+  ($ (-4096)) <=ᵢ ($ 40) && ($ 40) <=ᵢ ($ 4095) = true.
+Proof.
+  unfold orb.
+  unfold Int.lt.
+  unfold Int.eq.
+  destruct (zlt (Int.signed $ (-4096)) (Int.signed $ 40)) eqn:Heqe;
+    destruct (zeq (Int.unsigned $ (-4096)) (Int.unsigned $ 40)) eqn:Heqe1;
+    destruct (zlt (Int.signed $ 40) (Int.signed $ 4095)) eqn:Heqe2;
+    destruct (zeq (Int.unsigned $ 40) (Int.unsigned $ 4095)) eqn:Heqe3; eauto; tryfalse.
+Qed.
+
+Lemma in_range44 :
+  ($ (-4096)) <=ᵢ ($ 44) && ($ 44) <=ᵢ ($ 4095) = true.
+Proof.
+  unfold orb.
+  unfold Int.lt.
+  unfold Int.eq.
+  destruct (zlt (Int.signed $ (-4096)) (Int.signed $ 44)) eqn:Heqe;
+    destruct (zeq (Int.unsigned $ (-4096)) (Int.unsigned $ 44)) eqn:Heqe1;
+    destruct (zlt (Int.signed $ 44) (Int.signed $ 4095)) eqn:Heqe2;
+    destruct (zeq (Int.unsigned $ 44) (Int.unsigned $ 4095)) eqn:Heqe3; eauto; tryfalse.
+Qed.
+
+Lemma in_range48 :
+  ($ (-4096)) <=ᵢ ($ 48) && ($ 48) <=ᵢ ($ 4095) = true.
+Proof.
+  unfold orb.
+  unfold Int.lt.
+  unfold Int.eq.
+  destruct (zlt (Int.signed $ (-4096)) (Int.signed $ 48)) eqn:Heqe;
+    destruct (zeq (Int.unsigned $ (-4096)) (Int.unsigned $ 48)) eqn:Heqe1;
+    destruct (zlt (Int.signed $ 48) (Int.signed $ 4095)) eqn:Heqe2;
+    destruct (zeq (Int.unsigned $ 48) (Int.unsigned $ 4095)) eqn:Heqe3; eauto; tryfalse.
+Qed.
+
+Lemma in_range52 :
+  ($ (-4096)) <=ᵢ ($ 52) && ($ 52) <=ᵢ ($ 4095) = true.
+Proof.
+  unfold orb.
+  unfold Int.lt.
+  unfold Int.eq.
+  destruct (zlt (Int.signed $ (-4096)) (Int.signed $ 52)) eqn:Heqe;
+    destruct (zeq (Int.unsigned $ (-4096)) (Int.unsigned $ 52)) eqn:Heqe1;
+    destruct (zlt (Int.signed $ 52) (Int.signed $ 4095)) eqn:Heqe2;
+    destruct (zeq (Int.unsigned $ 52) (Int.unsigned $ 4095)) eqn:Heqe3; eauto; tryfalse.
+Qed.
+
+Lemma in_range56 :
+  ($ (-4096)) <=ᵢ ($ 56) && ($ 56) <=ᵢ ($ 4095) = true.
+Proof.
+  unfold orb.
+  unfold Int.lt.
+  unfold Int.eq.
+  destruct (zlt (Int.signed $ (-4096)) (Int.signed $ 56)) eqn:Heqe;
+    destruct (zeq (Int.unsigned $ (-4096)) (Int.unsigned $ 56)) eqn:Heqe1;
+    destruct (zlt (Int.signed $ 56) (Int.signed $ 4095)) eqn:Heqe2;
+    destruct (zeq (Int.unsigned $ 56) (Int.unsigned $ 4095)) eqn:Heqe3; eauto; tryfalse.
+Qed.
+
+Lemma in_range60 :
+  ($ (-4096)) <=ᵢ ($ 60) && ($ 60) <=ᵢ ($ 4095) = true.
+Proof.
+  unfold orb.
+  unfold Int.lt.
+  unfold Int.eq.
+  destruct (zlt (Int.signed $ (-4096)) (Int.signed $ 60)) eqn:Heqe;
+    destruct (zeq (Int.unsigned $ (-4096)) (Int.unsigned $ 60)) eqn:Heqe1;
+    destruct (zlt (Int.signed $ 60) (Int.signed $ 4095)) eqn:Heqe2;
+    destruct (zeq (Int.unsigned $ 60) (Int.unsigned $ 4095)) eqn:Heqe3; eauto; tryfalse.
 Qed.
 
 Lemma get_range_0_4_stable :
@@ -1796,6 +1916,370 @@ Proof.
     eauto.
   }
 Qed.
+
+Lemma st_rule_save_stk_i0 :
+  forall grst p l fm1 fm2 v1, 
+    get_genreg_val grst i0 = v1 ->
+    get_genreg_val grst sp = l ->
+    |- {{ GenRegs grst ** stack_frame l fm1 fm2 ** p }}
+        st i0 (Aro sp (' 32))
+      {{ GenRegs grst ** stack_frame l fm1 (update_frame fm2 0 v1) ** p }}.
+Proof.
+  intros.
+  destruct fm1, fm2.
+  eapply ins_conseq_rule.
+  {
+    introv Hs.
+    simpl_sep_liftn_in Hs 2.
+    unfold stack_frame in Hs.
+    eapply astar_assoc_elim in Hs.
+    simpl_sep_liftn_in Hs 2.
+    unfold stack_seg at 1 in Hs.
+    asrt_to_line_in Hs 7.
+    simpl_sep_liftn_in Hs 10.    
+    eauto.
+  }
+  { 
+    eapply st_rule_reg.
+    simpl.
+    rewrite in_range32; eauto.
+    rewrite H0; eauto.
+    eauto.
+  }
+  {  
+    introv Hs.
+    simpl update_frame.
+    unfold stack_frame.
+    sep_cancel1 1 1.
+    eapply astar_assoc_intro.
+    sep_cancel1 9 1.
+    unfold stack_seg.
+    asrt_to_line 7.
+    eauto.
+  }
+Qed.
+
+Lemma st_rule_save_stk_i1 :
+  forall grst p l fm1 fm2 v1,
+    get_genreg_val grst i1 = v1 ->
+    get_genreg_val grst sp = l ->
+    |- {{ GenRegs grst ** stack_frame l fm1 fm2 ** p }}
+        st i1 (Aro sp (' 36))
+      {{ GenRegs grst ** stack_frame l fm1 (update_frame fm2 1 v1) ** p }}.
+Proof.
+  intros.
+  destruct fm1, fm2.
+  eapply ins_conseq_rule.
+  {
+    introv Hs.
+    simpl_sep_liftn_in Hs 2.
+    unfold stack_frame in Hs.
+    eapply astar_assoc_elim in Hs.
+    simpl_sep_liftn_in Hs 2.
+    unfold stack_seg at 1 in Hs.
+    asrt_to_line_in Hs 7.
+    simpl_sep_liftn_in Hs 2.
+    simpl_sep_liftn_in Hs 10.    
+    eauto.
+  }
+  { 
+    eapply st_rule_reg.
+    simpl.
+    rewrite in_range36; eauto.
+    rewrite H0; eauto.
+    rewrite Int.add_assoc.
+    eauto.
+    eauto.
+  }
+  {  
+    introv Hs.
+    simpl update_frame.
+    unfold stack_frame.
+    sep_cancel1 1 1.
+    eapply astar_assoc_intro.
+    sep_cancel1 9 1.
+    unfold stack_seg.
+    asrt_to_line 7. 
+    sep_cancel1 1 2.
+    eauto.
+  }
+Qed.
+
+Lemma st_rule_save_stk_i2 :
+  forall grst p l fm1 fm2 v1,
+    get_genreg_val grst i2 = v1 ->
+    get_genreg_val grst sp = l ->
+    |- {{ GenRegs grst ** stack_frame l fm1 fm2 ** p }}
+        st i2 (Aro sp (' 40))
+      {{ GenRegs grst ** stack_frame l fm1 (update_frame fm2 2 v1) ** p }}.
+Proof.
+  intros.
+  destruct fm1, fm2.
+  eapply ins_conseq_rule.
+  {
+    introv Hs.
+    simpl_sep_liftn_in Hs 2.
+    unfold stack_frame in Hs.
+    eapply astar_assoc_elim in Hs.
+    simpl_sep_liftn_in Hs 2.
+    unfold stack_seg at 1 in Hs.
+    asrt_to_line_in Hs 7.
+    simpl_sep_liftn_in Hs 3.
+    simpl_sep_liftn_in Hs 10.    
+    eauto.
+  }
+  { 
+    eapply st_rule_reg.
+    simpl.
+    rewrite in_range40; eauto.
+    rewrite H0; eauto.
+    rewrite Int.add_assoc.
+    eauto.
+    eauto.
+  }
+  {  
+    introv Hs.
+    simpl update_frame.
+    unfold stack_frame.
+    sep_cancel1 1 1.
+    eapply astar_assoc_intro.
+    sep_cancel1 9 1.
+    unfold stack_seg.
+    asrt_to_line 7. 
+    sep_cancel1 1 3. 
+    eauto.
+  }
+Qed.
+
+Lemma st_rule_save_stk_i3 :
+  forall grst p l fm1 fm2 v1,
+    get_genreg_val grst i3 = v1 ->
+    get_genreg_val grst sp = l ->
+    |- {{ GenRegs grst ** stack_frame l fm1 fm2 ** p }}
+        st i3 (Aro sp (' 44))
+      {{ GenRegs grst ** stack_frame l fm1 (update_frame fm2 3 v1) ** p }}.
+Proof.
+  intros.
+  destruct fm1, fm2.
+  eapply ins_conseq_rule.
+  {
+    introv Hs.
+    simpl_sep_liftn_in Hs 2.
+    unfold stack_frame in Hs.
+    eapply astar_assoc_elim in Hs.
+    simpl_sep_liftn_in Hs 2.
+    unfold stack_seg at 1 in Hs.
+    asrt_to_line_in Hs 7.
+    simpl_sep_liftn_in Hs 4.
+    simpl_sep_liftn_in Hs 10.    
+    eauto.
+  }
+  { 
+    eapply st_rule_reg.
+    simpl.
+    rewrite in_range44; eauto.
+    rewrite H0; eauto.
+    rewrite Int.add_assoc.
+    eauto.
+    eauto.
+  }
+  {  
+    introv Hs.
+    simpl update_frame.
+    unfold stack_frame.
+    sep_cancel1 1 1.
+    eapply astar_assoc_intro.
+    sep_cancel1 9 1.
+    unfold stack_seg.
+    asrt_to_line 7. 
+    sep_cancel1 1 4. 
+    eauto.
+  }
+Qed.
+
+Lemma st_rule_save_stk_i4 :
+  forall grst p l fm1 fm2 v1,
+    get_genreg_val grst i4 = v1 ->
+    get_genreg_val grst sp = l ->
+    |- {{ GenRegs grst ** stack_frame l fm1 fm2 ** p }}
+        st i4 (Aro sp (' 48))
+      {{ GenRegs grst ** stack_frame l fm1 (update_frame fm2 4 v1) ** p }}.
+Proof.
+  intros.
+  destruct fm1, fm2.
+  eapply ins_conseq_rule.
+  {
+    introv Hs.
+    simpl_sep_liftn_in Hs 2.
+    unfold stack_frame in Hs.
+    eapply astar_assoc_elim in Hs.
+    simpl_sep_liftn_in Hs 2.
+    unfold stack_seg at 1 in Hs.
+    asrt_to_line_in Hs 7.
+    simpl_sep_liftn_in Hs 5.
+    simpl_sep_liftn_in Hs 10.    
+    eauto.
+  }
+  { 
+    eapply st_rule_reg.
+    simpl. 
+    rewrite in_range48; eauto.
+    rewrite H0; eauto.
+    rewrite Int.add_assoc.
+    eauto.
+    eauto.
+  }
+  {  
+    introv Hs.
+    simpl update_frame.
+    unfold stack_frame.
+    sep_cancel1 1 1.
+    eapply astar_assoc_intro.
+    sep_cancel1 9 1.
+    unfold stack_seg.
+    asrt_to_line 7. 
+    sep_cancel1 1 5. 
+    eauto.
+  }
+Qed.
+
+Lemma st_rule_save_stk_i5 :
+  forall grst p l fm1 fm2 v1,
+    get_genreg_val grst i5 = v1 ->
+    get_genreg_val grst sp = l ->
+    |- {{ GenRegs grst ** stack_frame l fm1 fm2 ** p }}
+        st i5 (Aro sp (' 52))
+      {{ GenRegs grst ** stack_frame l fm1 (update_frame fm2 5 v1) ** p }}.
+Proof.
+  intros.
+  destruct fm1, fm2.
+  eapply ins_conseq_rule.
+  {
+    introv Hs.
+    simpl_sep_liftn_in Hs 2.
+    unfold stack_frame in Hs.
+    eapply astar_assoc_elim in Hs.
+    simpl_sep_liftn_in Hs 2.
+    unfold stack_seg at 1 in Hs.
+    asrt_to_line_in Hs 7.
+    simpl_sep_liftn_in Hs 6.
+    simpl_sep_liftn_in Hs 10.    
+    eauto.
+  }
+  { 
+    eapply st_rule_reg.
+    simpl. 
+    rewrite in_range52; eauto.
+    rewrite H0; eauto.
+    rewrite Int.add_assoc.
+    eauto.
+    eauto.
+  }
+  {  
+    introv Hs.
+    simpl update_frame.
+    unfold stack_frame.
+    sep_cancel1 1 1.
+    eapply astar_assoc_intro.
+    sep_cancel1 9 1.
+    unfold stack_seg.
+    asrt_to_line 7. 
+    sep_cancel1 1 6. 
+    eauto.
+  }
+Qed.
+
+Lemma st_rule_save_stk_i6 :
+  forall grst p l fm1 fm2 v1,
+    get_genreg_val grst i6 = v1 ->
+    get_genreg_val grst sp = l ->
+    |- {{ GenRegs grst ** stack_frame l fm1 fm2 ** p }}
+        st i6 (Aro sp (' 56))
+      {{ GenRegs grst ** stack_frame l fm1 (update_frame fm2 6 v1) ** p }}.
+Proof.
+  intros.
+  destruct fm1, fm2.
+  eapply ins_conseq_rule.
+  {
+    introv Hs.
+    simpl_sep_liftn_in Hs 2.
+    unfold stack_frame in Hs.
+    eapply astar_assoc_elim in Hs.
+    simpl_sep_liftn_in Hs 2.
+    unfold stack_seg at 1 in Hs.
+    asrt_to_line_in Hs 7.
+    simpl_sep_liftn_in Hs 7.
+    simpl_sep_liftn_in Hs 10.    
+    eauto.
+  }
+  { 
+    eapply st_rule_reg.
+    simpl. 
+    rewrite in_range56; eauto.
+    rewrite H0; eauto.
+    rewrite Int.add_assoc.
+    eauto.
+    eauto.
+  }
+  {  
+    introv Hs.
+    simpl update_frame.
+    unfold stack_frame.
+    sep_cancel1 1 1.
+    eapply astar_assoc_intro.
+    sep_cancel1 9 1.
+    unfold stack_seg.
+    asrt_to_line 7. 
+    sep_cancel1 1 7. 
+    eauto.
+  }
+Qed.
+
+Lemma st_rule_save_stk_i7 :
+  forall grst p l fm1 fm2 v1,
+    get_genreg_val grst i7 = v1 ->
+    get_genreg_val grst sp = l ->
+    |- {{ GenRegs grst ** stack_frame l fm1 fm2 ** p }}
+        st i7 (Aro sp (' 60))
+      {{ GenRegs grst ** stack_frame l fm1 (update_frame fm2 7 v1) ** p }}.
+Proof.
+  intros.
+  destruct fm1, fm2.
+  eapply ins_conseq_rule.
+  {
+    introv Hs.
+    simpl_sep_liftn_in Hs 2.
+    unfold stack_frame in Hs.
+    eapply astar_assoc_elim in Hs.
+    simpl_sep_liftn_in Hs 2.
+    unfold stack_seg at 1 in Hs.
+    asrt_to_line_in Hs 7.
+    simpl_sep_liftn_in Hs 8.
+    simpl_sep_liftn_in Hs 10.    
+    eauto.
+  }
+  { 
+    eapply st_rule_reg.
+    simpl. 
+    rewrite in_range60; eauto.
+    rewrite H0; eauto.
+    rewrite Int.add_assoc.
+    eauto.
+    eauto.
+  }
+  {  
+    introv Hs.
+    simpl update_frame.
+    unfold stack_frame.
+    sep_cancel1 1 1.
+    eapply astar_assoc_intro.
+    sep_cancel1 9 1.
+    unfold stack_seg.
+    asrt_to_line 7. 
+    sep_cancel1 1 8. 
+    eauto.
+  }
+Qed.
   
 (*+ Lemmas for stack frame constraint +*)
 Lemma stack_frame_constraint_pt_same_equal :
@@ -1899,7 +2383,17 @@ Proof.
   eapply H8 in H0.
   tryfalse.
 Qed.
-  
+
+(*+ Lemmas for Space +*)
+Lemma stack_frame_combine :
+  forall l fm1 fm2 lfp s p,
+    s |= stack_frame l fm1 fm2 ** stack' (l -ᵢ ($ 64)) lfp ** p ->
+    s |= stack' l ((fm1, fm2) :: lfp) ** p.
+Proof.
+  intros.
+  unfold stack'; fold stack'.
+  eapply astar_assoc_intro; eauto.
+Qed.
   
 (*+ Proof +*)
 Theorem OSInt0HandlerProof :
@@ -2447,5 +2941,98 @@ Proof.
   TimReduce_simpl.
   eapply st_rule_save_stk_l7; eauto.
   simpl update_frame.
+
+  (** st i0 (sp + 32) *) 
+  eapply seq_rule. 
+  TimReduce_simpl.
+  eapply st_rule_save_stk_i0; eauto.
+  simpl update_frame.
+
+  (** st i1 (sp + 36) *) 
+  eapply seq_rule. 
+  TimReduce_simpl.
+  eapply st_rule_save_stk_i1; eauto.
+  simpl update_frame.
+
+  (** st i2 (sp + 40) *) 
+  eapply seq_rule. 
+  TimReduce_simpl.
+  eapply st_rule_save_stk_i2; eauto.
+  simpl update_frame.
+
+  (** st i3 (sp + 44) *) 
+  eapply seq_rule. 
+  TimReduce_simpl.
+  eapply st_rule_save_stk_i3; eauto.
+  simpl update_frame.
+
+  (** st i4 (sp + 48) *) 
+  eapply seq_rule. 
+  TimReduce_simpl.
+  eapply st_rule_save_stk_i4; eauto.
+  simpl update_frame.
+
+  (** st i5 (sp + 52) *) 
+  eapply seq_rule. 
+  TimReduce_simpl.
+  eapply st_rule_save_stk_i5; eauto.
+  simpl update_frame.
+
+  (** st i6 (sp + 56) *) 
+  eapply seq_rule. 
+  TimReduce_simpl.
+  eapply st_rule_save_stk_i6; eauto.
+  simpl update_frame.
+
+  (** st i4 (sp + 60) *) 
+  eapply seq_rule. 
+  TimReduce_simpl.
+  eapply st_rule_save_stk_i7; eauto.
+  simpl update_frame.
+
+  eapply backward_rule.
+  introv Hs.
+  simpl_sep_liftn_in Hs 4.
+  simpl_sep_liftn_in Hs 3.
+  eapply stack_frame_combine in Hs.
+  eauto.
+
+  (** rd wim l4 *)
+  hoare_lift_pre 4. 
+  hoare_lift_pre 3.
+  eapply seq_rule.
+  TimReduce_simpl.
+  eapply rd_rule_reg_wim; eauto.
+  simpl upd_genreg.
+
+  (** srl l4 1 l5 **)
+  eapply seq_rule.
+  TimReduce_simpl.
+  eapply srl_rule_reg; eauto.
+  simpl.
+  rewrite in_range1; eauto.
+  simpl upd_genreg.
+  rewrite get_range_0_4_stable; eauto.
+
+  (** sll l4 (OS_WINDOWS - 1) l4 *)
+  eapply seq_rule.
+  TimReduce_simpl.
+  eapply sll_rule_reg; eauto.
+  unfold OS_WINDOWS.
+  simpl.
+  assert (Heq_7 : ($ 8) -ᵢ ($ 1) = ($ 7)).
+  eauto.
+  rewrite Heq_7.
+  rewrite in_range7; eauto.
+  simpl upd_genreg.
+  rewrite get_range_0_4_stable; eauto.
+
+  (** or l4 l5 l4 *)
+  eapply seq_rule.
+  TimReduce_simpl.
+  eapply or_rule_reg; eauto.
+  simpl.
+  eauto.
+  simpl upd_genreg.
   
   >>>>>>>>>>>>>>>
