@@ -2940,9 +2940,9 @@ Proof.
     destruct p.
     destruct r.
     simpl in H.
-    simpljoin1.
-    exists (merge M m, (merge R r, f), set_delay s0 v1 xor v2 d).
-    exists (m, (r, f), set_delay s0 v1 xor v2 d).
+    simpljoin1. 
+    exists (merge M m, (merge R r, f), set_delay s0 (set_spec_reg s0 v1 xor v2) d).
+    exists (m, (r, f), set_delay s0 (set_spec_reg s0 v1 xor v2) d).
     simpl.
     repeat (split; eauto).
 
@@ -3333,8 +3333,8 @@ Proof.
     destruct s2', p, r1.
     simpls.
     simpljoin1.
-    exists (merge M m0, (merge R r1, f0), set_delay s0 v1 xor v2 d).
-    exists (m0, (r1, f0), set_delay s0 v1 xor v2 d).
+    exists (merge M m0, (merge R r1, f0), set_delay s0 (set_spec_reg s0 v1 xor v2) d).
+    exists (m0, (r1, f0), set_delay s0 (set_spec_reg s0 v1 xor v2) d).
     repeat (split; simpl; eauto).
     eapply Wr; eauto.
     eapply get_R_merge_still; eauto.

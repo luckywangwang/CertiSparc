@@ -257,6 +257,12 @@ Definition pre_cwp: Word -> Word :=
 Definition win_masked: Word -> Word -> bool :=
   fun w v => if ((($1) <<ᵢ w) &ᵢ v) !=ᵢ ($0) then true else false.
 
+Definition set_spec_reg (rsp : SpReg) (v : Word) :=
+  match rsp with
+  | Rwim => get_range 0 7 v
+  | _ => v
+  end.
+
 (* Operations that may touch DelayList and FrameList *)
 Inductive Q__: State -> command -> State -> Prop :=
 | NormalIns :
@@ -286,8 +292,8 @@ Inductive Q__: State -> command -> State -> Prop :=
 
 | Wr :
     forall M (R : RegFile) F D D' (rs : GenReg) (rsp : SpReg) oexp v1 v2 v,
-      get_R R rs = Some v1 -> eval_opexp R oexp = Some v2 -> v = v1 xor v2 ->
-      indom rsp R -> D' = set_delay rsp v D ->
+      get_R R rs = Some v1 -> eval_opexp R oexp = Some v2 ->
+      v = set_spec_reg rsp (v1 xor v2) -> indom rsp R -> D' = set_delay rsp v D ->
       Q__ (M, (R, F), D) (cntrans (wr rs oexp rsp)) (M, (R, F), D').
 
 (* Operation Semantics for Control Transfer *)

@@ -1474,6 +1474,90 @@ Proof.
     eauto.
   }
 Qed.
+
+Lemma set_wim_eq_pre_cwp :
+  forall id,
+    $ 0 <=ᵤᵢ id <=ᵤᵢ $ 7 ->
+    get_range 0 7 ((($ 1) <<ᵢ id) <<ᵢ ($ 7)) |ᵢ ((($ 1) <<ᵢ id) >>ᵢ ($ 1)) =
+                                              ($ 1) <<ᵢ (pre_cwp id).
+Proof.
+  intros.
+  unfold get_range.
+  unfold pre_cwp.
+  unfolds int_leu.
+  unfolds Int.ltu, Int.eq.
+  unfold Int.shl.
+  unfold Int.shru.
+  unfold Int.add.
+  unfold Int.sub.
+  unfold N.
+  simpl.
+  assert (Int.unsigned $ 0 = 0%Z).
+  eauto.
+  assert (Int.unsigned $ 1 = 1%Z).
+  eauto.
+  assert (Int.unsigned $ 7 = 7%Z).
+  eauto.
+  assert (Int.unsigned $ 8 = 8%Z).
+  eauto.
+  try rewrite H0 in *.
+  try rewrite H1 in *.
+  try rewrite H2 in *.
+  try rewrite H3 in *.
+  destruct id. 
+  simpls Int.unsigned.
+  unfold Int.modu, Int.or, Int.and.
+  rewrite H3.
+  destruct (zlt 0 intval); destruct (zeq 0 intval);
+    destruct (zlt intval 7); destruct (zeq intval 7);
+      tryfalse; try omega; eauto.
+  {
+    destruct intval; tryfalse.
+    do 3 (try destruct p; eauto; tryfalse).
+  }
+  {
+    subst; eauto.
+  }
+  {
+    subst; eauto.
+  }
+Qed.
+
+Lemma post_pre_stable :
+  forall id,
+    $ 0 <=ᵤᵢ id <=ᵤᵢ $ 7 ->
+    post_cwp (pre_cwp id) = id.
+Proof.
+  intros.
+  rewrite <- Int.repr_unsigned.
+  unfolds int_leu.
+  unfolds Int.ltu, Int.eq.
+  unfold post_cwp.
+  unfold pre_cwp.
+  unfold N.
+  unfold Int.add.
+  unfold Int.sub.
+  unfold Int.modu.
+  assert (Int.unsigned $ 0 = 0%Z).
+  eauto.
+  assert (Int.unsigned $ 7 = 7%Z).
+  eauto.
+  assert (Int.unsigned $ 8 = 8%Z).
+  eauto.
+  assert (Int.unsigned $ 1 = 1%Z).
+  eauto.
+  try rewrite H0 in *.
+  try rewrite H1 in *.
+  try rewrite H2 in *.
+  try rewrite H3 in *.
+  destruct id.
+  simpl Int.unsigned in *.
+  destruct (zlt 0 intval); destruct (zeq 0 intval);
+    destruct (zlt intval 7); destruct (zeq intval 7); tryfalse; try omega;
+      subst; eauto.
+  destruct intval; tryfalse.
+  do 3 (destruct p; tryfalse; eauto).
+Qed.
   
 Ltac eval_spec :=
   match goal with
@@ -3037,5 +3121,64 @@ Proof.
   simpl.
   eauto.
   simpl upd_genreg.
+
+  hoare_lift_pre 2.
+  unfold FrameState at 1.
+  eapply backward_rule.
+  introv Hs.
+  asrt_to_line_in Hs 3.
+  eauto.
+
+  hoare_lift_pre 2.
+  hoare_lift_pre 5.
+
+  (** wr g0 l4 Rwim *)
+  eapply seq_rule.
+  TimReduce_simpl.
+  eapply wr_rule_reg; eauto.
+  simpl; eauto.
+  simpl set_spec_reg.
+  rewrite Int.xor_zero_l.
+  rewrite set_wim_eq_pre_cwp; eauto.
+
+  (** nop *)
+  eapply seq_rule.
+  TimReduce_simpl.
+  eapply nop_rule; eauto.
+
+  (** nop *)
+  eapply seq_rule.
+  TimReduce_simpl.
+  eapply nop_rule; eauto.
+
+  (** nop *)
+  eapply seq_rule.
+  TimReduce_simpl.
+  eapply nop_rule; eauto.
+
+  hoare_lift_pre 4.
+  eapply Pure_intro_rule.
+  introv Hlen_F.
+
+  hoare_lift_pre 4.
+  eapply Pure_intro_rule.
+  introv Hin_range.
   
+  (** restore *)
+  eapply seq_rule.
+  TimReduce_simpl.
+  eapply restore_rule_reg; eauto.
+  simpl; eauto.
+  rewrite post_pre_stable; eauto.
+  unfold win_masked.
+  rewrite Int.and_commut.
+  rewrite win_mask_pre_cwp; eauto.
+  simpl upd_genreg.
+  rewrite post_pre_stable; eauto.
+
+  (** nop *)
+  eapply seq_rule.
+  TimReduce_simpl.
+  eapply nop_rule; eauto.
+
   >>>>>>>>>>>>>>>

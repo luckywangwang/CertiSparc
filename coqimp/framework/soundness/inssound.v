@@ -918,7 +918,8 @@ Qed.
 Lemma wr_rule_sound :
   forall (rsp : SpReg) v p (rs : GenReg) oexp v1 v2,
     rsp |=> v ** p ==> Or rs ==ₑ v1 //\\ oexp ==ₑ v2 ->
-    ins_sound (rsp |=> v ** p) (3 @ rsp |==> v1 xor v2 ** p) (wr rs oexp rsp).
+    ins_sound (rsp |=> v ** p)
+              (3 @ rsp |==> (set_spec_reg rsp v1 xor v2) ** p) (wr rs oexp rsp).
 Proof.
   intros.
   unfold ins_sound.
@@ -930,14 +931,15 @@ Proof.
   simpljoin1.
   simpl in Hoexp.
   simpljoin1.
-  exists (m ⊎ m0, (r ⊎ r0, f0), set_delay rsp (v1 xor v2) d0).
+  exists (m ⊎ m0, (r ⊎ r0, f0), set_delay rsp (set_spec_reg rsp v1 xor v2) d0).
   split; eauto.
 
   eapply Wr; eauto.
   eapply indom_merge_still; eauto.
   eapply regst_indom; eauto.
   simpl.
-  exists (m, (r, f0), set_delay rsp v1 xor v2 d0) (m0, (r0, f0), set_delay rsp v1 xor v2 d0). 
+  exists (m, (r, f0), set_delay rsp (set_spec_reg rsp v1 xor v2) d0)
+    (m0, (r0, f0), set_delay rsp (set_spec_reg rsp v1 xor v2) d0). 
   simpls.
   repeat (split; eauto).
   exists v.

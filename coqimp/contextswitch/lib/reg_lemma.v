@@ -1561,7 +1561,7 @@ Theorem wr_rule_reg :
     eval_opexp_reg grst oexp = Some v2 ->
     |- {{ GenRegs grst ** rsp |=> v ** p }}
         wr rs oexp rsp
-      {{ GenRegs grst ** 3 @ rsp |==> v1 xor v2 ** p }}.
+      {{ GenRegs grst ** 3 @ rsp |==> set_spec_reg rsp (v1 xor v2) ** p }}.
 Proof.
   intros. 
   eapply ins_conseq_rule with (p1 := rsp |=> v ** GenRegs grst ** p).
