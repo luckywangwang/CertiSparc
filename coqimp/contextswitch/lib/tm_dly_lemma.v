@@ -52,6 +52,29 @@ Proof.
   eauto.
 Qed.
 
+Theorem GenRegs_rm_one_TimReduce' :
+  forall grst (rr : GenReg) ,
+    GenRegs_rm_one grst rr ↓ = GenRegs_rm_one grst rr.
+Proof. 
+  intros.
+  simpl.
+  destruct grst.
+  destruct p.
+  destruct p.
+  destruct f1, f2, f0, f.
+  simpls.
+  destruct rr; simpls; eauto.
+Qed.
+
+Theorem GenRegs_rm_one_TimReduce :
+  forall grst (rr : GenReg) p,
+    (GenRegs_rm_one grst rr ** p) ↓ = GenRegs_rm_one grst rr ** (p ↓).
+Proof.
+  intros.
+  simpl.
+  rewrite GenRegs_rm_one_TimReduce'; eauto.
+Qed.
+  
 Theorem FrameState_TimeReduce :
   forall id vi F p,
     (FrameState id vi F ** p) ↓ = FrameState id vi F ** (p ↓).
@@ -239,6 +262,8 @@ Ltac TimReduce_simpl :=
     rewrite Stk_TimeReduce1; TimReduce_simpl
   | |- context [(GenRegs ?grst ** ?p) ↓] =>
     rewrite GenRegs_TimeReduce; TimReduce_simpl
+  | |- context [(GenRegs_rm_one ?grst ?rr ** ?p) ↓] =>
+    rewrite GenRegs_rm_one_TimReduce; TimReduce_simpl
   | |- context [(FrameState ?id ?vi ?F ** ?p) ↓] =>
     rewrite FrameState_TimeReduce; TimReduce_simpl
   | |- context [(?rn |=> ?v ** ?p) ↓] =>
@@ -259,6 +284,8 @@ Ltac TimReduce_simpl :=
     rewrite Stk_TimeReduce'; TimReduce_simpl
   | |- context [(stack_frame _ _ _) ↓] =>
     rewrite stack_frame_TimeReduce; TimReduce_simpl
+  | |- context [(GenRegs_rm_one ?grst ?rr) ↓] =>
+    rewrite GenRegs_rm_one_TimReduce'; TimReduce_simpl
   | |- context [(?p1 //\\ ?p2) ↓] =>
     rewrite conj_TimeReduce; TimReduce_simpl
   | |- context [(?p1 \\// ?p2) ↓] =>

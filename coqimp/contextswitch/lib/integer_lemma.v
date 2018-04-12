@@ -1105,3 +1105,369 @@ Proof.
   destruct intval; tryfalse.
   do 3 (destruct p; tryfalse; eauto).
 Qed.
+
+Ltac solve_max_range :=
+  unfold Int.max_unsigned; unfold Int.modulus;
+  simpl; try omega.
+
+Lemma int_repr_add :
+  forall (x y : Z),
+    (0 <= x <= Int.max_unsigned)%Z -> (0 <= y <= Int.max_unsigned)%Z ->
+    ($ x) +ᵢ ($ y) = $ (x + y).
+Proof.
+  intros.
+  unfold Int.add.
+  unfolds Int.max_unsigned.
+  unfolds Int.modulus.
+  simpls.
+  destruct x, y; eauto; try omega; tryfalse;
+    try solve [do 2 try rewrite Int.unsigned_repr; eauto].
+Qed.
+
+Lemma mul_64_in_range :
+  forall z,
+    (0 <= z <= 100)%Z ->
+    (0 <= 64 * z <= 6400)%Z.
+Proof.
+  intros.
+  omega.
+Qed.
+
+Lemma pre_1_neq :
+  forall id,
+    $ 0 <=ᵤᵢ id <=ᵤᵢ $ 7 ->
+    pre_cwp id <> id.
+Proof.
+  intros.
+  intro.
+  rewrite <- Int.repr_unsigned with (i := id) in H0.
+  unfolds pre_cwp.
+  unfolds int_leu.
+  unfolds Int.ltu, Int.eq.
+  unfolds Int.add.
+  unfolds Int.modu.
+  unfolds N.
+  assert (Int.unsigned $ 0 = 0%Z); eauto.
+  assert (Int.unsigned $ 7 = 7%Z); eauto.
+  assert (Int.unsigned $ 1 = 1%Z); eauto.
+  assert (Int.unsigned $ 8 = 8%Z); eauto.
+  try rewrite H1 in *.
+  try rewrite H2 in *.
+  try rewrite H3 in *.
+  try rewrite H4 in *.
+  destruct id.
+  simpl Int.unsigned in *.
+  destruct (zlt 0 intval); destruct (zeq 0 intval);
+    destruct (zlt intval 7); destruct (zeq intval 7); tryfalse; try omega.
+  {
+    destruct intval; eauto; tryfalse.
+    do 3 (try destruct p; simpls; tryfalse; try omega).
+  }
+  {
+    subst.
+    rewrite H2 in H0.
+    simpls; eauto.
+    tryfalse.
+  }
+  {
+    subst.
+    rewrite H1 in H0.
+    simpls; eauto.
+    tryfalse.
+  }
+Qed.
+
+Lemma post_1_neq_pre :
+  forall id,
+    $ 0 <=ᵤᵢ id <=ᵤᵢ $ 7 ->
+    post_cwp id <> pre_cwp id.
+Proof.
+  intros.
+  intro.
+  rewrite <- Int.repr_unsigned with (i := id) in H0.
+  unfolds post_cwp, pre_cwp.
+  unfolds int_leu.
+  unfolds Int.ltu, Int.eq.
+  unfolds Int.add, Int.sub.
+  unfolds Int.modu.
+  unfolds N.
+  assert (Int.unsigned $ 0 = 0%Z); eauto.
+  assert (Int.unsigned $ 7 = 7%Z); eauto.
+  assert (Int.unsigned $ 1 = 1%Z); eauto.
+  assert (Int.unsigned $ 8 = 8%Z); eauto.
+  try rewrite H1 in *.
+  try rewrite H2 in *.
+  try rewrite H3 in *.
+  try rewrite H4 in *.
+  destruct id.
+  simpl Int.unsigned in *.
+  destruct (zlt 0 intval); destruct (zeq 0 intval);
+    destruct (zlt intval 7); destruct (zeq intval 7); tryfalse; try omega.
+  {
+    destruct intval; eauto; tryfalse.
+    do 3 (try destruct p; simpls; tryfalse; try omega).
+  }
+  {
+    subst.
+    rewrite H2 in H0.
+    simpls; eauto.
+    tryfalse.
+  }
+  {
+    subst.
+    rewrite H1 in H0.
+    simpls; eauto.
+    tryfalse.
+  }
+Qed.
+
+Lemma post_2_neq_pre :
+  forall id,
+    $ 0 <=ᵤᵢ id <=ᵤᵢ $ 7 ->
+    post_cwp (post_cwp id) <> pre_cwp id.
+Proof.
+  intros.
+  intro.
+  rewrite <- Int.repr_unsigned with (i := id) in H0.
+  unfolds post_cwp, pre_cwp.
+  unfolds int_leu.
+  unfolds Int.ltu, Int.eq.
+  unfolds Int.add, Int.sub.
+  unfolds Int.modu.
+  unfolds N.
+  assert (Int.unsigned $ 0 = 0%Z); eauto.
+  assert (Int.unsigned $ 7 = 7%Z); eauto.
+  assert (Int.unsigned $ 1 = 1%Z); eauto.
+  assert (Int.unsigned $ 8 = 8%Z); eauto.
+  try rewrite H1 in *.
+  try rewrite H2 in *.
+  try rewrite H3 in *.
+  try rewrite H4 in *.
+  destruct id.
+  simpl Int.unsigned in *.
+  destruct (zlt 0 intval); destruct (zeq 0 intval);
+    destruct (zlt intval 7); destruct (zeq intval 7); tryfalse; try omega.
+  {
+    destruct intval; eauto; tryfalse.
+    do 3 (try destruct p; simpls; tryfalse; try omega).
+  }
+  {
+    subst.
+    rewrite H2 in H0.
+    simpls; eauto.
+    tryfalse.
+  }
+  {
+    subst.
+    rewrite H1 in H0.
+    simpls; eauto.
+    tryfalse.
+  }
+Qed.
+
+Lemma post_3_neq_pre :
+  forall id,
+    $ 0 <=ᵤᵢ id <=ᵤᵢ $ 7 ->
+    post_cwp (post_cwp (post_cwp id)) <> pre_cwp id.
+Proof.
+  intros.
+  intro.
+  rewrite <- Int.repr_unsigned with (i := id) in H0.
+  unfolds post_cwp, pre_cwp.
+  unfolds int_leu.
+  unfolds Int.ltu, Int.eq.
+  unfolds Int.add, Int.sub.
+  unfolds Int.modu.
+  unfolds N.
+  assert (Int.unsigned $ 0 = 0%Z); eauto.
+  assert (Int.unsigned $ 7 = 7%Z); eauto.
+  assert (Int.unsigned $ 1 = 1%Z); eauto.
+  assert (Int.unsigned $ 8 = 8%Z); eauto.
+  try rewrite H1 in *.
+  try rewrite H2 in *.
+  try rewrite H3 in *.
+  try rewrite H4 in *.
+  destruct id.
+  simpl Int.unsigned in *.
+  destruct (zlt 0 intval); destruct (zeq 0 intval);
+    destruct (zlt intval 7); destruct (zeq intval 7); tryfalse; try omega.
+  {
+    destruct intval; eauto; tryfalse.
+    do 3 (try destruct p; simpls; tryfalse; try omega).
+  }
+  {
+    subst.
+    rewrite H2 in H0.
+    simpls; eauto.
+    tryfalse.
+  }
+  {
+    subst.
+    rewrite H1 in H0.
+    simpls; eauto.
+    tryfalse.
+  }
+Qed.
+
+Lemma post_4_neq_pre :
+  forall id,
+    $ 0 <=ᵤᵢ id <=ᵤᵢ $ 7 ->
+    post_cwp (post_cwp (post_cwp (post_cwp id))) <> pre_cwp id.
+Proof.
+  intros.
+  intro.
+  rewrite <- Int.repr_unsigned with (i := id) in H0.
+  unfolds post_cwp, pre_cwp.
+  unfolds int_leu.
+  unfolds Int.ltu, Int.eq.
+  unfolds Int.add, Int.sub.
+  unfolds Int.modu.
+  unfolds N.
+  assert (Int.unsigned $ 0 = 0%Z); eauto.
+  assert (Int.unsigned $ 7 = 7%Z); eauto.
+  assert (Int.unsigned $ 1 = 1%Z); eauto.
+  assert (Int.unsigned $ 8 = 8%Z); eauto.
+  try rewrite H1 in *.
+  try rewrite H2 in *.
+  try rewrite H3 in *.
+  try rewrite H4 in *.
+  destruct id.
+  simpl Int.unsigned in *.
+  destruct (zlt 0 intval); destruct (zeq 0 intval);
+    destruct (zlt intval 7); destruct (zeq intval 7); tryfalse; try omega.
+  {
+    destruct intval; eauto; tryfalse.
+    do 3 (try destruct p; simpls; tryfalse; try omega).
+  }
+  {
+    subst.
+    rewrite H2 in H0.
+    simpls; eauto.
+    tryfalse.
+  }
+  {
+    subst.
+    rewrite H1 in H0.
+    simpls; eauto.
+    tryfalse.
+  }
+Qed.
+
+Lemma post_5_neq_pre :
+  forall id,
+    $ 0 <=ᵤᵢ id <=ᵤᵢ $ 7 ->
+    post_cwp (post_cwp (post_cwp (post_cwp (post_cwp id)))) <> pre_cwp id.
+Proof.
+  intros.
+  intro.
+  rewrite <- Int.repr_unsigned with (i := id) in H0.
+  unfolds post_cwp, pre_cwp.
+  unfolds int_leu.
+  unfolds Int.ltu, Int.eq.
+  unfolds Int.add, Int.sub.
+  unfolds Int.modu.
+  unfolds N.
+  assert (Int.unsigned $ 0 = 0%Z); eauto.
+  assert (Int.unsigned $ 7 = 7%Z); eauto.
+  assert (Int.unsigned $ 1 = 1%Z); eauto.
+  assert (Int.unsigned $ 8 = 8%Z); eauto.
+  try rewrite H1 in *.
+  try rewrite H2 in *.
+  try rewrite H3 in *.
+  try rewrite H4 in *.
+  destruct id.
+  simpl Int.unsigned in *.
+  destruct (zlt 0 intval); destruct (zeq 0 intval);
+    destruct (zlt intval 7); destruct (zeq intval 7); tryfalse; try omega.
+  {
+    destruct intval; eauto; tryfalse.
+    do 3 (try destruct p; simpls; tryfalse; try omega).
+  }
+  {
+    subst.
+    rewrite H2 in H0.
+    simpls; eauto.
+    tryfalse.
+  }
+  {
+    subst.
+    rewrite H1 in H0.
+    simpls; eauto.
+    tryfalse.
+  }
+Qed.
+
+Lemma post_6_neq_pre :
+  forall id,
+    $ 0 <=ᵤᵢ id <=ᵤᵢ $ 7 ->
+    post_cwp (post_cwp (post_cwp (post_cwp (post_cwp (post_cwp id))))) <> pre_cwp id.
+Proof.
+  intros.
+  intro.
+  rewrite <- Int.repr_unsigned with (i := id) in H0.
+  unfolds post_cwp, pre_cwp.
+  unfolds int_leu.
+  unfolds Int.ltu, Int.eq.
+  unfolds Int.add, Int.sub.
+  unfolds Int.modu.
+  unfolds N.
+  assert (Int.unsigned $ 0 = 0%Z); eauto.
+  assert (Int.unsigned $ 7 = 7%Z); eauto.
+  assert (Int.unsigned $ 1 = 1%Z); eauto.
+  assert (Int.unsigned $ 8 = 8%Z); eauto.
+  try rewrite H1 in *.
+  try rewrite H2 in *.
+  try rewrite H3 in *.
+  try rewrite H4 in *.
+  destruct id.
+  simpl Int.unsigned in *.
+  destruct (zlt 0 intval); destruct (zeq 0 intval);
+    destruct (zlt intval 7); destruct (zeq intval 7); tryfalse; try omega.
+  {
+    destruct intval; eauto; tryfalse.
+    do 3 (try destruct p; simpls; tryfalse; try omega).
+  }
+  {
+    subst.
+    rewrite H2 in H0.
+    simpls; eauto.
+    tryfalse.
+  }
+  {
+    subst.
+    rewrite H1 in H0.
+    simpls; eauto.
+    tryfalse.
+  }
+Qed.
+
+Lemma post_7_eq_pre :
+  forall id,
+    $ 0 <=ᵤᵢ id <=ᵤᵢ $ 7 ->
+    post_cwp (post_cwp (post_cwp (post_cwp (post_cwp (post_cwp (post_cwp id)))))) = pre_cwp id.
+Proof.
+  intros.
+  rewrite <- Int.repr_unsigned with (i := id).
+  unfolds post_cwp, pre_cwp.
+  unfolds int_leu.
+  unfolds Int.ltu, Int.eq.
+  unfolds Int.add, Int.sub.
+  unfolds Int.modu.
+  unfolds N. 
+  assert (Int.unsigned $ 0 = 0%Z); eauto.
+  assert (Int.unsigned $ 7 = 7%Z); eauto.
+  assert (Int.unsigned $ 1 = 1%Z); eauto.
+  assert (Int.unsigned $ 8 = 8%Z); eauto.
+  try rewrite H0 in *.
+  try rewrite H1 in *.
+  try rewrite H2 in *.
+  try rewrite H3 in *.
+  destruct id.
+  simpl Int.unsigned in *.
+  destruct (zlt 0 intval); destruct (zeq 0 intval);
+    destruct (zlt intval 7); destruct (zeq intval 7); tryfalse; try omega; subst; eauto.
+  {
+    destruct intval; eauto; tryfalse.
+    do 3 (try destruct p; simpls; tryfalse; try omega; eauto).
+  }
+Qed.

@@ -93,22 +93,6 @@ Proof.
   simpl in Hs; destruct Hs; eauto.
 Qed.
 
-Ltac hoare_ex_intro :=
-  match goal with
-  | |- _ |- {{ EX _, _ }} _ {{ EX _, _ }} =>
-    eapply ex_intro_rule'; try intros;
-    hoare_ex_intro
-  | _ => idtac
-  end.
-
-Ltac hoare_ex_intro_pre :=
-  match goal with
-  | |- _ |- {{ EX _, _ }} _ {{ _ }} =>
-    eapply Ex_intro_rule; try intros;
-    hoare_ex_intro_pre
-  | _ => idtac
-  end.
-
 Ltac hoare_lift_pre n :=
   let H' := fresh in
   match goal with
@@ -422,3 +406,34 @@ Proof.
   eapply H in Ht.
   eapply sep_pure_l_intro; eauto.
 Qed.
+
+Theorem ex_intro_l_rule :
+  forall {tp : Type} (p : tp -> asrt) p' q I Spec,
+    (forall x' : tp, Spec |- {{ p x' ** p' }} I {{ q }}) ->
+    Spec |- {{ (EX x : tp, p x) ** p' }} I {{ q }}.
+Proof.
+  intros.
+  eapply backward_rule.
+  introv Hs.
+  eapply astar_l_aexists_elim in Hs; eauto.
+  eapply Ex_intro_rule; eauto.
+Qed.
+  
+Ltac hoare_ex_intro :=
+  match goal with
+  | |- _ |- {{ EX _, _ }} _ {{ EX _, _ }} =>
+    eapply ex_intro_rule'; try intros;
+    hoare_ex_intro
+  | _ => idtac
+  end.
+
+Ltac hoare_ex_intro_pre :=
+  match goal with
+  | |- _ |- {{ EX _, _ }} _ {{ _ }} =>
+    eapply Ex_intro_rule; try intros;
+    hoare_ex_intro_pre
+  | |- _ |- {{ (EX _, _) ** _ }} _ {{ _ }} =>
+    eapply ex_intro_l_rule; try intros;
+    hoare_ex_intro_pre
+  | _ => idtac
+  end.

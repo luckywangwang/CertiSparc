@@ -211,21 +211,23 @@ Inductive stack_frame_top : list (Frame * Frame) -> FrameList -> Prop :=
       lfp = (fml, fmi) :: lfp' -> F = fml :: fmi :: F' ->
       stack_frame_top lfp F.
 
-Inductive stack_frame_save' : Word -> FrameList -> list (Frame * Frame) -> Word -> Prop :=
+Inductive stack_frame_save' :
+  Word -> FrameList -> list (Frame * Frame) -> list (Frame * Frame) -> Word -> Prop :=
 | frame_save_end :
     forall id lfp F vi,
-      id = vi ->
-      stack_frame_save' id F lfp vi
+      post_cwp id = vi ->
+      stack_frame_save' id F lfp lfp vi
 
 | frame_save_cons :
-    forall id lfp lfp' F F' fml fmi vi,
-      id <> vi -> lfp = (fml, fmi) :: lfp' -> F = fml :: fmi :: F' ->
-      stack_frame_save' (post_cwp id) F' lfp' vi ->
-      stack_frame_save' id F lfp vi.
+    forall id lfp lfp1 F fml fmi fml' fmi' vi,
+      post_cwp id <> vi ->
+      stack_frame_save' (post_cwp id) F lfp lfp1 vi ->
+      stack_frame_save' id (fml :: fmi :: F) ((fml, fmi) :: lfp) ((fml', fmi') :: lfp1) vi.
 
-Definition stack_frame_save F (stk : stack_val) id vi :=
+Definition stack_frame_save F (stk : stack_val) (stk' : stack_val) id vi :=
   let (sa, lfp) := stk in
-  stack_frame_save' id F lfp vi.
+  let (sa', lfp') := stk' in
+  sa = sa' /\ stack_frame_save' id F lfp lfp' vi.
 
 Definition ctx_win_match (ctx : ctx_val) (fml fmi fmg : Frame) (vy : Word) :=
   match ctx with
@@ -254,7 +256,7 @@ Definition FrameState (id vi : Word) (F : FrameList) :=
 Definition os_int_ta0_handler_pre (vl : list logicvar) :=
   EX fmg fmo fml fmi id F vy vi bv ll
      ct cctx cstk nt nctx nstk vz vn,
-  [| vl = logic_fm fmg :: logic_fm fml :: logic_fm fmi :: logic_lv id
+  [| vl = logic_fm fmg :: logic_fm fmo :: logic_fm fml :: logic_fm fmi :: logic_lv id
           :: logic_fmls F :: logic_lv vy :: logic_lv vi :: logic_lv bv :: logic_lv ll
           :: logic_lv ct :: logic_ctx cctx :: logic_stk cstk
           :: logic_lv nt :: logic_ctx nctx :: logic_stk nstk :: nil |] **
@@ -275,9 +277,9 @@ Definition os_int_ta0_handler_pre (vl : list logicvar) :=
   ).
 
 Definition os_int_ta0_handler_post (vl : list logicvar) :=
-  EX fmg fmg' fmo' fml fml' fmi fmi' id id' F F' vy vy' vi vi' bv ll
+  EX fmg fmg' fmo fmo' fml fml' fmi fmi' id id' F F' vy vy' vi vi' bv ll
      ct cctx cctx' cstk cstk' nt nctx nstk vz' vn',
-  [| vl = logic_fm fmg :: logic_fm fml :: logic_fm fmi :: logic_lv id
+  [| vl = logic_fm fmg :: logic_fm fmo :: logic_fm fml :: logic_fm fmi :: logic_lv id
           :: logic_fmls F :: logic_lv vy :: logic_lv vi :: logic_lv bv :: logic_lv ll
           :: logic_lv ct :: logic_ctx cctx :: logic_stk cstk
           :: logic_lv nt :: logic_ctx nctx :: logic_stk nstk :: nil |] **
@@ -301,7 +303,7 @@ Definition os_int_ta0_handler_post (vl : list logicvar) :=
       [| bv = OSTRUE |] **
       context nctx ** stack nstk **
       [| (get_ctx_addr cctx = ct +ᵢ OS_CONTEXT_OFFSET) ->
-         (ctx_pt_stk cctx' cstk' /\ stack_frame_save F cstk' id vi /\
+         (ctx_pt_stk cctx' cstk' /\ stack_frame_save (F ++ (fmo :: nil)) cstk' cstk id vi /\
           ctx_win_save cctx (update_frame (update_frame fml 1 ((get_frame_nth' fml 1) +ᵢ ($ 4))) 2
                              ((get_frame_nth' fml 2) +ᵢ ($ 4))) fmi fmg vy) |] **
       [| stack_frame_constraint nstk (fml' :: fmi' :: F' ++ (fmo' :: nil)) id' vi' /\
@@ -320,6 +322,22 @@ Definition os_ta0_return_post (vl : list logicvar) :=
   [| vl = logic_fm fmg :: logic_fm fml :: logic_fm fmi :: logic_lv id
           :: logic_fmls F :: logic_lv vi :: nil |] **
   GenRegs (upd_genreg (fmg, fmo, fml, fmi) l0 id) ** FrameState id vi F.
+
+Definition reg_save_pre (vl : list logicvar) :=
+  EX fmg fmo fml fmi cctx l vy retf id vi F,
+  [| vl = logic_fm fmg :: logic_fm fmo :: logic_fm fml :: logic_fm fmi
+          :: logic_lv id :: logic_lv vi :: logic_fmls F
+          :: logic_lv vy :: logic_lv retf :: nil |] **
+  GenRegs (fmg, fmo, fml, fmi) ** context cctx ** Rsp Ry |=> vy ** FrameState id vi F **
+  [| get_frame_nth fml 5 = Some l /\ get_ctx_addr cctx = l /\ get_frame_nth fmo 7 = Some retf |].
+
+Definition reg_save_post (vl : list logicvar) :=
+  EX fmg fmo fml fmi cctx' vy retf id vi F,
+  [| vl = logic_fm fmg :: logic_fm fmo :: logic_fm fml :: logic_fm fmi
+          :: logic_lv id :: logic_lv vi :: logic_fmls F
+          :: logic_lv vy :: logic_lv retf :: nil |] **
+  GenRegs (fmg, fmo, fml, fmi) ** context cctx' ** Rsp Ry |=> vy ** FrameState id vi F **
+  [| ctx_win_save cctx' fml fmi fmg vy /\ get_frame_nth fmo 7 = Some retf |].
                                                    
 Fixpoint convert_spec (ls : list (Address * Address * fspec)) :
   funspec :=
@@ -341,7 +359,7 @@ Fixpoint convert_spec (ls : list (Address * Address * fspec)) :
 Definition ta0_window_ok_pre (vl : list logicvar) :=
   EX fmg fmo fml fmi id F vy vi ll
      ct cctx cstk nt nctx nstk vz vn,
-  [| vl = logic_fm fmg :: logic_fm fml :: logic_fm fmi :: logic_lv id
+  [| vl = logic_fm fmg :: logic_fm fmo :: logic_fm fml :: logic_fm fmi :: logic_lv id
           :: logic_fmls F :: logic_lv vy :: logic_lv vi :: logic_lv ll
           :: logic_lv ct :: logic_ctx cctx :: logic_stk cstk
           :: logic_lv nt :: logic_ctx nctx :: logic_stk nstk :: nil |] **
@@ -355,9 +373,9 @@ Definition ta0_window_ok_pre (vl : list logicvar) :=
   [| stack_frame_constraint cstk (fml :: fmi :: F ++ (fmo :: nil)) id vi |].
 
 Definition ta0_window_ok_post (vl : list logicvar) :=
-  EX fmg fmg' fmo' fml fml' fmi fmi' id id' F F' vy vy' vi vi' ll
+  EX fmg fmg' fmo fmo' fml fml' fmi fmi' id id' F F' vy vy' vi vi' ll
      ct cctx cctx' cstk cstk' nt nctx nstk vz' vn',
-  [| vl = logic_fm fmg :: logic_fm fml :: logic_fm fmi :: logic_lv id
+  [| vl = logic_fm fmg :: logic_fm fmo :: logic_fm fml :: logic_fm fmi :: logic_lv id
           :: logic_fmls F :: logic_lv vy :: logic_lv vi :: logic_lv ll
           :: logic_lv ct :: logic_ctx cctx :: logic_stk cstk
           :: logic_lv nt :: logic_ctx nctx :: logic_stk nstk :: nil |] **
@@ -368,7 +386,7 @@ Definition ta0_window_ok_post (vl : list logicvar) :=
   [| get_ctx_addr cctx = get_ctx_addr cctx' /\ get_stk_addr cstk = get_stk_addr cstk' |] **
   context nctx ** stack nstk **
   [| (get_ctx_addr cctx = ct +ᵢ OS_CONTEXT_OFFSET) ->
-     (ctx_pt_stk cctx' cstk' /\ stack_frame_save F cstk' id vi /\
+     (ctx_pt_stk cctx' cstk' /\ stack_frame_save (F ++ (fmo :: nil)) cstk' cstk id vi /\
       ctx_win_save cctx fml fmi fmg vy) |] **
   [| stack_frame_constraint nstk (fml' :: fmi' :: F' ++ (fmo' :: nil)) id' vi' /\
      ctx_win_restore nctx fml' fmi' fmg' vy' |].
@@ -378,6 +396,8 @@ Definition spec := convert_spec
                        (os_ta0_return_pre, os_ta0_return_post))
                         :: (Ta0_Window_OK, Ta0_Window_OK +ᵢ ($ 4),
                             (ta0_window_ok_pre, ta0_window_ok_post))
+                        :: (reg_save, reg_save +ᵢ ($ 4),
+                            (reg_save_pre, reg_save_post))
                         :: nil).
   
 Ltac eval_spec :=

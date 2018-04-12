@@ -1,4 +1,4 @@
-Require Import Coqlib.                         
+Require Import Coqlib.                            
 Require Import Maps.           
 Require Import LibTactics.   
         
@@ -869,6 +869,8 @@ Lemma stack_frame_constraint_pt_same_equal :
 Proof.
   intros.
   unfolds stack_frame_constraint.
+  destruct stk.
+  simpls get_stk_addr, get_stk_cont.
   inversion H0; subst.
   {
     eapply frame_invalid; eauto.
@@ -885,7 +887,9 @@ Lemma stk_bottom_pre_pt :
     stack_frame_constraint' l id (F ++ fm1 :: fm2 :: fm3 :: nil) lfp id ->
     get_frame_nth fm1 6 = Some l' -> s |= stack' l lfp ** p ->
     s |= EX lfp1 lfp2 fm' fm'', stack' l lfp1 ** stack_frame l' fm' fm''
-         ** stack' (l' -ᵢ ($ 64)) lfp2 ** [| length lfp1 = 6 /\ l' = l -ᵢ ($ (64 * 6)) |] ** p.
+         ** stack' (l' -ᵢ ($ 64)) lfp2 **
+         [| length lfp1 = 6 /\ l' = l -ᵢ ($ (64 * 6)) |] ** [| lfp = lfp1 ++ (fm', fm'') :: lfp2|]
+         ** p.
 Proof.  
   intros.
   do 14 (try destruct F; simpl in H; tryfalse).
@@ -961,9 +965,132 @@ Proof.
   repeat (rewrite Int.sub_add_opp; eauto).
   repeat (rewrite Int.add_assoc; eauto).
   eapply astar_emp_intro_l; eauto.
+  eapply sep_pure_l_intro; eauto.
   eapply post_8_eq in H0.
   eapply H8 in H0.
   tryfalse.
+Qed.
+
+Lemma stk_fm_constraint_map :
+  forall l id fm1 fm1' fm2 fm2' fm3 fm3' fm4 fm4' fm5 fm5' fm6 fm6' fm7 fm7' F lfp1 lfp2,
+    get_frame_nth fm2 = get_frame_nth fm2' ->
+    length lfp1 = 6 -> length F = 11 -> $ 0 <=ᵤᵢ id <=ᵤᵢ $ 7 ->
+    stack_frame_constraint' l id (fm1 :: fm2 :: F ++ fm3 :: fm4 :: fm5 :: nil)
+                            (lfp1 ++ (fm6, fm7) :: lfp2) id ->
+    stack_frame_constraint' l id (fm1' :: fm2' :: F ++ fm3' :: fm4' :: fm5' :: nil)
+                            (lfp1 ++ (fm6', fm7') :: lfp2) (pre_cwp id).
+Proof.
+  intros.
+  do 12 (try destruct F; simpl in H1; tryfalse).
+  do 7 (try destruct lfp1; simpl in H0; tryfalse).
+
+  inversion H3; subst.
+  eapply post_1_neq in H4; tryfalse; eauto.
+  eapply frame_valid; eauto.
+  eapply post_1_neq_pre; eauto.
+  rewrite <- H; eauto.
+ 
+  clear H12 H13 H3.
+  inversion H14; subst.
+  eapply post_2_neq in H3; tryfalse; eauto.
+  eapply frame_valid; eauto.
+  eapply post_2_neq_pre; eauto.
+
+  clear H14 H11 H12.
+  inversion H13; subst.
+  eapply post_3_neq in H3; tryfalse; eauto.
+  eapply frame_valid; eauto.
+  eapply post_3_neq_pre; eauto.
+
+  clear H13 H11 H12.
+  inversion H14; subst.  
+  eapply post_4_neq in H3; tryfalse; eauto.
+  eapply frame_valid; eauto.
+  eapply post_4_neq_pre; eauto.
+  
+  clear H11 H12 H14.
+  inversion H13; subst.
+  eapply post_5_neq in H3; tryfalse; eauto.
+  eapply frame_valid; eauto.
+  eapply post_5_neq_pre; eauto.
+
+  clear H13 H11 H12.
+  inversion H14; subst.
+  eapply post_6_neq in H3; tryfalse; eauto.
+  eapply frame_valid; eauto.
+  eapply post_6_neq_pre; eauto.
+
+  clear H14 H11 H12.
+  eapply frame_invalid; eauto.
+  eapply post_7_eq_pre; eauto.
+Qed.
+
+Lemma stk_frm_save_pre :
+  forall F fm1 fm2 fm3 fm4 fm4' fm5 fm5' l lfp1 lfp2 id cstk,
+    $ 0 <=ᵤᵢ id <=ᵤᵢ $ 7 -> length F = 11 -> length lfp1 = 6 ->
+    stack_frame_save (F ++ (fm1 :: fm2 :: fm3 :: nil)) cstk
+                     (l, lfp1 ++ (fm4, fm5) :: lfp2) id (pre_cwp id) ->
+    stack_frame_save (F ++ (fm1 :: fm4 :: fm5 :: nil)) cstk
+                     (l, lfp1 ++ (fm4', fm5') :: lfp2) id id.
+Proof.
+  intros.
+  do 12 (try destruct F; simpl in H0; tryfalse).
+  do 7 (try destruct lfp1; simpl in H1; tryfalse).
+  clear H0 H1.
+
+  unfolds stack_frame_save.
+  destruct cstk.
+  simpljoin1.
+  split; eauto.
+ 
+  inversion H1; subst.
+  eapply post_1_neq_pre in H0; tryfalse; eauto.
+  simpl.
+  eapply frame_save_cons; eauto.
+  eapply post_1_neq; eauto.
+
+  clear H1 H9.
+  inversion H10; subst.
+  eapply post_2_neq_pre in H0; tryfalse; eauto.
+  eapply frame_save_cons; eauto.
+  eapply post_2_neq; eauto.
+
+  clear H10 H8.
+  inversion H9; subst.
+  eapply post_3_neq_pre in H0; tryfalse; eauto.
+  eapply frame_save_cons; eauto.
+  eapply post_3_neq; eauto.
+
+  clear H9 H8.
+  inversion H10; subst.
+  eapply post_4_neq_pre in H0; tryfalse; eauto.
+  eapply frame_save_cons; eauto.
+  eapply post_4_neq; eauto.
+
+  clear H10 H8.
+  inversion H9; subst.
+  eapply post_5_neq_pre in H0; tryfalse; eauto.
+  eapply frame_save_cons; eauto.
+  eapply post_5_neq; eauto.
+
+  clear H9 H8.
+  inversion H10; subst.
+  eapply post_6_neq_pre in H0; tryfalse; eauto.
+  eapply frame_save_cons; eauto.
+  eapply post_6_neq; eauto.
+
+  clear H10 H8.
+  inversion H9; subst.
+  {
+    eapply frame_save_cons; eauto.
+    eapply post_7_eq; eauto.
+    eapply frame_save_end; eauto.
+    eapply post_8_eq; eauto.
+  }
+
+  false.
+  eapply H10.
+  eapply post_7_eq_pre; eauto.
 Qed.
 
 (*+ Lemmas for Space +*)
@@ -975,4 +1102,85 @@ Proof.
   intros.
   unfold stack'; fold stack'.
   eapply astar_assoc_intro; eauto.
+Qed.
+
+Lemma FrameState_combine :
+  forall id vi F s p,
+    s |= {| id, F |} ** Rwim |=> ($ 1) <<ᵢ vi ** p ->
+    length F = 13 -> $ 0 <=ᵤᵢ id <=ᵤᵢ $ 7 /\ $ 0 <=ᵤᵢ vi <=ᵤᵢ $ 7 ->
+    s |= FrameState id vi F ** p.
+Proof.
+  intros.
+  unfold FrameState.
+  eapply astar_assoc_intro.
+  sep_cancel1 1 1.
+  eapply astar_assoc_intro.
+  sep_cancel1 1 1.
+  eapply astar_assoc_intro.
+  eapply sep_pure_l_intro; eauto.
+  eapply sep_pure_l_intro; eauto.
+Qed.
+
+Lemma stack'_app :
+  forall n l1 l2 lfp1 lfp2 s p,
+    (0 <= Z.of_nat n <= 100)%Z ->
+    s |= stack' l1 lfp1 ** stack' l2 lfp2 ** p ->
+    length lfp1 = n -> l2 = l1 -ᵢ ($ (64 * Z.of_nat n)) ->
+    s |= stack' l1 (lfp1 ++ lfp2) ** p.
+Proof.
+  intro n.
+  induction n; intros.
+  -
+    destruct lfp1; tryfalse.
+    simpl.
+    simpl stack' in H0.
+    eapply astar_emp_elim_l in H0.
+    rewrite Nat2Z.inj_0 in H2.
+    simpl in H2.
+    rewrite Int.sub_zero_l in H2.
+    subst; eauto.
+  -
+    destruct lfp1; tryfalse. 
+    simpl stack' in H0.
+    destruct p0.
+    simpl stack'.
+    eapply astar_assoc_elim in H0.
+    eapply astar_assoc_intro.
+    sep_cancel1 1 1.
+    eapply IHn in H3; eauto.
+    clear - H.
+    rewrite Nat2Z.inj_succ in H.
+    unfold Z.succ in H.
+    omega.  
+    clear - H2 H.
+    rewrite Nat2Z.inj_succ in H2.
+    assert ((64 * Z.succ (Z.of_nat n) = 64 + 64 * Z.of_nat n)%Z).
+    omega.
+    rewrite H0 in H2.
+    clear - H2 H. 
+    rewrite Int.sub_add_opp in H2.
+    do 2 rewrite Int.sub_add_opp.
+    rewrite Int.add_assoc.
+    rewrite <- Int.neg_add_distr.
+    rewrite int_repr_add; eauto.
+    solve_max_range.
+    clear - H.
+    rewrite Nat2Z.inj_succ in H.
+    unfold Z.succ in H.
+    assert ((0 <= Z.of_nat n <= 100)%Z).
+    omega.
+    eapply mul_64_in_range in H0.
+    clear - H0.
+    remember (64 * Z.of_nat n)%Z as z.
+    clear Heqz.
+    solve_max_range.
+Qed.
+
+Lemma stack'_to_stack :
+  forall l lfp s p,
+    s |= stack' l lfp ** p ->
+    s |= stack (l, lfp) ** p.
+Proof.
+  intros.
+  unfold stack; eauto.
 Qed.

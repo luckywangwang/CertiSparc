@@ -1,4 +1,4 @@
-Require Import Coqlib.                         
+Require Import Coqlib.                               
 Require Import Maps.           
 Require Import LibTactics.   
         
@@ -40,108 +40,7 @@ Require Import WindowOKProof.
 Open Scope nat.
 Open Scope code_scope.
 Open Scope mem_scope.
-
-(*+ Lemmas for Integer +*)
-Ltac solve_max_range :=
-  unfold Int.max_unsigned; unfold Int.modulus;
-  simpl; try omega.
-
-Lemma int_repr_add :
-  forall (x y : Z),
-    (0 <= x <= Int.max_unsigned)%Z -> (0 <= y <= Int.max_unsigned)%Z ->
-    ($ x) +ᵢ ($ y) = $ (x + y).
-Proof.
-  intros.
-  unfold Int.add.
-  unfolds Int.max_unsigned.
-  unfolds Int.modulus.
-  simpls.
-  destruct x, y; eauto; try omega; tryfalse;
-    try solve [do 2 try rewrite Int.unsigned_repr; eauto].
-Qed.
-
-Lemma mul_64_in_range :
-  forall z,
-    (0 <= z <= 100)%Z ->
-    (0 <= 64 * z <= 6400)%Z.
-Proof.
-  intros.
-  omega.
-Qed.
-
-(*+ Lemmas for Space +*)
-Lemma FrameState_combine :
-  forall id vi F s p,
-    s |= {| id, F |} ** Rwim |=> ($ 1) <<ᵢ vi ** p ->
-    length F = 13 -> $ 0 <=ᵤᵢ id <=ᵤᵢ $ 7 /\ $ 0 <=ᵤᵢ vi <=ᵤᵢ $ 7 ->
-    s |= FrameState id vi F ** p.
-Proof.
-  intros.
-  unfold FrameState.
-  eapply astar_assoc_intro.
-  sep_cancel1 1 1.
-  eapply astar_assoc_intro.
-  sep_cancel1 1 1.
-  eapply astar_assoc_intro.
-  eapply sep_pure_l_intro; eauto.
-  eapply sep_pure_l_intro; eauto.
-Qed.
-
-Lemma stack'_app :
-  forall n l1 l2 lfp1 lfp2 s p,
-    (0 <= Z.of_nat n <= 100)%Z ->
-    s |= stack' l1 lfp1 ** stack' l2 lfp2 ** p ->
-    length lfp1 = n -> l2 = l1 -ᵢ ($ (64 * Z.of_nat n)) ->
-    s |= stack' l1 (lfp1 ++ lfp2) ** p.
-Proof.
-  intro n.
-  induction n; intros.
-  -
-    destruct lfp1; tryfalse.
-    simpl.
-    simpl stack' in H0.
-    eapply astar_emp_elim_l in H0.
-    rewrite Nat2Z.inj_0 in H2.
-    simpl in H2.
-    rewrite Int.sub_zero_l in H2.
-    subst; eauto.
-  -
-    destruct lfp1; tryfalse. 
-    simpl stack' in H0.
-    destruct p0.
-    simpl stack'.
-    eapply astar_assoc_elim in H0.
-    eapply astar_assoc_intro.
-    sep_cancel1 1 1.
-    eapply IHn in H3; eauto.
-    clear - H.
-    rewrite Nat2Z.inj_succ in H.
-    unfold Z.succ in H.
-    omega.  
-    clear - H2 H.
-    rewrite Nat2Z.inj_succ in H2.
-    assert ((64 * Z.succ (Z.of_nat n) = 64 + 64 * Z.of_nat n)%Z).
-    omega.
-    rewrite H0 in H2.
-    clear - H2 H. 
-    rewrite Int.sub_add_opp in H2.
-    do 2 rewrite Int.sub_add_opp.
-    rewrite Int.add_assoc.
-    rewrite <- Int.neg_add_distr.
-    rewrite int_repr_add; eauto.
-    solve_max_range.
-    clear - H.
-    rewrite Nat2Z.inj_succ in H.
-    unfold Z.succ in H.
-    assert ((0 <= Z.of_nat n <= 100)%Z).
-    omega.
-    eapply mul_64_in_range in H0.
-    clear - H0.
-    remember (64 * Z.of_nat n)%Z as z.
-    clear Heqz.
-    solve_max_range.
-Qed.
-    
+  
 (*+ Proof +*)
 Theorem OSInt0HandlerProof :
   forall vl,
@@ -633,11 +532,14 @@ Proof.
   eauto.
   
   hoare_ex_intro_pre.
-  renames x' to lfp1, x'0 to lfp2, x'1 to fm', x'2 to fm''.
+  renames x' to lfp1, x'0 to lfp2, x'1 to fm', x'2 to fm''. 
   hoare_lift_pre 2.
   hoare_lift_pre 4.
   eapply Pure_intro_rule.
   introv Hlen_lfp1.
+  hoare_lift_pre 4.
+  eapply Pure_intro_rule.
+  introv Hlfp.
   hoare_lift_pre 4.
   destruct fm', fm''.
 
@@ -869,8 +771,111 @@ Proof.
   rewrite Hlen_lfp1.
   simpls.
   eauto.
-  
+  eapply backward_rule.
+  introv Hs.
+  eapply stack'_to_stack in Hs; eauto.
+   
   eapply Seq_conseq_rule.
   eapply Ta0WindowOKProof; eauto.
+  {
+    introv Hs.
+    unfold ta0_window_ok_pre.
+    sep_ex_intro.
+    eapply sep_pure_l_intro; eauto.
+    simpl_sep_liftn 2.
+    eapply GenRegs_split_Regs_Global.
+    sep_cancel1 3 1.
+    sep_cancel1 2 1.
+    sep_cancel1 6 1.
+    sep_cancel1 3 1.
+    sep_cancel1 2 1.
+    sep_cancel1 4 1.
+    sep_cancel1 4 1.
+    sep_cancel1 3 1.
+    sep_cancel1 3 1.
+    sep_cancel1 3 1.
+    sep_cancel1 1 1.
+    match goal with
+    | H : _ |= _ |- _ =>
+      renames H to Hs
+    end.
+    asrt_to_line_in Hs 4.
+    sep_cancel1 1 3.
+    sep_cancel1 1 3.
+    eapply sep_pure_l_intro; eauto.
+    eapply sep_pure_l_intro.
+    introv Hcontr.
+    symmetry in Hcontr.
+    eapply  pre_1_neq in Hcontr; eauto.
+    sep_cancel1 1 1.
+    sep_cancel1 1 1.
+    subst lfp.
+    sep_cancel1 1 1.
+    eapply astar_emp_elim_r.
+    match goal with
+    | H : _ |= _ |- _ =>
+      renames H to Hs
+    end. 
+    eapply sep_pure_l_elim in Hs.
+    destruct Hs as [Ht Hs].
+    eapply sep_pure_l_intro; eauto. 
+    clear - Hid_range Hlen_lfp1 Hlen_F' Hstk_fm_constraint.
+    unfold stack_frame_constraint.
+    simpl get_stk_addr.
+    simpl get_stk_cont.
+    rewrite <- app_assoc.
+    simpl.
+    eapply stk_fm_constraint_map; eauto.
+    simpljoin1; eauto.
+    clear - Hlen_F'.
+    rewrite app_length in Hlen_F'.
+    simpls.
+    omega.
+  }
+  {
+    unfold ta0_window_ok_post.
+    introv Hs.
+    sep_ex_elim_in Hs.
+    eapply sep_pure_l_elim in Hs.
+    destruct Hs as [Hlgvl Hs].
+    symmetry in Hlgvl.
+    inversion Hlgvl; subst.
+    clear Hlgvl.
+    simpl get_stk_addr in *.
+    renames x0 to fmg', x2 to fmo', x4 to fml', x6 to fmi'.
+    renames x8 to id', x14 to vi', x10 to F', x12 to vy', x24 to vz', x25 to vn'.
+    renames x18 to cctx', x20 to cstk'.
+    sep_ex_intro.
+    eapply sep_pure_l_intro; eauto.
+    simpl get_stk_addr.
+    do 14 sep_cancel1 1 1.
+    eapply asrt_disj_intro.
+    right.
+    eapply sep_pure_l_intro; eauto.
+    sep_cancel1 1 1.
+    sep_cancel1 1 1.
+    match goal with
+    | H : _ |= _ |- _ => renames H to Hs
+    end.
+    simpl update_frame.
+    eapply sep_pure_l_elim in Hs.
+    destruct Hs as [Hsave Hs].
+    eapply sep_pure_l_intro.
+    introv Hcctx_addr.
+    eapply Hsave in Hcctx_addr.
+    destruct Hcctx_addr as [Hcctx_pt_stk [Hstk_fm_save Hctx_win_save] ].
+    repeat (split; eauto).  
+    clear - Hlen_lfp1 Hlen_F' Hstk_fm_save Hid_range.
+    try rewrite <- app_assoc in *.
+    simpls.
+    eapply stk_frm_save_pre; eauto.
+    rewrite app_length in Hlen_F'.
+    simpls; omega.
+    simpljoin1; eauto.
+    eauto.
+  }
 
-  >>>>>>>>>>>>>>>
+  Unshelve.
+  exact (logic_lv w :: nil).
+  exact (logic_lv w :: nil).
+Qed.
