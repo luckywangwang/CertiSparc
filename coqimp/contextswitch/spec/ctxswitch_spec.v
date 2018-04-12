@@ -371,4 +371,18 @@ Definition ta0_window_ok_post (vl : list logicvar) :=
      (ctx_pt_stk cctx' cstk' /\ stack_frame_save F cstk' id vi /\
       ctx_win_save cctx fml fmi fmg vy) |] **
   [| stack_frame_constraint nstk (fml' :: fmi' :: F' ++ (fmo' :: nil)) id' vi' /\
-         ctx_win_restore nctx fml' fmi' fmg' vy' |].
+     ctx_win_restore nctx fml' fmi' fmg' vy' |].
+
+Definition spec := convert_spec
+                     ((Ta0_return, Ta0_return +ᵢ ($ 4),
+                       (os_ta0_return_pre, os_ta0_return_post))
+                        :: (Ta0_Window_OK, Ta0_Window_OK +ᵢ ($ 4),
+                            (ta0_window_ok_pre, ta0_window_ok_post))
+                        :: nil).
+  
+Ltac eval_spec :=
+  match goal with
+  | |- ?spec (?f1, ?f2) = Some (?fp, ?fq) =>
+    unfold spec; unfold convert_spec;
+    repeat progress (destruct_addreq; destruct_addreq)
+  end.
