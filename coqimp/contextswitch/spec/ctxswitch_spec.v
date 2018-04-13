@@ -417,7 +417,8 @@ Definition ta0_start_adjust_cwp_pre (vl : list logicvar) :=
   z |=> vz ** n |=> vn **
   OSTaskCur |-> ct ** OSTaskNew |-> nt ** OSTaskSwitchFlag |-> OSTRUE **
   OSIntNestCnt |-> ll +ᵢ ($ 1) ** context nctx ** stack nstk **
-  [| get_ctx_addr nctx = nt +ᵢ OS_CONTEXT_OFFSET /\ ctx_pt_stk nctx nstk |].
+  [| get_ctx_addr nctx = nt +ᵢ OS_CONTEXT_OFFSET /\ ctx_pt_stk nctx nstk |] **
+  [| ct = ($ 0) |].                       
 
 Definition ta0_start_adjust_cwp_post (vl : list logicvar) :=
   EX fmg' fmo' fml' fmi' id' F' vy' vi' ll
@@ -439,7 +440,7 @@ Definition ta0_adjust_cwp_pre (vl : list logicvar) :=
   OSTaskCur |-> ct ** OSTaskNew |-> nt ** OSTaskSwitchFlag |-> OSTRUE **
   OSIntNestCnt |-> ll +ᵢ ($ 1) ** context nctx ** stack nstk **
   [| get_frame_nth fmg 4 = Some (($ 1) <<ᵢ id) /\
-     get_frame_nth fmg 7 = Some (($ 1) <<ᵢ vi)  |] **
+     get_frame_nth fmg 7 = Some (($ 1) <<ᵢ vi) /\ ct = ($ 0) |] **
   [| get_ctx_addr nctx = nt +ᵢ OS_CONTEXT_OFFSET /\ ctx_pt_stk nctx nstk |].
 
 Definition ta0_adjust_cwp_post (vl : list logicvar) :=
