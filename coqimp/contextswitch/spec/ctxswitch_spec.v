@@ -302,7 +302,7 @@ Definition os_int_ta0_handler_post (vl : list logicvar) :=
     (
       [| bv = OSTRUE |] **
       context nctx ** stack nstk **
-      [| (get_ctx_addr cctx = ct +ᵢ OS_CONTEXT_OFFSET) ->
+      [| (ct <> ($ 0)) ->
          (ctx_pt_stk cctx' cstk' /\ stack_frame_save (F ++ (fmo :: nil)) cstk' cstk id vi /\
           ctx_win_save cctx (update_frame (update_frame fml 1 ((get_frame_nth' fml 1) +ᵢ ($ 4))) 2
                              ((get_frame_nth' fml 2) +ᵢ ($ 4))) fmi fmg vy) |] **
@@ -338,7 +338,23 @@ Definition reg_save_post (vl : list logicvar) :=
           :: logic_lv vy :: logic_lv retf :: nil |] **
   GenRegs (fmg, fmo, fml, fmi) ** context cctx' ** Rsp Ry |=> vy ** FrameState id vi F **
   [| ctx_win_save cctx' fml fmi fmg vy /\ get_frame_nth fmo 7 = Some retf |].
-                                                   
+
+Definition reg_restore_pre (vl : list logicvar) :=
+  EX fmg fmo fml fmi nctx l vy retf id vi F,
+  [| vl = logic_fm fmg :: logic_fm fmo :: logic_fm fml :: logic_fm fmi
+          :: logic_lv id :: logic_lv vi :: logic_fmls F :: logic_ctx nctx
+          :: logic_lv vy :: logic_lv retf :: nil |] **
+  GenRegs (fmg, fmo, fml, fmi) ** context nctx ** Rsp Ry |=> vy ** FrameState id vi F **
+  [| get_frame_nth fml 5 = Some l /\ get_ctx_addr nctx = l /\ get_frame_nth fmo 7 = Some retf |].
+
+Definition reg_restore_post (vl : list logicvar) :=
+  EX fmg fmo fml fmi nctx vy retf id vi F,
+  [| vl = logic_fm fmg :: logic_fm fmo :: logic_fm fml :: logic_fm fmi
+          :: logic_lv id :: logic_lv vi :: logic_fmls F :: logic_ctx nctx
+          :: logic_lv vy :: logic_lv retf :: nil |] **
+  GenRegs (fmg, fmo, fml, fmi) ** context nctx ** Rsp Ry |=> vy ** FrameState id vi F **
+  [| ctx_win_restore nctx fml fmi fmg vy /\ get_frame_nth fmo 7 = Some retf |].
+
 Fixpoint convert_spec (ls : list (Address * Address * fspec)) :
   funspec :=
   match ls with
@@ -385,12 +401,34 @@ Definition ta0_window_ok_post (vl : list logicvar) :=
   context cctx' ** stack cstk' ** [| get_frame_nth fml' 0 = Some id' |] **
   [| get_ctx_addr cctx = get_ctx_addr cctx' /\ get_stk_addr cstk = get_stk_addr cstk' |] **
   context nctx ** stack nstk **
-  [| (get_ctx_addr cctx = ct +ᵢ OS_CONTEXT_OFFSET) ->
+  [| (ct <> ($ 0)) ->
      (ctx_pt_stk cctx' cstk' /\ stack_frame_save (F ++ (fmo :: nil)) cstk' cstk id vi /\
       ctx_win_save cctx fml fmi fmg vy) |] **
   [| stack_frame_constraint nstk (fml' :: fmi' :: F' ++ (fmo' :: nil)) id' vi' /\
      ctx_win_restore nctx fml' fmi' fmg' vy' |].
 
+Definition ta0_task_switch_newcontext_pre (vl : list logicvar) :=
+  EX fmg fmo fml fmi id F vy vi ll
+     ct nt nctx nstk vz vn,
+  [| vl = logic_lv ll :: logic_lv nt :: logic_ctx nctx :: logic_stk nstk :: nil |] **
+  GlobalRegs fmg ** Regs fmo fml fmi ** FrameState id vi F ** Rsp Ry |=> vy **
+  z |=> vz ** n |=> vn **
+  OSTaskCur |-> ct ** OSTaskNew |-> nt ** OSTaskSwitchFlag |-> OSTRUE **
+  OSIntNestCnt |-> ll +ᵢ ($ 1) ** context nctx ** stack nstk **
+  [| get_ctx_addr nctx = nt +ᵢ OS_CONTEXT_OFFSET /\ ctx_pt_stk nctx nstk |] **
+  [| post_cwp id = vi |].
+
+Definition ta0_task_switch_newcontext_post (vl : list logicvar) :=
+  EX fmg' fmo' fml' fmi' id' F' vy' vi' ll
+     nt nctx nstk vz' vn',
+  [| vl = logic_lv ll :: logic_lv nt :: logic_ctx nctx :: logic_stk nstk :: nil |] **
+  GlobalRegs fmg' ** Regs fmo' fml' fmi' ** FrameState id' vi' F' ** Rsp Ry |=> vy' **
+  z |=> vz' ** n |=> vn' **
+  OSTaskCur |-> nt ** OSTaskNew |-> nt ** OSTaskSwitchFlag |-> OSFALSE **
+  OSIntNestCnt |-> ll ** context nctx ** stack nstk **
+  [| stack_frame_constraint nstk (fml' :: fmi' :: F' ++ (fmo' :: nil)) id' vi' /\
+     ctx_win_restore nctx fml' fmi' fmg' vy' |].
+  
 Definition spec := convert_spec
                      ((Ta0_return, Ta0_return +ᵢ ($ 4),
                        (os_ta0_return_pre, os_ta0_return_post))
@@ -398,6 +436,10 @@ Definition spec := convert_spec
                             (ta0_window_ok_pre, ta0_window_ok_post))
                         :: (reg_save, reg_save +ᵢ ($ 4),
                             (reg_save_pre, reg_save_post))
+                        :: (reg_restore, reg_restore +ᵢ ($ 4),
+                            (reg_restore_pre, reg_restore_post))
+                        :: (Ta0_Task_Switch_NewContext, Ta0_Task_Switch_NewContext +ᵢ ($ 4),
+                            (ta0_task_switch_newcontext_pre, ta0_task_switch_newcontext_post))
                         :: nil).
   
 Ltac eval_spec :=

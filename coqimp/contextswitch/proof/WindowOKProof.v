@@ -1,4 +1,4 @@
-Require Import Coqlib.                                
+Require Import Coqlib.                                 
 Require Import Maps.            
 Require Import LibTactics.   
         
@@ -39,54 +39,10 @@ Open Scope code_scope.
 Open Scope mem_scope.
 
 (*+ Lemmas for Integer +*)
-Lemma in_range84 :
-  ($ (-4096)) <=ᵢ ($ 84) && ($ 84) <=ᵢ ($ 4095) = true.
-Proof.
-  unfold orb.
-  unfold Int.lt.
-  unfold Int.eq.
-  destruct (zlt (Int.signed $ (-4096)) (Int.signed $ 84)) eqn:Heqe;
-    destruct (zeq (Int.unsigned $ (-4096)) (Int.unsigned $ 84)) eqn:Heqe1;
-    destruct (zlt (Int.signed $ 84) (Int.signed $ 4095)) eqn:Heqe2;
-    destruct (zeq (Int.unsigned $ 84) (Int.unsigned $ 4095)) eqn:Heqe3; eauto; tryfalse.
-Qed.
 
 (*+ Lemmas for Space +*)
-Lemma getR_eq_get_genreg_val1 :
-  forall M R F D grst (rr : GenReg) p,
-    (M, (R, F), D) |= GenRegs grst ** p ->
-    get_R R rr = Some (get_genreg_val grst rr).
-Proof.
-  intros.
-  sep_star_split_tac.
-  simpl in H3.
-  simpljoin1.
-  eapply get_R_merge_still; eauto.
-  eapply getR_eq_get_genreg_val; eauto.
-Qed.
 
 (*+ Lemmas for Inference Rule +*)
-Theorem getcwp_rule_reg_fm :
-  forall grst rd p id vi F,
-    |- {{ GenRegs grst ** FrameState id vi F ** p }}
-        getcwp rd
-      {{ GenRegs (upd_genreg grst rd id) ** FrameState id vi F ** p }}.
-Proof.
-  intros.
-  eapply ins_conseq_rule.
-  introv Hs.
-  simpl_sep_liftn_in Hs 2.
-  unfold FrameState in Hs.
-  asrt_to_line_in Hs 3.
-  simpl_sep_liftn_in Hs 5.
-  eauto.
-  eapply getcwp_rule_reg; eauto.
-  introv Hs.
-  sep_cancel1 1 1.
-  unfold FrameState.
-  asrt_to_line 3.
-  eauto.
-Qed.
 
 (*+ Proof +*)
 Theorem Ta0WindowOKProof :

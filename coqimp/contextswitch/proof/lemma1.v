@@ -859,6 +859,28 @@ Proof.
     eauto.
   }
 Qed.
+
+Theorem getcwp_rule_reg_fm :
+  forall grst rd p id vi F,
+    |- {{ GenRegs grst ** FrameState id vi F ** p }}
+        getcwp rd
+      {{ GenRegs (upd_genreg grst rd id) ** FrameState id vi F ** p }}.
+Proof.
+  intros.
+  eapply ins_conseq_rule.
+  introv Hs.
+  simpl_sep_liftn_in Hs 2.
+  unfold FrameState in Hs.
+  asrt_to_line_in Hs 3.
+  simpl_sep_liftn_in Hs 5.
+  eauto.
+  eapply getcwp_rule_reg; eauto.
+  introv Hs.
+  sep_cancel1 1 1.
+  unfold FrameState.
+  asrt_to_line 3.
+  eauto.
+Qed.
   
 (*+ Lemmas for stack frame constraint +*)
 Lemma stack_frame_constraint_pt_same_equal :
@@ -1183,4 +1205,17 @@ Lemma stack'_to_stack :
 Proof.
   intros.
   unfold stack; eauto.
+Qed.
+
+Lemma getR_eq_get_genreg_val1 :
+  forall M R F D grst (rr : GenReg) p,
+    (M, (R, F), D) |= GenRegs grst ** p ->
+    get_R R rr = Some (get_genreg_val grst rr).
+Proof.
+  intros.
+  sep_star_split_tac.
+  simpl in H3.
+  simpljoin1.
+  eapply get_R_merge_still; eauto.
+  eapply getR_eq_get_genreg_val; eauto.
 Qed.

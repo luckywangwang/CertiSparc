@@ -237,6 +237,18 @@ Proof.
     destruct (zeq (Int.unsigned $ 60) (Int.unsigned $ 4095)) eqn:Heqe3; eauto; tryfalse.
 Qed.
 
+Lemma in_range84 :
+  ($ (-4096)) <=ᵢ ($ 84) && ($ 84) <=ᵢ ($ 4095) = true.
+Proof.
+  unfold orb.
+  unfold Int.lt.
+  unfold Int.eq.
+  destruct (zlt (Int.signed $ (-4096)) (Int.signed $ 84)) eqn:Heqe;
+    destruct (zeq (Int.unsigned $ (-4096)) (Int.unsigned $ 84)) eqn:Heqe1;
+    destruct (zlt (Int.signed $ 84) (Int.signed $ 4095)) eqn:Heqe2;
+    destruct (zeq (Int.unsigned $ 84) (Int.unsigned $ 4095)) eqn:Heqe3; eauto; tryfalse.
+Qed.
+
 Lemma get_range_0_4_stable :
   forall id,
     $ 0 <=ᵤᵢ id <=ᵤᵢ $ 7 -> get_range 0 4 id = id.
