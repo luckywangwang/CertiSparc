@@ -881,6 +881,652 @@ Proof.
   asrt_to_line 3.
   eauto.
 Qed.
+
+Lemma ld_rule_restore_stk_l0 :
+  forall grst p l fm1 fm2 v,
+    get_frame_nth fm1 0 = Some v ->
+    get_genreg_val grst sp = l ->
+    |- {{ GenRegs grst ** stack_frame l fm1 fm2 ** p }}
+        ld (Aro sp (' 0)) l0
+      {{ GenRegs (upd_genreg grst l0 v) ** stack_frame l fm1 fm2 ** p }}.
+Proof.
+  intros.
+  destruct fm1, fm2.
+  simpl in H.
+  inversion H; subst.
+  eapply ins_conseq_rule.
+  {
+    introv Hs.
+    unfold stack_frame in Hs.
+    simpl_sep_liftn_in Hs 2.
+    eapply astar_assoc_elim in Hs.
+    simpl stack_seg in Hs at 1.
+    asrt_to_line_in Hs 7.
+    simpl_sep_liftn_in Hs 10.
+    eauto.
+  }
+  { 
+    eapply ld_rule_reg; eauto.
+    simpl.
+    rewrite in_range0; eauto.
+    rewrite Int.add_zero; eauto.
+  }
+  {
+    introv Hs.
+    sep_cancel1 1 1.
+    unfold stack_frame.
+    eapply astar_assoc_intro.
+    unfold stack_seg at 1.
+    asrt_to_line 7.
+    eauto.
+  }
+Qed.
+
+Lemma ld_rule_restore_stk_l1 :
+  forall grst p l fm1 fm2 v,
+    get_frame_nth fm1 1 = Some v ->
+    get_genreg_val grst sp = l ->
+    |- {{ GenRegs grst ** stack_frame l fm1 fm2 ** p }}
+        ld (Aro sp (' 4)) l1
+      {{ GenRegs (upd_genreg grst l1 v) ** stack_frame l fm1 fm2 ** p }}.
+Proof.
+  intros.
+  destruct fm1, fm2.
+  simpl in H.
+  inversion H; subst.
+  eapply ins_conseq_rule.
+  {
+    introv Hs.
+    unfold stack_frame in Hs.
+    simpl_sep_liftn_in Hs 2.
+    eapply astar_assoc_elim in Hs.
+    simpl stack_seg in Hs at 1.
+    asrt_to_line_in Hs 7.
+    simpl_sep_liftn_in Hs 2.
+    simpl_sep_liftn_in Hs 10.
+    eauto.
+  }
+  {  
+    eapply ld_rule_reg; eauto.
+  }
+  {
+    introv Hs.
+    sep_cancel1 1 1.
+    unfold stack_frame.
+    eapply astar_assoc_intro.
+    unfold stack_seg at 1.
+    asrt_to_line 7.
+    sep_cancel1 1 2.
+    eauto.
+  }
+Qed.
+
+Lemma ld_rule_restore_stk_l2 :
+  forall grst p l fm1 fm2 v,
+    get_frame_nth fm1 2 = Some v ->
+    get_genreg_val grst sp = l ->
+    |- {{ GenRegs grst ** stack_frame l fm1 fm2 ** p }}
+        ld (Aro sp (' 8)) l2
+      {{ GenRegs (upd_genreg grst l2 v) ** stack_frame l fm1 fm2 ** p }}.
+Proof.
+  intros.
+  destruct fm1, fm2.
+  simpl in H.
+  inversion H; subst.
+  eapply ins_conseq_rule.
+  {
+    introv Hs.
+    unfold stack_frame in Hs.
+    simpl_sep_liftn_in Hs 2.
+    eapply astar_assoc_elim in Hs.
+    simpl stack_seg in Hs at 1.
+    asrt_to_line_in Hs 7.
+    simpl_sep_liftn_in Hs 3.
+    simpl_sep_liftn_in Hs 10.
+    eauto.
+  }
+  {  
+    eapply ld_rule_reg; eauto.
+  }
+  {
+    introv Hs.
+    sep_cancel1 1 1.
+    unfold stack_frame.
+    eapply astar_assoc_intro.
+    unfold stack_seg at 1.
+    asrt_to_line 7.
+    sep_cancel1 1 3.
+    eauto.
+  }
+Qed.
+
+Lemma ld_rule_restore_stk_l3 :
+  forall grst p l fm1 fm2 v,
+    get_frame_nth fm1 3 = Some v ->
+    get_genreg_val grst sp = l ->
+    |- {{ GenRegs grst ** stack_frame l fm1 fm2 ** p }}
+        ld (Aro sp (' 12)) l3
+      {{ GenRegs (upd_genreg grst l3 v) ** stack_frame l fm1 fm2 ** p }}.
+Proof.
+  intros. 
+  destruct fm1, fm2.
+  simpl in H.
+  inversion H; subst.
+  eapply ins_conseq_rule.
+  {
+    introv Hs.
+    unfold stack_frame in Hs.
+    simpl_sep_liftn_in Hs 2.
+    eapply astar_assoc_elim in Hs.
+    simpl stack_seg in Hs at 1.
+    asrt_to_line_in Hs 7.
+    simpl_sep_liftn_in Hs 4.
+    simpl_sep_liftn_in Hs 10.
+    eauto.
+  }
+  {  
+    eapply ld_rule_reg; eauto.
+  }
+  { 
+    introv Hs.
+    sep_cancel1 1 1.
+    unfold stack_frame.
+    eapply astar_assoc_intro.
+    unfold stack_seg at 1.
+    asrt_to_line 7.
+    sep_cancel1 1 4.
+    eauto.
+  }
+Qed.
+
+Lemma ld_rule_restore_stk_l4 :
+  forall grst p l fm1 fm2 v,
+    get_frame_nth fm1 4 = Some v ->
+    get_genreg_val grst sp = l ->
+    |- {{ GenRegs grst ** stack_frame l fm1 fm2 ** p }}
+        ld (Aro sp (' 16)) l4
+      {{ GenRegs (upd_genreg grst l4 v) ** stack_frame l fm1 fm2 ** p }}.
+Proof.
+  intros. 
+  destruct fm1, fm2.
+  simpl in H.
+  inversion H; subst.
+  eapply ins_conseq_rule.
+  {
+    introv Hs.
+    unfold stack_frame in Hs.
+    simpl_sep_liftn_in Hs 2.
+    eapply astar_assoc_elim in Hs.
+    simpl stack_seg in Hs at 1.
+    asrt_to_line_in Hs 7.
+    simpl_sep_liftn_in Hs 5.
+    simpl_sep_liftn_in Hs 10.
+    eauto.
+  }
+  {  
+    eapply ld_rule_reg; eauto.
+  }
+  { 
+    introv Hs.
+    sep_cancel1 1 1.
+    unfold stack_frame.
+    eapply astar_assoc_intro.
+    unfold stack_seg at 1.
+    asrt_to_line 7.
+    sep_cancel1 1 5.
+    eauto.
+  }
+Qed.
+
+Lemma ld_rule_restore_stk_l5 :
+  forall grst p l fm1 fm2 v,
+    get_frame_nth fm1 5 = Some v ->
+    get_genreg_val grst sp = l ->
+    |- {{ GenRegs grst ** stack_frame l fm1 fm2 ** p }}
+        ld (Aro sp (' 20)) l5
+      {{ GenRegs (upd_genreg grst l5 v) ** stack_frame l fm1 fm2 ** p }}.
+Proof.
+  intros. 
+  destruct fm1, fm2.
+  simpl in H.
+  inversion H; subst.
+  eapply ins_conseq_rule.
+  {
+    introv Hs.
+    unfold stack_frame in Hs.
+    simpl_sep_liftn_in Hs 2.
+    eapply astar_assoc_elim in Hs.
+    simpl stack_seg in Hs at 1.
+    asrt_to_line_in Hs 7.
+    simpl_sep_liftn_in Hs 6.
+    simpl_sep_liftn_in Hs 10.
+    eauto.
+  }
+  {  
+    eapply ld_rule_reg; eauto.
+  }
+  { 
+    introv Hs.
+    sep_cancel1 1 1.
+    unfold stack_frame.
+    eapply astar_assoc_intro.
+    unfold stack_seg at 1.
+    asrt_to_line 7.
+    sep_cancel1 1 6.
+    eauto.
+  }
+Qed.
+
+Lemma ld_rule_restore_stk_l6 :
+  forall grst p l fm1 fm2 v,
+    get_frame_nth fm1 6 = Some v ->
+    get_genreg_val grst sp = l ->
+    |- {{ GenRegs grst ** stack_frame l fm1 fm2 ** p }}
+        ld (Aro sp (' 24)) l6
+      {{ GenRegs (upd_genreg grst l6 v) ** stack_frame l fm1 fm2 ** p }}.
+Proof.
+  intros. 
+  destruct fm1, fm2.
+  simpl in H.
+  inversion H; subst.
+  eapply ins_conseq_rule.
+  {
+    introv Hs.
+    unfold stack_frame in Hs.
+    simpl_sep_liftn_in Hs 2.
+    eapply astar_assoc_elim in Hs.
+    simpl stack_seg in Hs at 1.
+    asrt_to_line_in Hs 7.
+    simpl_sep_liftn_in Hs 7.
+    simpl_sep_liftn_in Hs 10.
+    eauto.
+  }
+  {  
+    eapply ld_rule_reg; eauto.
+  }
+  { 
+    introv Hs.
+    sep_cancel1 1 1.
+    unfold stack_frame.
+    eapply astar_assoc_intro.
+    unfold stack_seg at 1.
+    asrt_to_line 7.
+    sep_cancel1 1 7.
+    eauto.
+  }
+Qed.
+
+Lemma ld_rule_restore_stk_l7 :
+  forall grst p l fm1 fm2 v,
+    get_frame_nth fm1 7 = Some v ->
+    get_genreg_val grst sp = l ->
+    |- {{ GenRegs grst ** stack_frame l fm1 fm2 ** p }}
+        ld (Aro sp (' 28)) l7
+      {{ GenRegs (upd_genreg grst l7 v) ** stack_frame l fm1 fm2 ** p }}.
+Proof.
+  intros. 
+  destruct fm1, fm2.
+  simpl in H.
+  inversion H; subst.
+  eapply ins_conseq_rule.
+  {
+    introv Hs.
+    unfold stack_frame in Hs.
+    simpl_sep_liftn_in Hs 2.
+    eapply astar_assoc_elim in Hs.
+    simpl stack_seg in Hs at 1.
+    asrt_to_line_in Hs 7.
+    simpl_sep_liftn_in Hs 8.
+    simpl_sep_liftn_in Hs 10.
+    eauto.
+  }
+  {  
+    eapply ld_rule_reg; eauto.
+  }
+  { 
+    introv Hs.
+    sep_cancel1 1 1.
+    unfold stack_frame.
+    eapply astar_assoc_intro.
+    unfold stack_seg at 1.
+    asrt_to_line 7.
+    sep_cancel1 1 8.
+    eauto.
+  }
+Qed.
+
+Lemma ld_rule_restore_stk_i0 :
+  forall grst p l fm1 fm2 v,
+    get_frame_nth fm2 0 = Some v ->
+    get_genreg_val grst sp = l ->
+    |- {{ GenRegs grst ** stack_frame l fm1 fm2 ** p }}
+        ld (Aro sp (' 32)) i0
+      {{ GenRegs (upd_genreg grst i0 v) ** stack_frame l fm1 fm2 ** p }}.
+Proof.
+  intros. 
+  destruct fm1, fm2.
+  simpl in H.
+  inversion H; subst.
+  eapply ins_conseq_rule.
+  {
+    introv Hs.
+    unfold stack_frame in Hs.
+    simpl_sep_liftn_in Hs 2.
+    eapply astar_assoc_elim in Hs.
+    simpl_sep_liftn_in Hs 2.
+    simpl stack_seg in Hs at 1.
+    asrt_to_line_in Hs 7.
+    simpl_sep_liftn_in Hs 10.
+    eauto.
+  }
+  {  
+    eapply ld_rule_reg; eauto.
+  }
+  { 
+    introv Hs.
+    sep_cancel1 1 1.
+    unfold stack_frame.
+    eapply astar_assoc_intro.
+    simpl_sep_liftn 2.
+    unfold stack_seg at 1.
+    asrt_to_line 7.
+    eauto.
+  }
+Qed.
+
+Lemma ld_rule_restore_stk_i1 :
+  forall grst p l fm1 fm2 v,
+    get_frame_nth fm2 1 = Some v ->
+    get_genreg_val grst sp = l ->
+    |- {{ GenRegs grst ** stack_frame l fm1 fm2 ** p }}
+        ld (Aro sp (' 36)) i1
+      {{ GenRegs (upd_genreg grst i1 v) ** stack_frame l fm1 fm2 ** p }}.
+Proof.
+  intros. 
+  destruct fm1, fm2.
+  simpl in H.
+  inversion H; subst.
+  eapply ins_conseq_rule.
+  {
+    introv Hs.
+    unfold stack_frame in Hs.
+    simpl_sep_liftn_in Hs 2.
+    eapply astar_assoc_elim in Hs.
+    simpl_sep_liftn_in Hs 2.
+    simpl stack_seg in Hs at 1.
+    asrt_to_line_in Hs 7.
+    simpl_sep_liftn_in Hs 2.
+    simpl_sep_liftn_in Hs 10.
+    eauto.
+  }
+  {  
+    eapply ld_rule_reg; eauto.
+    rewrite Int.add_assoc; eauto.
+  }
+  { 
+    introv Hs.
+    sep_cancel1 1 1.
+    unfold stack_frame.
+    eapply astar_assoc_intro.
+    simpl_sep_liftn 2.
+    unfold stack_seg at 1.
+    asrt_to_line 7.
+    sep_cancel1 1 2.
+    eauto.
+  }
+Qed.
+
+Lemma ld_rule_restore_stk_i2 :
+  forall grst p l fm1 fm2 v,
+    get_frame_nth fm2 2 = Some v ->
+    get_genreg_val grst sp = l ->
+    |- {{ GenRegs grst ** stack_frame l fm1 fm2 ** p }}
+        ld (Aro sp (' 40)) i2
+      {{ GenRegs (upd_genreg grst i2 v) ** stack_frame l fm1 fm2 ** p }}.
+Proof.
+  intros. 
+  destruct fm1, fm2.
+  simpl in H.
+  inversion H; subst.
+  eapply ins_conseq_rule.
+  {
+    introv Hs.
+    unfold stack_frame in Hs.
+    simpl_sep_liftn_in Hs 2.
+    eapply astar_assoc_elim in Hs.
+    simpl_sep_liftn_in Hs 2.
+    simpl stack_seg in Hs at 1.
+    asrt_to_line_in Hs 7.
+    simpl_sep_liftn_in Hs 3.
+    simpl_sep_liftn_in Hs 10.
+    eauto.
+  }
+  {  
+    eapply ld_rule_reg; eauto.
+    rewrite Int.add_assoc; eauto.
+  }
+  {  
+    introv Hs.
+    sep_cancel1 1 1.
+    unfold stack_frame.
+    eapply astar_assoc_intro.
+    simpl_sep_liftn 2.
+    unfold stack_seg at 1.
+    asrt_to_line 7.
+    sep_cancel1 1 3.
+    eauto.
+  }
+Qed.
+
+Lemma ld_rule_restore_stk_i3 :
+  forall grst p l fm1 fm2 v,
+    get_frame_nth fm2 3 = Some v ->
+    get_genreg_val grst sp = l ->
+    |- {{ GenRegs grst ** stack_frame l fm1 fm2 ** p }}
+        ld (Aro sp (' 44)) i3
+      {{ GenRegs (upd_genreg grst i3 v) ** stack_frame l fm1 fm2 ** p }}.
+Proof.
+  intros. 
+  destruct fm1, fm2.
+  simpl in H.
+  inversion H; subst.
+  eapply ins_conseq_rule.
+  {
+    introv Hs.
+    unfold stack_frame in Hs.
+    simpl_sep_liftn_in Hs 2.
+    eapply astar_assoc_elim in Hs.
+    simpl_sep_liftn_in Hs 2.
+    simpl stack_seg in Hs at 1.
+    asrt_to_line_in Hs 7. 
+    simpl_sep_liftn_in Hs 4.
+    simpl_sep_liftn_in Hs 10.
+    eauto.
+  }
+  {  
+    eapply ld_rule_reg; eauto.
+    rewrite Int.add_assoc; eauto.
+  }
+  {  
+    introv Hs.
+    sep_cancel1 1 1.
+    unfold stack_frame.
+    eapply astar_assoc_intro.
+    simpl_sep_liftn 2.
+    unfold stack_seg at 1.
+    asrt_to_line 7.
+    sep_cancel1 1 4.
+    eauto.
+  }
+Qed.
+
+Lemma ld_rule_restore_stk_i4 :
+  forall grst p l fm1 fm2 v,
+    get_frame_nth fm2 4 = Some v ->
+    get_genreg_val grst sp = l ->
+    |- {{ GenRegs grst ** stack_frame l fm1 fm2 ** p }}
+        ld (Aro sp (' 48)) i4
+      {{ GenRegs (upd_genreg grst i4 v) ** stack_frame l fm1 fm2 ** p }}.
+Proof.
+  intros. 
+  destruct fm1, fm2.
+  simpl in H.
+  inversion H; subst.
+  eapply ins_conseq_rule.
+  {
+    introv Hs.
+    unfold stack_frame in Hs.
+    simpl_sep_liftn_in Hs 2.
+    eapply astar_assoc_elim in Hs.
+    simpl_sep_liftn_in Hs 2.
+    simpl stack_seg in Hs at 1.
+    asrt_to_line_in Hs 7. 
+    simpl_sep_liftn_in Hs 5.
+    simpl_sep_liftn_in Hs 10.
+    eauto.
+  }
+  {  
+    eapply ld_rule_reg; eauto.
+    rewrite Int.add_assoc; eauto.
+  }
+  {  
+    introv Hs.
+    sep_cancel1 1 1.
+    unfold stack_frame.
+    eapply astar_assoc_intro.
+    simpl_sep_liftn 2.
+    unfold stack_seg at 1.
+    asrt_to_line 7.
+    sep_cancel1 1 5.
+    eauto.
+  }
+Qed.
+
+Lemma ld_rule_restore_stk_i5 :
+  forall grst p l fm1 fm2 v,
+    get_frame_nth fm2 5 = Some v ->
+    get_genreg_val grst sp = l ->
+    |- {{ GenRegs grst ** stack_frame l fm1 fm2 ** p }}
+        ld (Aro sp (' 52)) i5
+      {{ GenRegs (upd_genreg grst i5 v) ** stack_frame l fm1 fm2 ** p }}.
+Proof.
+  intros. 
+  destruct fm1, fm2.
+  simpl in H.
+  inversion H; subst.
+  eapply ins_conseq_rule.
+  {
+    introv Hs.
+    unfold stack_frame in Hs.
+    simpl_sep_liftn_in Hs 2.
+    eapply astar_assoc_elim in Hs.
+    simpl_sep_liftn_in Hs 2.
+    simpl stack_seg in Hs at 1.
+    asrt_to_line_in Hs 7. 
+    simpl_sep_liftn_in Hs 6.
+    simpl_sep_liftn_in Hs 10.
+    eauto.
+  }
+  {  
+    eapply ld_rule_reg; eauto.
+    rewrite Int.add_assoc; eauto.
+  }
+  {  
+    introv Hs.
+    sep_cancel1 1 1.
+    unfold stack_frame.
+    eapply astar_assoc_intro.
+    simpl_sep_liftn 2.
+    unfold stack_seg at 1.
+    asrt_to_line 7.
+    sep_cancel1 1 6.
+    eauto.
+  }
+Qed.
+
+Lemma ld_rule_restore_stk_i6 :
+  forall grst p l fm1 fm2 v,
+    get_frame_nth fm2 6 = Some v ->
+    get_genreg_val grst sp = l ->
+    |- {{ GenRegs grst ** stack_frame l fm1 fm2 ** p }}
+        ld (Aro sp (' 56)) i6
+      {{ GenRegs (upd_genreg grst i6 v) ** stack_frame l fm1 fm2 ** p }}.
+Proof.
+  intros. 
+  destruct fm1, fm2.
+  simpl in H.
+  inversion H; subst.
+  eapply ins_conseq_rule.
+  {
+    introv Hs.
+    unfold stack_frame in Hs.
+    simpl_sep_liftn_in Hs 2.
+    eapply astar_assoc_elim in Hs.
+    simpl_sep_liftn_in Hs 2.
+    simpl stack_seg in Hs at 1.
+    asrt_to_line_in Hs 7. 
+    simpl_sep_liftn_in Hs 7.
+    simpl_sep_liftn_in Hs 10.
+    eauto.
+  }
+  {  
+    eapply ld_rule_reg; eauto.
+    rewrite Int.add_assoc; eauto.
+  }
+  {  
+    introv Hs.
+    sep_cancel1 1 1.
+    unfold stack_frame.
+    eapply astar_assoc_intro.
+    simpl_sep_liftn 2.
+    unfold stack_seg at 1.
+    asrt_to_line 7.
+    sep_cancel1 1 7.
+    eauto.
+  }
+Qed.
+
+Lemma ld_rule_restore_stk_i7 :
+  forall grst p l fm1 fm2 v,
+    get_frame_nth fm2 7 = Some v ->
+    get_genreg_val grst sp = l ->
+    |- {{ GenRegs grst ** stack_frame l fm1 fm2 ** p }}
+        ld (Aro sp (' 60)) i7
+      {{ GenRegs (upd_genreg grst i7 v) ** stack_frame l fm1 fm2 ** p }}.
+Proof.
+  intros. 
+  destruct fm1, fm2.
+  simpl in H.
+  inversion H; subst.
+  eapply ins_conseq_rule.
+  {
+    introv Hs.
+    unfold stack_frame in Hs.
+    simpl_sep_liftn_in Hs 2.
+    eapply astar_assoc_elim in Hs.
+    simpl_sep_liftn_in Hs 2.
+    simpl stack_seg in Hs at 1.
+    asrt_to_line_in Hs 7. 
+    simpl_sep_liftn_in Hs 8.
+    simpl_sep_liftn_in Hs 10.
+    eauto.
+  }
+  {  
+    eapply ld_rule_reg; eauto.
+    rewrite Int.add_assoc; eauto.
+  }
+  {  
+    introv Hs.
+    sep_cancel1 1 1.
+    unfold stack_frame.
+    eapply astar_assoc_intro.
+    simpl_sep_liftn 2.
+    unfold stack_seg at 1.
+    asrt_to_line 7.
+    sep_cancel1 1 8.
+    eauto.
+  }
+Qed.
   
 (*+ Lemmas for stack frame constraint +*)
 Lemma stack_frame_constraint_pt_same_equal :

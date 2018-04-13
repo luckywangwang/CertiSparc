@@ -1483,3 +1483,193 @@ Proof.
     do 3 (try destruct p; simpls; tryfalse; try omega; eauto).
   }
 Qed.
+
+Lemma set_wim_eq_post_cwp :
+  forall id,
+    $ 0 <=ᵤᵢ id <=ᵤᵢ $ 7 ->
+    get_range 0 7 ((($ 1) <<ᵢ id) >>ᵢ ($ 7)) |ᵢ ((($ 1) <<ᵢ id) <<ᵢ ($ 1)) =
+                                              ($ 1) <<ᵢ (post_cwp id).
+Proof.
+  intros.
+  unfold get_range.
+  unfold post_cwp.
+  unfolds int_leu.
+  unfolds Int.ltu, Int.eq.
+  unfold Int.shl.
+  unfold Int.shru.
+  unfold Int.add.
+  unfold Int.sub.
+  unfold N.
+  simpl.
+  assert (Int.unsigned $ 0 = 0%Z).
+  eauto.
+  assert (Int.unsigned $ 1 = 1%Z).
+  eauto.
+  assert (Int.unsigned $ 7 = 7%Z).
+  eauto.
+  assert (Int.unsigned $ 8 = 8%Z).
+  eauto.
+  try rewrite H0 in *.
+  try rewrite H1 in *.
+  try rewrite H2 in *.
+  try rewrite H3 in *.
+  destruct id. 
+  simpls Int.unsigned.
+  unfold Int.modu, Int.or, Int.and.
+  rewrite H3.
+  destruct (zlt 0 intval); destruct (zeq 0 intval);
+    destruct (zlt intval 7); destruct (zeq intval 7);
+      tryfalse; try omega; eauto.
+  {
+    destruct intval; tryfalse.
+    do 3 (try destruct p; eauto; tryfalse).
+  }
+  {
+    subst; eauto.
+  }
+  {
+    subst; eauto.
+  }
+Qed.
+
+Lemma pre_post_stable :
+  forall id,
+    $ 0 <=ᵤᵢ id <=ᵤᵢ $ 7 ->
+    pre_cwp (post_cwp id) = id.
+Proof.
+  intros.
+  rewrite <- Int.repr_unsigned.
+  unfolds int_leu.
+  unfolds Int.ltu, Int.eq.
+  unfold post_cwp.
+  unfold pre_cwp.
+  unfold N.
+  unfold Int.add.
+  unfold Int.sub.
+  unfold Int.modu.
+  assert (Int.unsigned $ 0 = 0%Z).
+  eauto.
+  assert (Int.unsigned $ 7 = 7%Z).
+  eauto.
+  assert (Int.unsigned $ 8 = 8%Z).
+  eauto.
+  assert (Int.unsigned $ 1 = 1%Z).
+  eauto.
+  try rewrite H0 in *.
+  try rewrite H1 in *.
+  try rewrite H2 in *.
+  try rewrite H3 in *.
+  destruct id.
+  simpl Int.unsigned in *.
+  destruct (zlt 0 intval); destruct (zeq 0 intval);
+    destruct (zlt intval 7); destruct (zeq intval 7); tryfalse; try omega;
+      subst; eauto.
+  destruct intval; tryfalse.
+  do 3 (destruct p; tryfalse; eauto).
+Qed.
+
+Lemma win_mask_post_cwp :
+  forall id,
+    $ 0 <=ᵤᵢ id <=ᵤᵢ $ 7 ->
+    (($ 1) <<ᵢ (post_cwp id)) &ᵢ (($ 1) <<ᵢ id) = $ 0.
+Proof.
+  intros.
+  unfolds int_leu.
+  unfolds Int.ltu.
+  unfolds Int.eq.
+  assert (Int.unsigned $ 0 = 0%Z).
+  eauto.
+  assert (Int.unsigned $ 7 = 7%Z).
+  eauto.
+  assert (Int.unsigned $ 1 = 1%Z).
+  eauto.
+  assert (Int.unsigned $ 8 = 8%Z).
+  eauto.
+  unfold post_cwp.
+  unfold Int.and.
+  unfold Int.shl.
+  unfold Int.add.
+  unfold Int.sub.
+  unfold N.
+  try rewrite H0 in *.
+  try rewrite H1 in *.
+  try rewrite H2 in *.
+  try rewrite H3 in *.
+  destruct id. 
+  simpl Int.unsigned in *.
+  destruct (zlt 0 intval); destruct (zeq 0 intval);
+    destruct (zlt intval 7); destruct (zeq intval 7); tryfalse; try omega.
+  {
+    unfold Int.modu.
+    rewrite H3.
+    destruct intval; eauto; tryfalse.
+    do 3 (try destruct p; eauto; tryfalse).
+  }
+  {
+    subst.
+    unfold Int.modu.
+    simpl.
+    rewrite H3.
+    eauto.
+  }
+  {
+    subst.
+    unfold Int.modu.
+    rewrite H3.
+    simpl.
+    eauto.
+  }
+Qed.
+
+Lemma win_mask_post_2_cwp :
+  forall id,
+    $ 0 <=ᵤᵢ id <=ᵤᵢ $ 7 ->
+    (($ 1) <<ᵢ (post_cwp (post_cwp id))) &ᵢ (($ 1) <<ᵢ id) = $ 0.
+Proof.
+  intros.
+  unfolds int_leu.
+  unfolds Int.ltu.
+  unfolds Int.eq.
+  assert (Int.unsigned $ 0 = 0%Z).
+  eauto.
+  assert (Int.unsigned $ 7 = 7%Z).
+  eauto.
+  assert (Int.unsigned $ 1 = 1%Z).
+  eauto.
+  assert (Int.unsigned $ 8 = 8%Z).
+  eauto.
+  unfold post_cwp.
+  unfold Int.and.
+  unfold Int.shl.
+  unfold Int.add.
+  unfold Int.sub.
+  unfold N.
+  try rewrite H0 in *.
+  try rewrite H1 in *.
+  try rewrite H2 in *.
+  try rewrite H3 in *.
+  destruct id. 
+  simpl Int.unsigned in *.
+  destruct (zlt 0 intval); destruct (zeq 0 intval);
+    destruct (zlt intval 7); destruct (zeq intval 7); tryfalse; try omega.
+  {
+    unfold Int.modu.
+    rewrite H3.
+    destruct intval; eauto; tryfalse.
+    do 3 (try destruct p; eauto; tryfalse).
+  }
+  {
+    subst.
+    unfold Int.modu.
+    simpl.
+    rewrite H3.
+    eauto.
+  }
+  {
+    subst.
+    unfold Int.modu.
+    rewrite H3.
+    simpl.
+    eauto.
+  }
+Qed.

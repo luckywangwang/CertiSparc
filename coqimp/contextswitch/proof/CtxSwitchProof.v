@@ -183,19 +183,19 @@ Proof.
       eauto.
       eauto.
     
-     
-      introv Hs.
+      
+      introv Hs. 
       unfold os_ta0_return_post in Hs.
-      sep_ex_elim_in Hs.
+      sep_ex_elim_in Hs. 
       sep_ex_intro.
-      eapply astar_assoc_elim in Hs.
+      eapply astar_assoc_elim in Hs. 
       eapply sep_pure_l_elim in Hs.
       destruct Hs as [Hlg Hs].
       inversion Hlg; subst.
-      simpl upd_genreg in Hs.
+      simpl upd_genreg in Hs. 
       eapply sep_pure_l_intro.
       eauto.
-      eapply astar_assoc_elim in Hs.
+      eapply astar_assoc_elim in Hs. 
       sep_cancel1 2 3.
       sep_cancel1 6 3.
       sep_cancel1 4 3.
@@ -210,8 +210,10 @@ Proof.
       eapply sep_disj_l_intro; eauto.
       left. 
       simpl_sep_liftn 2.
-      simpl_sep_liftn 3.
-      eapply GenRegs_split_Regs_Global. 
+      simpl_sep_liftn 3.  
+      eapply GenRegs_split_Regs_Global.
+      instantiate (6 := [[x5, w16 +ᵢ ($ 4), w17 +ᵢ ($ 4), w18, OSFALSE, OSTRUE, w21, w22]]).
+      simpl update_frame.      
       sep_cancel1 1 1.
       eapply astar_assoc_intro.
       eapply sep_pure_l_intro.

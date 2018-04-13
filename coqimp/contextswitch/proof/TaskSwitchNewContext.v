@@ -1,4 +1,4 @@
-Require Import Coqlib.                                  
+Require Import Coqlib.                                     
 Require Import Maps.            
 Require Import LibTactics.   
         
@@ -39,58 +39,11 @@ Open Scope code_scope.
 Open Scope mem_scope.
 
 (*+ Lemmas for Integer +*)
-Lemma set_wim_eq_post_cwp :
-  forall id,
-    $ 0 <=ᵤᵢ id <=ᵤᵢ $ 7 ->
-    get_range 0 7 ((($ 1) <<ᵢ id) >>ᵢ ($ 7)) |ᵢ ((($ 1) <<ᵢ id) <<ᵢ ($ 1)) =
-                                              ($ 1) <<ᵢ (post_cwp id).
-Proof.
-  intros.
-  unfold get_range.
-  unfold post_cwp.
-  unfolds int_leu.
-  unfolds Int.ltu, Int.eq.
-  unfold Int.shl.
-  unfold Int.shru.
-  unfold Int.add.
-  unfold Int.sub.
-  unfold N.
-  simpl.
-  assert (Int.unsigned $ 0 = 0%Z).
-  eauto.
-  assert (Int.unsigned $ 1 = 1%Z).
-  eauto.
-  assert (Int.unsigned $ 7 = 7%Z).
-  eauto.
-  assert (Int.unsigned $ 8 = 8%Z).
-  eauto.
-  try rewrite H0 in *.
-  try rewrite H1 in *.
-  try rewrite H2 in *.
-  try rewrite H3 in *.
-  destruct id. 
-  simpls Int.unsigned.
-  unfold Int.modu, Int.or, Int.and.
-  rewrite H3.
-  destruct (zlt 0 intval); destruct (zeq 0 intval);
-    destruct (zlt intval 7); destruct (zeq intval 7);
-      tryfalse; try omega; eauto.
-  {
-    destruct intval; tryfalse.
-    do 3 (try destruct p; eauto; tryfalse).
-  }
-  {
-    subst; eauto.
-  }
-  {
-    subst; eauto.
-  }
-Qed.
 
 (*+ Lemmas for Space +*)
 
-(*+ Lemmas for Inference Rule +*)
-
+(*+ Lemmas for Inference Rule +*) 
+  
 (*+ Proof +*)
 Theorem Ta0TaskSwitchNewContextProof :
   forall vl,
@@ -405,8 +358,341 @@ Proof.
   destruct (((($ 1) <<ᵢ (post_cwp id)) &ᵢ (($ 1) <<ᵢ (post_cwp (post_cwp id)))) !=ᵢ ($ 0))
            eqn:Heqe;
     eauto.
-  Search Int.and.
+  rewrite Int.and_commut in Heqe.
+  rewrite win_mask_post_cwp in Heqe; eauto.
+  simpl upd_genreg.
+
+  eapply backward_rule.
+  introv Hs.
+  simpl_sep_liftn_in Hs 4.
+  eapply sep_pure_l_elim in Hs.
+  destruct Hs as [_ Hs].
+  simpl_sep_liftn_in Hs 4.
+  eapply sep_pure_l_elim in Hs.
+  destruct Hs as [_ Hs].
+  simpl_sep_liftn_in Hs 2.
+  simpl_sep_liftn_in Hs 3.
+  eapply FrameState_combine in Hs; eauto.
+  rewrite app_length; simpl.
+  omega.
+  split; eauto.
+  eapply in_range_0_7_post_cwp_still; eauto.
+
+  destruct nctx as [lnctx nctx].
+  destruct nstk as [lnstk nlfp].
+  simpl in Hnctx_addr_pt.
+  destruct Hnctx_addr_pt as [Hlnctx Hnctx_addr_pt]. 
+  unfold ctx_pt_stk in Hnctx_addr_pt.
+  simpl in Hnctx_addr_pt.
+  unfold ctx_win_restore in Hctx_win_restore. 
+  unfold ctx_win_match in Hctx_win_restore.
+  destruct nctx as [ [ [cl ci] cg] cy ].
+  simpl in Hctx_win_restore.
+  simpljoin1.
+  match goal with
+  | H : nth_val 6 _ = Some lnstk |- _  => renames H to Hlnstk
+  end.
+  simpl in Hlnstk.
+  inversion Hlnstk; subst.
+  match goal with
+  | H : length nlfp >= 1 |- _ => renames H to Hlen_nlfp
+  end.
+  destruct nlfp; simpl in Hlen_nlfp; try omega.
+
+  hoare_lift_pre 11.
+  unfold stack at 1.
+  destruct p.
+  destruct f, f0.
+  simpl stack' at 1.
+  eapply backward_rule.
+  introv Hs.
+  eapply astar_assoc_elim in Hs.
+  simpl_sep_liftn_in Hs 4.
+  eauto.
+
+  (** ld (sp + OS_CPU_STACK_FRAME_L0_OFFSET) l0 *)
+  unfold OS_CPU_STACK_FRAME_L0_OFFSET.
+  eapply seq_rule.
+  TimReduce_simpl.
+  eapply ld_rule_restore_stk_l0; eauto.
+  simpl; eauto.
+  simpl upd_genreg.
+
+  (** ld (sp + OS_CPU_STACK_FRAME_L1_OFFSET) l1 *)
+  unfold OS_CPU_STACK_FRAME_L1_OFFSET.
+  eapply seq_rule.
+  TimReduce_simpl.
+  eapply ld_rule_restore_stk_l1; eauto.
+  simpl; eauto.
+  simpl upd_genreg.
+
+  (** ld (sp + OS_CPU_STACK_FRAME_L2_OFFSET) l2 *)
+  unfold OS_CPU_STACK_FRAME_L2_OFFSET.
+  eapply seq_rule.
+  TimReduce_simpl.
+  eapply ld_rule_restore_stk_l2; eauto.
+  simpl; eauto.
+  simpl upd_genreg.
+
+  (** ld (sp + OS_CPU_STACK_FRAME_L3_OFFSET) l3 *)
+  unfold OS_CPU_STACK_FRAME_L3_OFFSET.
+  eapply seq_rule.
+  TimReduce_simpl.
+  eapply ld_rule_restore_stk_l3; eauto.
+  simpl; eauto.
+  simpl upd_genreg.
+
+  (** ld (sp + OS_CPU_STACK_FRAME_L4_OFFSET) l4 *)
+  unfold OS_CPU_STACK_FRAME_L4_OFFSET.
+  eapply seq_rule.
+  TimReduce_simpl.
+  eapply ld_rule_restore_stk_l4; eauto.
+  simpl; eauto.
+  simpl upd_genreg.
+
+  (** ld (sp + OS_CPU_STACK_FRAME_L5_OFFSET) l5 *)
+  unfold OS_CPU_STACK_FRAME_L5_OFFSET.
+  eapply seq_rule.
+  TimReduce_simpl.
+  eapply ld_rule_restore_stk_l5; eauto.
+  simpl; eauto.
+  simpl upd_genreg.
+
+  (** ld (sp + OS_CPU_STACK_FRAME_L6_OFFSET) l6 *)
+  unfold OS_CPU_STACK_FRAME_L6_OFFSET.
+  eapply seq_rule.
+  TimReduce_simpl.
+  eapply ld_rule_restore_stk_l6; eauto.
+  simpl; eauto.
+  simpl upd_genreg.
+
+  (** ld (sp + OS_CPU_STACK_FRAME_L7_OFFSET) l7 *)
+  unfold OS_CPU_STACK_FRAME_L7_OFFSET.
+  eapply seq_rule.
+  TimReduce_simpl.
+  eapply ld_rule_restore_stk_l7; eauto.
+  simpl; eauto.
+  simpl upd_genreg.
+
+  (** ld (sp + OS_CPU_STACK_FRAME_I0_OFFSET) i0 *)
+  unfold OS_CPU_STACK_FRAME_I0_OFFSET.
+  eapply seq_rule.
+  TimReduce_simpl.
+  eapply ld_rule_restore_stk_i0; eauto.
+  simpl; eauto.
+  simpl upd_genreg.
+
+  (** ld (sp + OS_CPU_STACK_FRAME_I1_OFFSET) i1 *)
+  unfold OS_CPU_STACK_FRAME_I1_OFFSET.
+  eapply seq_rule.
+  TimReduce_simpl.
+  eapply ld_rule_restore_stk_i1; eauto.
+  simpl; eauto.
+  simpl upd_genreg.
+
+  (** ld (sp + OS_CPU_STACK_FRAME_I2_OFFSET) i2 *)
+  unfold OS_CPU_STACK_FRAME_I2_OFFSET.
+  eapply seq_rule.
+  TimReduce_simpl.
+  eapply ld_rule_restore_stk_i2; eauto.
+  simpl; eauto.
+  simpl upd_genreg.
+
+  (** ld (sp + OS_CPU_STACK_FRAME_I3_OFFSET) i3 *)
+  unfold OS_CPU_STACK_FRAME_I3_OFFSET.
+  eapply seq_rule.
+  TimReduce_simpl.
+  eapply ld_rule_restore_stk_i3; eauto.
+  simpl; eauto.
+  simpl upd_genreg.
+
+  (** ld (sp + OS_CPU_STACK_FRAME_I4_OFFSET) i4 *)
+  unfold OS_CPU_STACK_FRAME_I4_OFFSET.
+  eapply seq_rule.
+  TimReduce_simpl.
+  eapply ld_rule_restore_stk_i4; eauto.
+  simpl; eauto.
+  simpl upd_genreg.
+
+  (** ld (sp + OS_CPU_STACK_FRAME_I5_OFFSET) i5 *)
+  unfold OS_CPU_STACK_FRAME_I5_OFFSET.
+  eapply seq_rule.
+  TimReduce_simpl.
+  eapply ld_rule_restore_stk_i5; eauto.
+  simpl; eauto.
+  simpl upd_genreg.
+
+  (** ld (sp + OS_CPU_STACK_FRAME_I6_OFFSET) i6 *)
+  unfold OS_CPU_STACK_FRAME_I6_OFFSET.
+  eapply seq_rule.
+  TimReduce_simpl.
+  eapply ld_rule_restore_stk_i6; eauto.
+  simpl; eauto.
+  simpl upd_genreg.
+
+  (** ld (sp + OS_CPU_STACK_FRAME_I7_OFFSET) i7 *)
+  unfold OS_CPU_STACK_FRAME_I7_OFFSET.
+  eapply seq_rule.
+  TimReduce_simpl.
+  eapply ld_rule_restore_stk_i7; eauto.
+  simpl; eauto.
+  simpl upd_genreg.
+
+  eapply backward_rule.
+  introv Hs. 
+  simpl_sep_liftn_in Hs 3.
+  simpl_sep_liftn_in Hs 3. 
+  eapply stack_frame_combine in Hs.
+  eapply stack'_to_stack in Hs; eauto.
+
+  hoare_lift_pre 3.
+  unfold FrameState at 1.
+  eapply backward_rule.
+  introv Hs.
+  asrt_to_line_in Hs 3.
+  simpl_sep_liftn_in Hs 2.
+  simpl_sep_liftn_in Hs 6.
+  eauto.
+
+  (** save g0 g0 g0 *)
+  eapply seq_rule.
+  TimReduce_simpl.
+  eapply save_rule_reg; eauto.
+  simpl; eauto.
+  unfold win_masked.
+  rewrite pre_post_stable; eauto. 
+  destruct (((($ 1) <<ᵢ id) &ᵢ (($ 1) <<ᵢ (post_cwp (post_cwp id)))) !=ᵢ ($ 0)) eqn:Heqe; eauto.
+  rewrite Int.and_commut in Heqe.
+  rewrite win_mask_post_2_cwp in Heqe; eauto.
+  simpl upd_genreg.
+  eapply backward_rule.
+  introv Hs.
+  simpl_sep_liftn_in Hs 4.
+  eapply sep_pure_l_elim in Hs.
+  destruct Hs as [_ Hs].
+  simpl_sep_liftn_in Hs 4.
+  eapply sep_pure_l_elim in Hs.
+  destruct Hs as [_ Hs].
+  simpl_sep_liftn_in Hs 2.
+  simpl_sep_liftn_in Hs 3.
+  eapply FrameState_combine in Hs; eauto.
+  split; eauto.
+  rewrite pre_post_stable; eauto.
+  eapply in_range_0_7_post_cwp_still; eauto.
+
+  (** set OSIntNestCnt o4 *)
+  hoare_lift_pre 2.
+  eapply seq_rule.
+  TimReduce_simpl.
+  eapply set_rule_reg; eauto.
+  simpl upd_genreg.
+
+  (** ld [o4] o5 *)
+  hoare_lift_pre 11.
+  hoare_lift_pre 2.
+  eapply seq_rule.
+  TimReduce_simpl.
+  eapply ld_rule_reg; eauto.
+  simpl upd_genreg.
+
+  (** sub o5 1 o5 *)
+  eapply seq_rule.
+  TimReduce_simpl.
+  eapply sub_rule_reg; eauto.
+  simpl; eauto.
+  rewrite in_range1; eauto.
+  simpl upd_genreg.
+
+  rewrite Int.sub_add_opp.
+  rewrite Int.add_assoc; eauto.
+  assert (Hzero : ($ 1) +ᵢ (Int.neg $ 1) = $ 0).
+  rewrite Int.add_neg_zero.
+  eauto.
+  rewrite Hzero.
+  assert (Hll : ll +ᵢ ($ 0) = ll).
+  rewrite Int.add_zero; eauto.
+  rewrite Hll.
+  clear Hzero Hll.
+
+  (** st o5 [o4] *)
+  eapply seq_rule.
+  TimReduce_simpl.
+  eapply st_rule_reg; eauto.
+  simpl get_genreg_val.
+
+  (** getcwp o4 *)
+  hoare_lift_pre 3.
+  hoare_lift_pre 2.
+  eapply seq_rule.
+  TimReduce_simpl.
+  eapply getcwp_rule_reg_fm; eauto.
+  simpl upd_genreg.
+
+  (** or o4 0 o4 *)
+  eapply seq_rule.
+  TimReduce_simpl.
+  eapply or_rule_reg; eauto.
+  simpl; eauto.
+  rewrite in_range0; eauto.
+  simpl upd_genreg.
+
+  (** retl ; nop *)
+  eapply forward_rule.
+  Focus 2.
+  eapply retl_rule; eauto.
+  TimReduce_simpl.
+  eapply nop_rule; eauto.
+  unfold fretSta.
+  TimReduce_simpl.
+  introv Hs Hs'.
+  eapply GenRegs_split_one with (rr := r15) in Hs.
+  simpl get_genreg_val' in Hs.
+  eapply GenRegs_split_one with (rr := r15) in Hs'.
+  simpl get_genreg_val' in Hs'.
+  destruct_state s.
+  destruct_state s'.
+  simpl.
+  eapply rn_st_v_eval_reg_v in Hs; eauto.
+  eapply rn_st_v_eval_reg_v in Hs'; eauto.
   
-  >>>>>>>>>>>>>>>>>>>>>>>>>>
+  introv Hs.
+  rewrite Int.or_zero in Hs.
+  sep_ex_intro.
+  eapply sep_pure_l_intro; eauto.
+  sep_cancel1 2 3.
+  sep_cancel1 2 9.
+  sep_cancel1 7 3.
+  sep_cancel1 7 3.
+  sep_cancel1 7 3.
+  sep_cancel1 2 7.
+  sep_cancel1 2 3.
+  sep_cancel1 2 3.
+  sep_cancel1 2 3.
+  sep_cancel1 2 3.
+  instantiate (3 := ([[w15, w16, w17, w18, OSTaskCur, nt, w21, w22]])).
+  instantiate (2 := ([[w23, w24, w25, w26, w27, w28, lnstk, w30]])).
+  instantiate (1 := ([[($ 0) +ᵢ ($ 0), w0, w1, w2, w3, w4, w5, w6]])).
+  simpl update_frame.
+  simpl_sep_liftn 2.
+  eapply GenRegs_split_Regs_Global; eauto.
+  instantiate (1 := ([[w7, w8, w9, w10, pre_cwp (post_cwp id), ll, w13, $ 392]])).
+  sep_cancel1 1 1.
+  instantiate (1 := Aemp).
+  eapply astar_emp_intro_r.
+  eauto.
+  rewrite pre_post_stable; eauto.
+  simpls.
+  simpljoin1.
+  repeat (split; eauto).
+  unfold stack_frame_constraint.
+  simpl get_stk_addr.
+  simpl get_stk_cont.
+  eapply frame_valid; eauto.
+  introv Hcontr.
+  symmetry in Hcontr.
+  eapply post_1_neq in Hcontr; tryfalse; eauto.
+  eapply frame_invalid; eauto.
+Qed.
+
+
   
-  set_wim_eq_pre_cwp
