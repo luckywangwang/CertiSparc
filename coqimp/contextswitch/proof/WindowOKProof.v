@@ -1,4 +1,4 @@
-Require Import Coqlib.                                 
+Require Import Coqlib.                                       
 Require Import Maps.            
 Require Import LibTactics.   
         
@@ -137,7 +137,7 @@ Proof.
   eapply Be_rule.
   {
     (** spec waits to add *)
-    admit.
+    eval_spec.
   }
   {
     TimReduce_simpl.
@@ -151,11 +151,59 @@ Proof.
     simpl; eauto.
   }
 
-  Focus 2.
-  admit.
+  Focus 3.
+  introv Hiszero.
+  rewrite Int.sub_zero_l in Hiszero.
+  unfold iszero in Hiszero.
+  destruct (Int.eq_dec ct $ 0); tryfalse.
+  renames e to Hct_null.
+  split.
 
+   introv Hs.
+   unfold ta0_start_adjust_cwp_pre.
+   sep_ex_intro.
+   asrt_to_line 14.
+   eapply sep_pure_l_intro; eauto.
+   simpl_sep_liftn 2.
+   eapply GenRegs_split_Regs_Global.
+   sep_cancel1 1 1.
+   sep_cancel1 5 1.
+   sep_cancel1 5 1.
+   sep_cancel1 1 2.
+   sep_cancel1 1 1.
+   sep_cancel1 1 1.
+   sep_cancel1 2 1.
+   sep_cancel1 1 2.
+   sep_cancel1 1 1. 
+   sep_cancel1 3 1. 
+   sep_cancel1 3 1.
+   eapply sep_pure_l_intro; eauto.
+   eapply sep_pure_l_intro; eauto.
+ 
+   introv Hs.
+   unfold ta0_start_adjust_cwp_post in Hs.
+   sep_ex_elim_in Hs.
+   asrt_to_line_in Hs 13.
+   sep_ex_intro.
+   eapply sep_pure_l_intro; eauto.
+   eapply sep_pure_l_elim in Hs. 
+   destruct Hs as [Hlgvl1 Hs].
+   symmetry in Hlgvl1.  
+   inversion Hlgvl1; subst. 
+   do 10 (sep_cancel1 1 1).
+   sep_cancel1 4 1.
+   sep_cancel1 4 1. 
+   sep_cancel1 3 5.
+   sep_cancel1 1 2. 
+   sep_cancel1 1 2. 
+   instantiate (1 := Aemp). 
+   eapply astar_emp_intro_r; eauto.
+   eapply sep_pure_l_intro; eauto.
+   eapply sep_pure_l_intro; eauto.
+   intros; tryfalse.
+   
   Focus 2.
-  admit.
+  DlyFrameFree_elim.
 
   introv Hiszero.
   unfold iszero in Hiszero.

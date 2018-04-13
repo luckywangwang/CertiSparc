@@ -1,4 +1,4 @@
-Require Import Coqlib.                               
+Require Import Coqlib.                                
 Require Import Maps.           
 Require Import LibTactics.   
         
@@ -183,7 +183,6 @@ Proof.
       eauto.
       eauto.
     
-      
       introv Hs. 
       unfold os_ta0_return_post in Hs.
       sep_ex_elim_in Hs. 
@@ -194,32 +193,31 @@ Proof.
       inversion Hlg; subst.
       simpl upd_genreg in Hs. 
       eapply sep_pure_l_intro.
-      eauto.
+      eauto. 
       eapply astar_assoc_elim in Hs. 
       sep_cancel1 2 3.
       sep_cancel1 6 3.
       sep_cancel1 4 3.
-      sep_cancel1 3 3.
+      sep_cancel1 3 3. 
       sep_cancel1 4 3.
       sep_cancel1 3 4.
       sep_cancel1 3 3.
       sep_cancel1 3 3.
       sep_cancel1 3 3.
-      sep_cancel1 3 3.
-      simpl_sep_liftn 5.
+      sep_cancel1 3 3.  
+      simpl_sep_liftn 4.
       eapply sep_disj_l_intro; eauto.
       left. 
       simpl_sep_liftn 2.
       simpl_sep_liftn 3.  
       eapply GenRegs_split_Regs_Global.
-      instantiate (6 := [[x5, w16 +ᵢ ($ 4), w17 +ᵢ ($ 4), w18, OSFALSE, OSTRUE, w21, w22]]).
+      instantiate (5 := [[x5, w16 +ᵢ ($ 4), w17 +ᵢ ($ 4), w18, OSFALSE, OSTRUE, w21, w22]]).
       simpl update_frame.      
       sep_cancel1 1 1.
       eapply astar_assoc_intro.
       eapply sep_pure_l_intro.
       repeat (split; simpl; eauto).
       simpl_sep_liftn 2.
-      simpl_sep_liftn 3.
       repeat (eapply sep_pure_l_intro; eauto).
 
     DlyFrameFree_elim.

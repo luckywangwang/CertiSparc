@@ -277,22 +277,21 @@ Definition os_int_ta0_handler_pre (vl : list logicvar) :=
   ).
 
 
-
 Definition os_int_ta0_handler_post (vl : list logicvar) :=
   EX fmg fmg' fmo fmo' fml fml' fmi fmi' id id' F F' vy vy' vi vi' bv ll
-     ct cctx cctx' cstk cstk' nt nctx nstk vz' vn',
+     ct ct' cctx cctx' cstk cstk' nt nctx nstk vz' vn',
   [| vl = logic_fm fmg :: logic_fm fmo :: logic_fm fml :: logic_fm fmi :: logic_lv id
           :: logic_fmls F :: logic_lv vy :: logic_lv vi :: logic_lv bv :: logic_lv ll
           :: logic_lv ct :: logic_ctx cctx :: logic_stk cstk
           :: logic_lv nt :: logic_ctx nctx :: logic_stk nstk :: nil |] **
   GlobalRegs fmg' ** Regs fmo' (update_frame fml' 0 id') fmi' **
   FrameState id' vi' F' ** Rsp Ry |=> vy' ** z |=> vz' ** n |=> vn' **
-  OSTaskCur |-> ct ** OSTaskNew |-> nt ** OSTaskSwitchFlag |-> OSFALSE ** OSIntNestCnt |-> ll **
-  context cctx' ** stack cstk' ** [| get_frame_nth fml' 0 = Some id' |] **
+  OSTaskCur |-> ct' ** OSTaskNew |-> nt ** OSTaskSwitchFlag |-> OSFALSE ** OSIntNestCnt |-> ll **
+  context cctx' ** stack cstk' **
   [| get_ctx_addr cctx = get_ctx_addr cctx' /\ get_stk_addr cstk = get_stk_addr cstk' |] **
   (
     (
-      [| bv = OSFALSE /\
+      [| bv = OSFALSE /\ ct' = ct /\
          get_global_valid fmg' = get_global_valid fmg /\
          get_local_valid fml' =
          get_local_valid (update_frame (update_frame fml 1 ((get_frame_nth' fml 1) +ᵢ ($ 4))) 2
@@ -302,7 +301,7 @@ Definition os_int_ta0_handler_post (vl : list logicvar) :=
     )
       \\//
     (
-      [| bv = OSTRUE |] **
+      [| bv = OSTRUE /\ ct' = nt |] **
       context nctx ** stack nstk **
       [| (ct <> ($ 0)) ->
          (ctx_pt_stk cctx' cstk' /\ stack_frame_save (F ++ (fmo :: nil)) cstk' cstk id vi /\
@@ -399,8 +398,8 @@ Definition ta0_window_ok_post (vl : list logicvar) :=
           :: logic_lv nt :: logic_ctx nctx :: logic_stk nstk :: nil |] **
   GlobalRegs fmg' ** Regs fmo' (update_frame fml' 0 id') fmi' **
   FrameState id' vi' F' ** Rsp Ry |=> vy' ** z |=> vz' ** n |=> vn' **
-  OSTaskCur |-> ct ** OSTaskNew |-> nt ** OSTaskSwitchFlag |-> OSFALSE ** OSIntNestCnt |-> ll **
-  context cctx' ** stack cstk' ** [| get_frame_nth fml' 0 = Some id' |] **
+  OSTaskCur |-> nt ** OSTaskNew |-> nt ** OSTaskSwitchFlag |-> OSFALSE ** OSIntNestCnt |-> ll **
+  context cctx' ** stack cstk' **
   [| get_ctx_addr cctx = get_ctx_addr cctx' /\ get_stk_addr cstk = get_stk_addr cstk' |] **
   context nctx ** stack nstk **
   [| (ct <> ($ 0)) ->
