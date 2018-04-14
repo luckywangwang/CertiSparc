@@ -234,6 +234,15 @@ Definition ta0_start_adjust_cwp :=
   ($ 368) # (restore g0 (Or g0) g0);;
   consJ1 ($ 372) (Ao (Ow Ta0_adjust_CWP)) g0 ($ 376) nop.
 
+Definition ta0_adjust_cwp :=
+  ($ 344) # (sll g4 ('1) g5);;
+  ($ 348) # (srl g4 (Ow (OS_WINDOWS -ᵢ ($ 1))) g4);;
+  ($ 352) # (or g4 (Or g5) g4);;
+  ($ 356) # (andcc g4 (Or g7) g0);;
+  ($ 360) n> bne Ta0_Task_Switch_NewContext;; ($ 364) n> nop;;
+  ($ 368) # (restore g0 (Or g0) g0);;
+  consJ1 ($ 372) (Ao (Ow Ta0_adjust_CWP)) g0 ($ 376) nop.
+
 Definition ta0_task_switch_newcontext :=
   ($ 380) # (sett OSTaskNew l4);;
   ($ 384) # (ld (Ao (Or l4)) l4);;
