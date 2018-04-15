@@ -378,3 +378,28 @@ Definition ta0_window_ok :=
   ($ 312) # (st i6 (Aro sp (Ow OS_CPU_STACK_FRAME_I6_OFFSET)));;
   ($ 316) # (st i7 (Aro sp (Ow OS_CPU_STACK_FRAME_I7_OFFSET)));;
   consJ1 ($ 320) (Ao (Ow Ta0_save_usedwindows)) g0 ($ 324) nop.
+
+Definition ta0_save_usedwindows :=
+  ($ 228) # (sll g4 ('1) g5);;
+  ($ 232) # (srl g4 (Ow (OS_WINDOWS -ᵢ ($ 1))) g4);;
+  ($ 236) # (or g4 (Or g5) g4);;
+  ($ 240) # (andcc g4 (Or g7) g0);;
+  ($ 244) n> bne Ta0_Task_Switch_NewContext;; ($ 248) n> nop;;
+  ($ 252) # (restore g0 (Or g0) g0);;
+  ($ 256) # (st l0 (Aro sp (Ow OS_CPU_STACK_FRAME_L0_OFFSET)));;
+  ($ 260) # (st l1 (Aro sp (Ow OS_CPU_STACK_FRAME_L1_OFFSET)));;
+  ($ 264) # (st l2 (Aro sp (Ow OS_CPU_STACK_FRAME_L2_OFFSET)));;
+  ($ 268) # (st l3 (Aro sp (Ow OS_CPU_STACK_FRAME_L3_OFFSET)));;
+  ($ 272) # (st l4 (Aro sp (Ow OS_CPU_STACK_FRAME_L4_OFFSET)));;
+  ($ 276) # (st l5 (Aro sp (Ow OS_CPU_STACK_FRAME_L5_OFFSET)));;
+  ($ 280) # (st l6 (Aro sp (Ow OS_CPU_STACK_FRAME_L6_OFFSET)));;
+  ($ 284) # (st l7 (Aro sp (Ow OS_CPU_STACK_FRAME_L7_OFFSET)));;
+  ($ 288) # (st i0 (Aro sp (Ow OS_CPU_STACK_FRAME_I0_OFFSET)));;
+  ($ 292) # (st i1 (Aro sp (Ow OS_CPU_STACK_FRAME_I1_OFFSET)));;
+  ($ 296) # (st i2 (Aro sp (Ow OS_CPU_STACK_FRAME_I2_OFFSET)));;
+  ($ 300) # (st i3 (Aro sp (Ow OS_CPU_STACK_FRAME_I3_OFFSET)));;
+  ($ 304) # (st i4 (Aro sp (Ow OS_CPU_STACK_FRAME_I4_OFFSET)));;
+  ($ 308) # (st i5 (Aro sp (Ow OS_CPU_STACK_FRAME_I5_OFFSET)));;
+  ($ 312) # (st i6 (Aro sp (Ow OS_CPU_STACK_FRAME_I6_OFFSET)));;
+  ($ 316) # (st i7 (Aro sp (Ow OS_CPU_STACK_FRAME_I7_OFFSET)));;
+  consJ1 ($ 320) (Ao (Ow Ta0_save_usedwindows)) g0 ($ 324) nop.
