@@ -1673,3 +1673,210 @@ Proof.
     eauto.
   }
 Qed.
+
+Lemma in_range_0_7_num :
+  forall v,
+    $ 0 <=ᵤᵢ v <=ᵤᵢ $ 7 ->
+    v = ($ 0) \/ v = ($ 1) \/ v = ($ 2) \/ v = ($ 3) \/
+    v = ($ 4) \/ v = ($ 5) \/ v = ($ 6) \/ v = ($ 7).
+Proof.
+  intros.
+  rewrite <- Int.repr_unsigned with (i := v).
+  unfolds int_leu.
+  unfolds Int.ltu, Int.eq.
+  assert (Int.unsigned $ 0 = 0%Z); eauto.
+  assert (Int.unsigned $ 7 = 7%Z); eauto.
+  try rewrite H0 in *.
+  try rewrite H1 in *.
+  destruct v.
+  simpl Int.unsigned in *.
+  destruct (zlt 0 intval); destruct (zeq 0 intval);
+    destruct (zlt intval 7); destruct (zeq intval 7); subst; eauto;
+      tryfalse; try omega.
+  destruct intval; tryfalse; eauto 20.
+  do 3 (try destruct p; eauto 10; tryfalse).
+  do 7 right.
+  eauto.
+Qed.
+
+Lemma post_cwp_step_limit_8 :
+  forall id vi,
+    $ 0 <=ᵤᵢ id <=ᵤᵢ $ 7 -> $ 0 <=ᵤᵢ vi <=ᵤᵢ $ 7 ->
+    post_cwp id = vi \/ post_cwp (post_cwp id) = vi \/ post_cwp (post_cwp (post_cwp id)) = vi \/
+    post_cwp (post_cwp (post_cwp (post_cwp id))) = vi \/
+    post_cwp (post_cwp (post_cwp (post_cwp (post_cwp id)))) = vi \/
+    post_cwp (post_cwp (post_cwp (post_cwp (post_cwp (post_cwp id))))) = vi \/
+    post_cwp (post_cwp (post_cwp (post_cwp (post_cwp (post_cwp (post_cwp id)))))) = vi \/
+    post_cwp (post_cwp (post_cwp (post_cwp (post_cwp (post_cwp (post_cwp (post_cwp id))))))) = vi.
+Proof.
+  intros.
+  unfold post_cwp.
+  unfold Int.modu.
+  unfold Int.add.
+  unfold N.
+  unfolds int_leu.
+  unfolds Int.ltu.
+  unfolds Int.eq.
+  assert (Int.unsigned $ 0 = 0%Z); eauto.
+  assert (Int.unsigned $ 7 = 7%Z); eauto.
+  assert (Int.unsigned $ 1 = 1%Z); eauto.
+  assert (Int.unsigned $ 8 = 8%Z); eauto.
+  try rewrite H1 in *.
+  try rewrite H2 in *.
+  try rewrite H3 in *.
+  try rewrite H4 in *.
+  try rewrite <- Int.repr_unsigned with (i := id).
+  try rewrite <- Int.repr_unsigned with (i := vi).
+  destruct id, vi.
+  simpls Int.unsigned.
+  destruct (zlt 0 intval); destruct (zeq 0 intval);
+    destruct (zlt intval 7); destruct (zeq intval 7);
+      destruct (zlt 0 intval0); destruct (zeq 0 intval0);
+        destruct (zlt intval0 7); destruct (zeq intval0 7);
+          tryfalse; subst; eauto 200; try omega.
+  {
+    destruct intval, intval0; tryfalse; eauto. 
+    do 4 (try destruct p; tryfalse; simpl; eauto 200);
+      do 4 (try destruct p0; tryfalse; simpl; eauto 200).
+  }
+  {
+    destruct intval; tryfalse; eauto.
+    do 4 (try destruct p; tryfalse; simpl; eauto 200).
+  }
+  {
+    destruct intval; tryfalse; eauto.
+    do 4 (try destruct p; tryfalse; simpl; eauto 200).
+  }
+  {
+    destruct intval0; tryfalse; eauto.
+    do 4 (try destruct p; tryfalse; simpl; eauto 200).
+  }
+  {
+    destruct intval0; tryfalse; eauto.
+    do 4 (try destruct p; tryfalse; simpl; eauto 200).
+  }
+Qed.
+
+Lemma in_range_0_7_and_255_stable :
+  forall v,
+    $ 0 <=ᵤᵢ v <=ᵤᵢ $ 7 ->
+    ($ 255) &ᵢ (($ 1) <<ᵢ v) = ($ 1) <<ᵢ v.
+Proof.
+  intros.
+  unfolds int_leu.
+  unfolds Int.ltu.
+  unfolds Int.eq.
+  unfold Int.and.
+  unfold Int.shl.
+  assert (Int.unsigned $ 0 = 0%Z).
+  eauto.
+  assert (Int.unsigned $ 1 = 1%Z).
+  eauto.
+  assert (Int.unsigned $ 7 = 7%Z).
+  eauto.
+  assert (Int.unsigned $ 255 = 255%Z).
+  eauto.
+  try rewrite H0 in *.
+  try rewrite H1 in *.
+  try rewrite H2 in *.
+  try rewrite H3 in *.
+  destruct v.
+  simpl Int.unsigned in *.
+  destruct (zlt 0 intval); destruct (zeq 0 intval);
+    destruct (zlt intval 7); destruct (zeq intval 7);
+      tryfalse; subst; eauto; try omega.
+  destruct intval; tryfalse.
+  do 3 (destruct p; tryfalse; eauto).
+Qed.
+  
+Lemma in_range_0_7_and :
+  forall x v,
+    $ 0 <=ᵤᵢ v <=ᵤᵢ $ 7 ->
+    x &ᵢ (($ 1) <<ᵢ v) = (get_range 0 7 x) &ᵢ (($ 1) <<ᵢ v).
+Proof. 
+  intros.
+  unfold get_range.
+  simpl.
+  rewrite Int.shl_zero.
+  assert ((($ 1) <<ᵢ ($ 8)) -ᵢ ($ 1) = ($ 255)).
+  eauto.
+  rewrite H0.
+  rewrite Int.and_assoc.
+  rewrite in_range_0_7_and_255_stable; eauto.
+Qed.
+
+Lemma get_range_0_7_or :
+  forall x y,
+    get_range 0 7 (x |ᵢ y) = (get_range 0 7 x) |ᵢ (get_range 0 7 y).
+Proof. 
+  intros.
+  unfold get_range.
+  simpl.
+  rewrite Int.shl_zero.
+  assert ((($ 1) <<ᵢ ($ 8)) -ᵢ ($ 1) = ($ 255)).
+  eauto.
+  rewrite H.
+  rewrite Int.and_or_distrib_l; eauto.
+Qed.
+
+Lemma in_range344 :
+  ($ (-4096)) <=ᵢ ($ 344) && ($ 344) <=ᵢ ($ 4095) = true.
+Proof.
+  eauto.
+Qed.
+
+Lemma get_range_0_7_and :
+  forall x y,
+    get_range 0 7 (x &ᵢ y) = (get_range 0 7 x) &ᵢ (get_range 0 7 y).
+Proof.
+  intros.
+  unfold get_range.
+  simpl.
+  assert ((($ 1) <<ᵢ ($ 8)) -ᵢ ($ 1) = ($ 255)).
+  eauto.
+  rewrite H.
+  rewrite Int.shl_zero; eauto.
+  assert ((x &ᵢ ($ 255)) &ᵢ (y &ᵢ ($ 255)) = x &ᵢ (($ 255) &ᵢ y &ᵢ ($ 255))).
+  rewrite Int.and_assoc.
+  assert (($ 255) &ᵢ (y &ᵢ ($ 255)) = (($ 255) &ᵢ y) &ᵢ ($ 255)).
+  rewrite <- Int.and_assoc.
+  eauto.
+  rewrite H0.
+  eauto.
+  rewrite H0.
+  assert ((($ 255) &ᵢ y) &ᵢ ($ 255) = y &ᵢ ($ 255)).
+  assert (($ 255) &ᵢ y = y &ᵢ ($ 255)).
+  eapply Int.and_commut.
+  rewrite H1.
+  rewrite Int.and_assoc.
+  assert (($ 255) &ᵢ ($ 255) = ($ 255)).
+  eauto.
+  rewrite H2; eauto.
+  rewrite H1; eauto.
+  rewrite Int.and_assoc; eauto.
+Qed.
+
+Lemma g4_val_get_range_0_7_equal :
+  forall id i,
+    i = ($ 1) <<ᵢ id \/ i = ((($ 1) <<ᵢ id) <<ᵢ ($ 8)) |ᵢ (($ 1) <<ᵢ id) ->
+    $ 0 <=ᵤᵢ id <=ᵤᵢ $ 7 -> 
+    get_range 0 7 (i >>ᵢ ($ 7)) |ᵢ (i <<ᵢ ($ 1)) = ($ 1) <<ᵢ (post_cwp id).
+Proof.
+  intros.
+  destruct H.
+  {
+    subst.
+    eapply set_wim_eq_post_cwp; eauto.
+  }
+  {
+    subst.
+    unfold get_range.
+    simpl.
+    rewrite Int.shl_zero.
+    unfold post_cwp.
+    unfold N.
+    eapply in_range_0_7_num in H0.
+    do 7 (destruct H0 as [a | H0]; [subst; eauto 10 | idtac]).
+    subst; eauto 20.
+  }
+Qed.

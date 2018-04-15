@@ -1,4 +1,4 @@
-Require Import Coqlib.                                         
+Require Import Coqlib.                                               
 Require Import Maps.            
 Require Import LibTactics.   
         
@@ -9,7 +9,7 @@ Import ListNotations.
 Set Asymmetric Patterns.  
         
 Require Import state.    
-Require Import language. 
+Require Import language.  
  
 Set Implicit Arguments.    
 Unset Strict Implicit. 
@@ -37,246 +37,6 @@ Require Import lemma1.
 Open Scope nat.
 Open Scope code_scope.
 Open Scope mem_scope.
-
-Lemma in_range_0_7_num :
-  forall v,
-    $ 0 <=ᵤᵢ v <=ᵤᵢ $ 7 ->
-    v = ($ 0) \/ v = ($ 1) \/ v = ($ 2) \/ v = ($ 3) \/
-    v = ($ 4) \/ v = ($ 5) \/ v = ($ 6) \/ v = ($ 7).
-Proof.
-  intros.
-  rewrite <- Int.repr_unsigned with (i := v).
-  unfolds int_leu.
-  unfolds Int.ltu, Int.eq.
-  assert (Int.unsigned $ 0 = 0%Z); eauto.
-  assert (Int.unsigned $ 7 = 7%Z); eauto.
-  try rewrite H0 in *.
-  try rewrite H1 in *.
-  destruct v.
-  simpl Int.unsigned in *.
-  destruct (zlt 0 intval); destruct (zeq 0 intval);
-    destruct (zlt intval 7); destruct (zeq intval 7); subst; eauto;
-      tryfalse; try omega.
-  destruct intval; tryfalse; eauto 20.
-  do 3 (try destruct p; eauto 10; tryfalse).
-  do 7 right.
-  eauto.
-Qed.
-
-Lemma post_cwp_step_limit_8 :
-  forall id vi,
-    $ 0 <=ᵤᵢ id <=ᵤᵢ $ 7 -> $ 0 <=ᵤᵢ vi <=ᵤᵢ $ 7 ->
-    post_cwp id = vi \/ post_cwp (post_cwp id) = vi \/ post_cwp (post_cwp (post_cwp id)) = vi \/
-    post_cwp (post_cwp (post_cwp (post_cwp id))) = vi \/
-    post_cwp (post_cwp (post_cwp (post_cwp (post_cwp id)))) = vi \/
-    post_cwp (post_cwp (post_cwp (post_cwp (post_cwp (post_cwp id))))) = vi \/
-    post_cwp (post_cwp (post_cwp (post_cwp (post_cwp (post_cwp (post_cwp id)))))) = vi \/
-    post_cwp (post_cwp (post_cwp (post_cwp (post_cwp (post_cwp (post_cwp (post_cwp id))))))) = vi.
-Proof.
-  intros.
-  unfold post_cwp.
-  unfold Int.modu.
-  unfold Int.add.
-  unfold N.
-  unfolds int_leu.
-  unfolds Int.ltu.
-  unfolds Int.eq.
-  assert (Int.unsigned $ 0 = 0%Z); eauto.
-  assert (Int.unsigned $ 7 = 7%Z); eauto.
-  assert (Int.unsigned $ 1 = 1%Z); eauto.
-  assert (Int.unsigned $ 8 = 8%Z); eauto.
-  try rewrite H1 in *.
-  try rewrite H2 in *.
-  try rewrite H3 in *.
-  try rewrite H4 in *.
-  try rewrite <- Int.repr_unsigned with (i := id).
-  try rewrite <- Int.repr_unsigned with (i := vi).
-  destruct id, vi.
-  simpls Int.unsigned.
-  destruct (zlt 0 intval); destruct (zeq 0 intval);
-    destruct (zlt intval 7); destruct (zeq intval 7);
-      destruct (zlt 0 intval0); destruct (zeq 0 intval0);
-        destruct (zlt intval0 7); destruct (zeq intval0 7);
-          tryfalse; subst; eauto 200; try omega.
-  {
-    destruct intval, intval0; tryfalse; eauto. 
-    do 4 (try destruct p; tryfalse; simpl; eauto 200);
-      do 4 (try destruct p0; tryfalse; simpl; eauto 200).
-  }
-  {
-    destruct intval; tryfalse; eauto.
-    do 4 (try destruct p; tryfalse; simpl; eauto 200).
-  }
-  {
-    destruct intval; tryfalse; eauto.
-    do 4 (try destruct p; tryfalse; simpl; eauto 200).
-  }
-  {
-    destruct intval0; tryfalse; eauto.
-    do 4 (try destruct p; tryfalse; simpl; eauto 200).
-  }
-  {
-    destruct intval0; tryfalse; eauto.
-    do 4 (try destruct p; tryfalse; simpl; eauto 200).
-  }
-Qed.
-  
-(*+ Lemmas for Integer +*)
-Lemma in_range_0_7_and_255_stable :
-  forall v,
-    $ 0 <=ᵤᵢ v <=ᵤᵢ $ 7 ->
-    ($ 255) &ᵢ (($ 1) <<ᵢ v) = ($ 1) <<ᵢ v.
-Proof.
-  intros.
-  unfolds int_leu.
-  unfolds Int.ltu.
-  unfolds Int.eq.
-  unfold Int.and.
-  unfold Int.shl.
-  assert (Int.unsigned $ 0 = 0%Z).
-  eauto.
-  assert (Int.unsigned $ 1 = 1%Z).
-  eauto.
-  assert (Int.unsigned $ 7 = 7%Z).
-  eauto.
-  assert (Int.unsigned $ 255 = 255%Z).
-  eauto.
-  try rewrite H0 in *.
-  try rewrite H1 in *.
-  try rewrite H2 in *.
-  try rewrite H3 in *.
-  destruct v.
-  simpl Int.unsigned in *.
-  destruct (zlt 0 intval); destruct (zeq 0 intval);
-    destruct (zlt intval 7); destruct (zeq intval 7);
-      tryfalse; subst; eauto; try omega.
-  destruct intval; tryfalse.
-  do 3 (destruct p; tryfalse; eauto).
-Qed.
-  
-Lemma in_range_0_7_and :
-  forall x v,
-    $ 0 <=ᵤᵢ v <=ᵤᵢ $ 7 ->
-    x &ᵢ (($ 1) <<ᵢ v) = (get_range 0 7 x) &ᵢ (($ 1) <<ᵢ v).
-Proof. 
-  intros.
-  unfold get_range.
-  simpl.
-  rewrite Int.shl_zero.
-  assert ((($ 1) <<ᵢ ($ 8)) -ᵢ ($ 1) = ($ 255)).
-  eauto.
-  rewrite H0.
-  rewrite Int.and_assoc.
-  rewrite in_range_0_7_and_255_stable; eauto.
-Qed.
-
-Lemma get_range_0_7_or :
-  forall x y,
-    get_range 0 7 (x |ᵢ y) = (get_range 0 7 x) |ᵢ (get_range 0 7 y).
-Proof. 
-  intros.
-  unfold get_range.
-  simpl.
-  rewrite Int.shl_zero.
-  assert ((($ 1) <<ᵢ ($ 8)) -ᵢ ($ 1) = ($ 255)).
-  eauto.
-  rewrite H.
-  rewrite Int.and_or_distrib_l; eauto.
-Qed.
-
-Inductive rotate : Word -> Word -> Word -> Word -> Prop :=
-| rotate_end :
-    forall (oid oid vi l : Word),
-      rotate oid oid vi (($ 1) <<ᵢ oid)
-| rotate_cons :
-    forall (oid id vi l : Word),
-      rotate oid id vi l -> post_cwp id <> vi -> $ 0 <=ᵤᵢ id <=ᵤᵢ $ 7 ->
-      rotate oid (post_cwp id) vi ((($ 1) <<ᵢ l |ᵢ l >>ᵢ ($ 7))).
-
-Lemma rotate_no_reach :
-  forall oid id vi l,
-    $ 0 <=ᵤᵢ oid <=ᵤᵢ $ 7 -> $ 0 <=ᵤᵢ vi <=ᵤᵢ $ 7 -> $ 0 <=ᵤᵢ id <=ᵤᵢ $ 7 -> rotate oid id vi l ->
-    l <> ($ 15) <<ᵢ ($ 1) |ᵢ ($ 7) <<ᵢ ($ 1).
-Proof.
-  intros.
-  inversion H2; subst.
-  {
-    intro.
-    eapply in_range_0_7_num in H.
-    do 7 (destruct H as [a | H]; [subst; tryfalse | idtac]).
-    subst; tryfalse.
-  }
-
-  inversion H3; subst.
-  {
-    intro.
-    eapply in_range_0_7_num in H.
-    do 7 (destruct H as [a | H]; [subst; tryfalse | idtac]).
-    subst; tryfalse.
-  }
- 
-  inversion H6; subst.
-  { 
-    intro.
-    eapply in_range_0_7_num in H.
-    do 7 (destruct H as [a | H]; [subst; tryfalse | idtac]).
-    subst; tryfalse.
-  }
- 
-  inversion H9; subst.
-  {
-    intro.
-    eapply in_range_0_7_num in H.
-    do 7 (destruct H as [a | H]; [subst; tryfalse | idtac]).
-    subst; tryfalse.
-  }
-
-  inversion H12; subst.
-  {
-    intro.
-    eapply in_range_0_7_num in H.
-    do 7 (destruct H as [a | H]; [subst; tryfalse | idtac]).
-    subst; tryfalse.
-  }
-
-  inversion H15; subst.
-  {
-    intro.
-    eapply in_range_0_7_num in H.
-    do 7 (destruct H as [a | H]; [subst; tryfalse | idtac]).
-    subst; tryfalse.
-  }
-
-  inversion H18; subst.
-  {
-    intro.
-    eapply in_range_0_7_num in H.
-    do 7 (destruct H as [a | H]; [subst; tryfalse | idtac]).
-    subst; tryfalse.
-  }
-
-  inversion H21; subst.
-  {
-    intro.
-    eapply in_range_0_7_num in H.
-    do 7 (destruct H as [a | H]; [subst; tryfalse | idtac]).
-    subst; tryfalse.
-  }
-
-  inversion H24; subst.
-  {
-    intro.
-    eapply in_range_0_7_num in H.
-    do 7 (destruct H as [a | H]; [subst; tryfalse | idtac]).
-    subst; tryfalse.
-  }
-   
-  clear - H29 H0 H22 H16 H10 H16 H7 H19 H13 H20 H25 H28.
-  false. 
-  eapply post_cwp_step_limit_8 with (vi := vi) in H29; eauto.
-  do 7 (destruct H29 as [a | H29]; [tryfalse | idtac]).
-  tryfalse.
-Qed.
   
 (*+ Proof +*)
 Theorem Ta0AdjustCWPProof :
@@ -292,7 +52,7 @@ Proof.
   renames x' to fmg, x'0 to fmo, x'1 to fml, x'2 to fmi.
   renames x'3 to id, x'6 to vi, x'4 to F, x'5 to vy. 
   renames x'8 to i, x'13 to vz, x'14 to vn.
-  renames x'7 to ll, x'9 to ct, x'10 to nt, x'11 to nctx, x'12 to nstk.
+  renames x'7 to ll, x'9 to ct, x'10 to nt, x'11 to nctx, x'12 to nstk, x'15 to oid.
   eapply Pure_intro_rule.
   introv Hlgvl.
   hoare_lift_pre 13.
@@ -307,8 +67,8 @@ Proof.
   simpl_sep_liftn_in Hs 2.
   eapply Regs_Global_combine_GenRegs in Hs; eauto.
   unfold ta0_adjust_cwp.
- 
-  destruct Hpure as [Hg4 [Hid [Hg4_hid [ Hg7 Hct ] ] ] ].
+
+  destruct Hpure as [Hg4 [Hrot [Hoid_range [Hvl_g4 [Hg7 Hct] ] ] ] ].
   simpl in Hg4.
   inversion Hg4; subst.
   simpl in Hg7.
@@ -370,16 +130,198 @@ Proof.
          iszero (get_range 0 7 ((i >>ᵢ ($ 7)) |ᵢ (i <<ᵢ ($ 1)))) &ᵢ (($ 1) <<ᵢ vi)).
   {
     rewrite in_range_0_7_and; eauto.
-  }
-  
+  }  
   rewrite Hiszero.
+  rewrite g4_val_get_range_0_7_equal with (id := id); eauto.
 
-  Lemma tst :
-    forall i,
-      
-  
-  rewrite get_range_0_7_or.
-  Search Int.shl.
-  
-    
-  >>>>>>>>>>>>>>>>>>
+  (** bne Ta0_Switch; nop *)
+  eapply Bne_rule; eauto.
+  {
+    eval_spec.
+  }
+  {
+    TimReduce_simpl.
+    eapply nop_rule; eauto.
+  }
+  {
+    TimReduce_simpl.
+    introv Hs.
+    simpl_sep_liftn_in Hs 3.
+    sep_cancel1 1 1.
+    simpl; eauto.
+  }
+
+  Focus 3.
+  introv Hne.
+  unfold iszero in Hne.
+  destruct (Int.eq_dec (($ 1) <<ᵢ (post_cwp id)) &ᵢ (($ 1) <<ᵢ vi) $ 0); tryfalse.
+  clear Hne.
+  renames n to Hne.
+  eapply and_not_zero_eq in Hne; eauto.
+  2 : eapply in_range_0_7_post_cwp_still; eauto.
+  split.
+ 
+    introv Hs.
+    unfold ta0_task_switch_newcontext_pre.
+    sep_ex_intro.
+    asrt_to_line 14.
+    eapply sep_pure_l_intro; eauto.
+    simpl_sep_liftn 2.
+    eapply GenRegs_split_Regs_Global; eauto.
+    sep_cancel1 1 1.
+    sep_cancel1 3 1.
+    sep_cancel1 1 3.
+    sep_cancel1 1 2.
+    do 7 sep_cancel1 1 1.
+    instantiate (1 := Aemp).
+    eapply astar_emp_intro_r; eauto.
+    instantiate (1 := Aemp).
+    eapply sep_pure_l_intro; eauto.
+    eapply sep_pure_l_intro; eauto.
+
+    introv Hs. 
+    unfold ta0_task_switch_newcontext_post in Hs.
+    sep_ex_elim_in Hs.
+    asrt_to_line_in Hs 13.
+    eapply sep_pure_l_elim in Hs.
+    destruct Hs as [Hlgvl1 Hs].
+    symmetry in Hlgvl1.
+    inversion Hlgvl1; subst.
+    sep_ex_intro.
+    eapply sep_pure_l_intro; eauto.
+    do 12 sep_cancel1 1 1.
+    match goal with
+    | H : _ |= _ |- _ => renames H to Hs
+    end.
+    eapply sep_pure_l_elim in Hs; eauto.
+
+  2 : DlyFrameFree_elim.  
+
+  introv Heq.
+  unfold iszero in Heq.
+  destruct (Int.eq_dec (($ 1) <<ᵢ (post_cwp id)) &ᵢ (($ 1) <<ᵢ vi) $ 0); tryfalse.
+  clear Heq.
+  renames e to Heq.
+  eapply and_zero_not_eq in Heq; eauto.
+  2 : eapply in_range_0_7_post_cwp_still; eauto.
+
+  eapply hoare_pure_gen' with (length F = 13).
+  {
+    introv Hs.
+    simpl_sep_liftn_in Hs 4.
+    unfold FrameState in Hs.
+    asrt_to_line_in Hs 3.
+    simpl_sep_liftn_in Hs 3.
+    eapply sep_pure_l_elim in Hs.
+    simpljoin1; eauto.
+  }
+  eapply Pure_intro_rule.
+  introv Hlen_F.
+
+  destruct F; simpl in Hlen_F; tryfalse.
+  destruct F; simpl in Hlen_F; tryfalse.
+  destruct f, f0.
+  hoare_lift_pre 4. 
+  unfold FrameState at 1.
+  eapply backward_rule.
+  introv Hs.
+  asrt_to_line_in Hs 3.
+  simpl_sep_liftn_in Hs 3.
+  eapply sep_pure_l_elim in Hs.
+  destruct Hs as [_ Hs].
+  simpl_sep_liftn_in Hs 3.
+  eapply sep_pure_l_elim in Hs.
+  destruct Hs as [_ Hs].
+  eauto.
+
+  (** restore *)
+  hoare_lift_pre 2.
+  hoare_lift_pre 3.
+  eapply seq_rule; eauto.
+  TimReduce_simpl.
+  eapply restore_rule_reg; eauto.
+  simpl; eauto.
+  unfold win_masked.
+  destruct (((($ 1) <<ᵢ (post_cwp id)) &ᵢ (($ 1) <<ᵢ vi)) !=ᵢ ($ 0)) eqn:Heqe; eauto.
+  unfold negb in Heqe.
+  destruct (((($ 1) <<ᵢ (post_cwp id)) &ᵢ (($ 1) <<ᵢ vi)) =ᵢ ($ 0)) eqn:Heqe1; tryfalse.
+  eapply int_eq_false_neq in Heqe1.
+  eapply and_not_zero_eq in Heqe1; eauto.
+  subst; tryfalse.
+  eapply in_range_0_7_post_cwp_still; eauto.
+  simpl upd_genreg.
+
+  (** jumpl Ta0_adjust_cwp; nop *)
+  eapply J1_rule; eauto.
+  {
+    TimReduce_simpl.
+    introv Hs.
+    simpl. 
+    unfold Ta0_adjust_CWP at 1 2.
+    unfold Ta0_adjust_CWP at 1 2.
+    rewrite in_range344; eauto.
+  }
+  {
+    eval_spec.
+  }
+  {
+    TimReduce_simpl.
+    introv Hs.
+    eapply GenRegs_split_one with (rr := g0) in Hs.
+    simpl get_genreg_val' in Hs.
+    eauto.
+  }
+  {
+    TimReduce_simpl.
+    eapply nop_rule; eauto.
+    introv Hs.
+    eapply GenRegs_upd_combine_one in Hs.
+    simpl upd_genreg in Hs.
+    simpl_sep_liftn_in Hs 2.
+    simpl_sep_liftn_in Hs 3.
+    eapply FrameState_combine in Hs; eauto.
+    unfold ta0_adjust_cwp_pre.
+    sep_ex_intro.
+    asrt_to_line 14.
+    eapply sep_pure_l_intro; eauto.
+    simpl_sep_liftn 2.
+    eapply GenRegs_split_Regs_Global; eauto.
+    sep_cancel1 2 1.
+    sep_cancel1 4 2.
+    sep_cancel1 1 1.
+    sep_cancel1 1 2.
+    do 7 sep_cancel1 1 1.
+    instantiate (1 := Aemp).
+    eapply astar_emp_intro_r; eauto.
+    instantiate (1 := Aemp).
+    simpl get_frame_nth.
+    eapply sep_pure_l_intro; eauto.
+    split; eauto.
+    split.
+    {
+      instantiate (1 := oid).
+      eapply rotate_cons; eauto.
+    }
+    repeat (split; eauto).
+    eapply g4_rot_stable with (oid := oid); eauto.
+    eapply sep_pure_l_intro; eauto.
+    clear - Hlen_F.
+    rewrite app_length.
+    simpl; omega.
+    split; eauto.
+    eapply in_range_0_7_post_cwp_still; eauto.
+  }
+
+  introv Hs.
+  unfold ta0_adjust_cwp_post in Hs.
+  sep_ex_elim_in Hs.
+  asrt_to_line_in Hs 13.
+  sep_ex_intro.
+  do 13 sep_cancel1 1 1.
+  match goal with
+  | H : _ |= _ |- _ => rename H into Hs
+  end.
+  eapply sep_pure_l_elim in Hs; eauto.
+
+  DlyFrameFree_elim.
+Qed.

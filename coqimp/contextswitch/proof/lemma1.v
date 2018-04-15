@@ -1,4 +1,4 @@
-Require Import Coqlib.                            
+Require Import Coqlib.                              
 Require Import Maps.           
 Require Import LibTactics.   
         
@@ -1525,6 +1525,118 @@ Proof.
     asrt_to_line 7.
     sep_cancel1 1 8.
     eauto.
+  }
+Qed.
+
+(*+ Lemmas for Integer +*)
+Lemma rotate_no_reach :
+  forall oid id vi l,
+    $ 0 <=ᵤᵢ oid <=ᵤᵢ $ 7 -> $ 0 <=ᵤᵢ vi <=ᵤᵢ $ 7 -> $ 0 <=ᵤᵢ id <=ᵤᵢ $ 7 -> rotate oid id vi l ->
+    l <> (($ 1) <<ᵢ ($ 15)) |ᵢ (($ 1) <<ᵢ ($ 7)).
+Proof.
+  intros.
+  inversion H2; subst.
+  {
+    intro.
+    eapply in_range_0_7_num in H.
+    do 7 (destruct H as [a | H]; [subst; tryfalse | idtac]).
+    subst; tryfalse.
+  }
+
+  inversion H3; subst.
+  {
+    intro.
+    eapply in_range_0_7_num in H.
+    do 7 (destruct H as [a | H]; [subst; tryfalse | idtac]).
+    subst; tryfalse.
+  }
+ 
+  inversion H6; subst.
+  { 
+    intro.
+    eapply in_range_0_7_num in H.
+    do 7 (destruct H as [a | H]; [subst; tryfalse | idtac]).
+    subst; tryfalse.
+  }
+ 
+  inversion H9; subst.
+  {
+    intro.
+    eapply in_range_0_7_num in H.
+    do 7 (destruct H as [a | H]; [subst; tryfalse | idtac]).
+    subst; tryfalse.
+  }
+
+  inversion H12; subst.
+  {
+    intro.
+    eapply in_range_0_7_num in H.
+    do 7 (destruct H as [a | H]; [subst; tryfalse | idtac]).
+    subst; tryfalse.
+  }
+
+  inversion H15; subst.
+  {
+    intro.
+    eapply in_range_0_7_num in H.
+    do 7 (destruct H as [a | H]; [subst; tryfalse | idtac]).
+    subst; tryfalse.
+  }
+
+  inversion H18; subst.
+  {
+    intro.
+    eapply in_range_0_7_num in H.
+    do 7 (destruct H as [a | H]; [subst; tryfalse | idtac]).
+    subst; tryfalse.
+  }
+
+  inversion H21; subst.
+  {
+    intro.
+    eapply in_range_0_7_num in H.
+    do 7 (destruct H as [a | H]; [subst; tryfalse | idtac]).
+    subst; tryfalse.
+  }
+ 
+  clear - H H0 H26 H25 H22 H19 H16 H13 H10 H7 H4.
+  false.
+  eapply post_cwp_step_limit_8 with (vi := vi) in H26; eauto.
+  do 7 (destruct H26 as [a | H26]; [tryfalse | idtac]).
+  tryfalse.
+Qed.
+
+Lemma g4_rot_stable :
+  forall oid id vi l,
+    $ 0 <=ᵤᵢ oid <=ᵤᵢ $ 7 -> $ 0 <=ᵤᵢ id <=ᵤᵢ $ 7 -> $ 0 <=ᵤᵢ vi <=ᵤᵢ $ 7 ->
+    l = ($ 1) <<ᵢ id \/ l = ((($ 1) <<ᵢ id) <<ᵢ ($ 8)) |ᵢ (($ 1) <<ᵢ id) ->
+    rotate oid id vi l ->
+    (l >>ᵢ ($ 7)) |ᵢ (l <<ᵢ ($ 1)) = ($ 1) <<ᵢ (post_cwp id) \/
+    (l >>ᵢ ($ 7)) |ᵢ (l <<ᵢ ($ 1)) =
+                   ((($ 1) <<ᵢ (post_cwp id)) <<ᵢ ($ 8)) |ᵢ (($ 1) <<ᵢ (post_cwp id)).
+Proof.
+  intros.
+  destruct H2.
+  {
+    eapply in_range_0_7_num in H0.
+    unfold post_cwp.
+    unfold N.
+    do 7 (destruct H0 as [a | H0]; [subst; eauto | idtac]).
+    subst.
+    right.
+    eauto.
+  }
+  {
+    eapply in_range_0_7_num in H0.
+    unfold post_cwp.
+    unfold N. 
+    do 7 (destruct H0 as [a | H0]; [subst; eauto | idtac]).
+    subst.
+    assert ((($ 1) <<ᵢ ($ 7)) <<ᵢ ($ 8) = ($ 1) <<ᵢ ($ 15)).
+    eauto.
+    rewrite H0 in H3.
+    eapply rotate_no_reach in H3; eauto.
+    false.
   }
 Qed.
   

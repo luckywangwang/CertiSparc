@@ -1,4 +1,4 @@
-Require Import Coqlib.                                       
+Require Import Coqlib.                                        
 Require Import Maps.            
 Require Import LibTactics.   
         
@@ -33,6 +33,8 @@ Require Import code.
 Require Import ctxswitch_spec.
 
 Require Import lemma1.
+
+Require Import AdjustCWP.
 
 Open Scope nat.
 Open Scope code_scope.
@@ -107,4 +109,27 @@ Proof.
   introv Hid_inrange.
   destruct Hid_inrange as [Hid_inrange Hvi_inrange].
   rewrite get_range_0_4_stable; eauto.
-Admitted.
+
+  eapply Seq_conseq_rule.
+  eapply Ta0AdjustCWPProof; eauto.
+  introv Hs.
+  unfold ta0_adjust_cwp_pre.
+  sep_ex_intro.
+  eapply sep_pure_l_intro; eauto.
+  simpl_sep_liftn 2.
+  eapply GenRegs_split_Regs_Global; eauto.
+  do 11 sep_cancel1 1 1.
+  instantiate (1 := Aemp).
+  eapply astar_emp_intro_r; eauto.
+  simpl get_frame_nth.
+  eapply sep_pure_l_intro; eauto.
+  split; eauto.
+  instantiate (1 := id).
+  split; eauto.
+  eapply rotate_end; eauto.
+  simpl; eauto.
+
+  introv Hs.
+  unfold ta0_adjust_cwp_post in Hs.
+  eauto.
+Qed.

@@ -429,17 +429,27 @@ Definition ta0_start_adjust_cwp_post (vl : list logicvar) :=
   OSIntNestCnt |-> ll ** context nctx ** stack nstk **
   [| stack_frame_constraint nstk (fml' :: fmi' :: F' ++ (fmo' :: nil)) id' vi' /\
      ctx_win_restore nctx fml' fmi' fmg' vy' |].
+
+
+Inductive rotate : Word -> Word -> Word -> Word -> Prop :=
+| rotate_end :
+    forall (oid oid vi l : Word),
+      rotate oid oid vi (($ 1) <<ᵢ oid)
+| rotate_cons :
+    forall (oid id vi l : Word),
+      rotate oid id vi l -> post_cwp id <> vi -> $ 0 <=ᵤᵢ id <=ᵤᵢ $ 7 ->
+      rotate oid (post_cwp id) vi ((l >>ᵢ ($ 7)) |ᵢ (l <<ᵢ ($ 1))).
  
 Definition ta0_adjust_cwp_pre (vl : list logicvar) :=
   EX fmg fmo fml fmi id F vy vi ll i
-     ct nt nctx nstk vz vn,
+     ct nt nctx nstk vz vn oid,
   [| vl = logic_lv ll :: logic_lv nt :: logic_ctx nctx :: logic_stk nstk :: nil |] **
   GlobalRegs fmg ** Regs fmo fml fmi ** FrameState id vi F ** Rsp Ry |=> vy **
   z |=> vz ** n |=> vn **
   OSTaskCur |-> ct ** OSTaskNew |-> nt ** OSTaskSwitchFlag |-> OSTRUE **
   OSIntNestCnt |-> ll +ᵢ ($ 1) ** context nctx ** stack nstk **
-  [| get_frame_nth fmg 4 = Some i /\ get_range 0 7 i = (($ 1) <<ᵢ id) /\
-     ((get_range 0 7 (i >>ᵢ ($ 8)) = (($ 1) <<ᵢ id)) \/ (get_range 0 7 (i >>ᵢ ($ 8)) = ($ 0))) /\
+  [| get_frame_nth fmg 4 = Some i /\ rotate oid id vi i /\ $ 0 <=ᵤᵢ oid <=ᵤᵢ $ 7 /\
+     ((i = ($ 1) <<ᵢ id) \/ (i = ((($ 1) <<ᵢ id) <<ᵢ ($ 8)) |ᵢ (($ 1) <<ᵢ id))) /\
      get_frame_nth fmg 7 = Some (($ 1) <<ᵢ vi) /\ ct = ($ 0) |] **
   [| get_ctx_addr nctx = nt +ᵢ OS_CONTEXT_OFFSET /\ ctx_pt_stk nctx nstk |].
 
