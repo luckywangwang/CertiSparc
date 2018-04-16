@@ -495,7 +495,7 @@ Inductive frame_restore :
       frame_restore oid F oid F
 | restore_cons :
     forall F oid id F' fm1 fm2,
-      frame_restore oid F id (fm1 :: fm2 :: F') -> length F' = 11 ->
+      frame_restore oid F id (fm1 :: fm2 :: F') -> length F' = 11 -> post_cwp id <> oid ->
       frame_restore oid F (post_cwp id) (F ++ (fm1 :: fm2 :: nil)).
 
 Inductive stack_frame_match :
@@ -520,7 +520,7 @@ Definition ta0_save_usedwindows_pre (vl : list logicvar) :=
   [| get_ctx_addr nctx = nt +ᵢ OS_CONTEXT_OFFSET /\ ctx_pt_stk nctx nstk |] **
   [| stack_frame_match oid clfp1 (F ++ fmo :: nil) id /\ length F = 13 |] **
   [| frame_restore oid (fmo :: fml :: fmi :: F) id (fmo' :: fml' :: fmi' :: F') |] **
-  [| stack_frame_constraint (cl +ᵢ ($ (64 * (Z.of_nat (length clfp1)))), clfp2)
+  [| stack_frame_constraint (cl -ᵢ ($ (64 * (Z.of_nat (length clfp1)))), clfp2)
                             (fml' :: fmi' :: F' ++ (fmo' :: nil)) id vi |] **
   [| get_frame_nth fmg' 4 = Some i /\ rotate oid id vi i /\ $ 0 <=ᵤᵢ oid <=ᵤᵢ $ 7 /\
      ((i = ($ 1) <<ᵢ id) \/ (i = ((($ 1) <<ᵢ id) <<ᵢ ($ 8)) |ᵢ (($ 1) <<ᵢ id))) /\

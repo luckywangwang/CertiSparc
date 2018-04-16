@@ -1,4 +1,4 @@
-Require Import Coqlib.                                                    
+Require Import Coqlib.                                                      
 Require Import Maps.            
 Require Import LibTactics.   
         
@@ -96,6 +96,14 @@ Proof.
   eapply post_1_neq in H0; eauto.
 Qed.
 
+Lemma in_range228 : 
+  ($ (-4096)) <=ᵢ ($ 228) && ($ 228) <=ᵢ ($ 4095) = true.
+Proof.
+  eauto.
+Qed.
+
+(*+ Lemma for stack frame relation +*)
+
 Lemma stack_frame_match_fm_save :
   forall fm F oid id cl clfp1 clfp2,
     $ 0 <=ᵤᵢ oid <=ᵤᵢ $ 7 -> $ 0 <=ᵤᵢ id <=ᵤᵢ $ 7 ->
@@ -192,6 +200,136 @@ Proof.
           repeat (eapply post_cons_neq_still_rev; eauto)).
     eapply frame_save_end; eauto.
   }
+Qed.
+
+Lemma stk_fm_match_stk_len_lt_13 :
+  forall oid clfp F id,
+    $ 0 <=ᵤᵢ oid <=ᵤᵢ $ 7 -> $ 0 <=ᵤᵢ id <=ᵤᵢ $ 7 ->
+    stack_frame_match oid clfp F id -> length F = 14 ->
+    length clfp < 8.
+Proof.
+  intros.
+  do 15 (destruct F; simpl in H2; tryfalse).
+  
+  inversion H1; subst; simpl; try omega.
+  inversion H10; subst; simpl; try omega.
+  inversion H12; subst; simpl; try omega.
+  inversion H14; subst; simpl; try omega.
+  inversion H16; subst; simpl; try omega.
+  inversion H18; subst; simpl; try omega.
+  inversion H20; subst; simpl; try omega.
+  inversion H22; subst; simpl; try omega.
+Qed.
+
+(*+ Lemmas for Space +*)
+Lemma stack'_split :
+  forall lfp1 lfp2 l s p,
+    length lfp1 < 100 ->
+    s |= stack' l (lfp1 ++ lfp2) ** p ->
+    s |= stack' l lfp1 ** stack' (l -ᵢ ($ (64 * Z.of_nat (length lfp1)))) lfp2 ** p.
+Proof.
+  intro lfp1.
+  induction lfp1; intros.
+  -
+    simpl stack' in H0.
+    simpl stack'.
+    eapply astar_emp_intro_l; eauto.
+    rewrite Int.sub_zero_l; eauto.
+  -
+    destruct a.
+    simpl stack' in H0.
+    simpl stack' at 1.
+    eapply astar_assoc_elim in H0.
+    eapply astar_assoc_intro.
+    sep_cancel1 1 1.
+    eapply IHlfp1 in H1; eauto.
+    sep_cancel1 1 1.
+    simpl length.
+    rewrite Nat2Z.inj_succ.
+    unfold Z.succ.
+    do 2 rewrite Int.sub_add_opp in H0.
+    rewrite Int.sub_add_opp.
+    rewrite Int.add_assoc in H0.
+    rewrite <- Int.neg_add_distr in H0.
+    remember (length lfp1) as lenlfp1.
+    assert (($ 64) +ᵢ ($ (64 * Z.of_nat lenlfp1)) = $ (64 * (Z.of_nat lenlfp1 + 1))).
+    {
+      rewrite Int.add_unsigned.
+      assert (Int.unsigned $ 64 = 64%Z).
+      eauto.
+      rewrite H1; eauto.
+      rewrite Int.unsigned_repr; eauto.
+      assert ((64 * (Z.of_nat lenlfp1 + 1) = 64 + 64 * Z.of_nat lenlfp1)%Z).
+      omega.
+      rewrite H2.
+      eauto.
+      subst lenlfp1.
+      clear - H.
+      simpl in H.
+      unfold Int.max_unsigned, Int.modulus.
+      unfold two_power_nat.
+      simpl shift_nat.
+      omega.
+    }
+    rewrite H1 in H0.
+    eauto.
+    simpl in H.
+    omega.
+Qed.
+
+Lemma stack'_cons_tail :
+  forall lfp l s p fm1 fm2,
+    length lfp < 100 ->
+    s |= stack' l lfp ** stack_frame (l -ᵢ ($ (64 * Z.of_nat (length lfp)))) fm1 fm2 ** p ->
+    s |= stack' l (lfp ++ (fm1, fm2) :: nil) ** p.
+Proof.
+  intro lfp.
+  induction lfp; intros.
+  -
+    simpl stack' in *.
+    simpl length in *.
+    eapply astar_assoc_intro; eauto.
+    assert ((64 * Z.of_nat 0 = 0)%Z).
+    simpl. eauto.
+    rewrite H1 in H0.
+    rewrite Int.sub_zero_l in H0.
+    sep_cancel1 2 1.
+    eauto.
+  -
+    destruct a.
+    simpl length in H0.
+    simpl stack' in *.
+    eapply astar_assoc_elim in H0.
+    eapply astar_assoc_intro; eauto.
+    sep_cancel1 1 1.
+    eapply IHlfp; eauto.
+    simpl in H; omega.
+    rewrite Nat2Z.inj_succ in H1.
+    unfold Z.succ in H1.
+    sep_cancel1 1 1.
+    rewrite Int.sub_add_opp in H0.
+    do 2 rewrite Int.sub_add_opp.
+    rewrite Int.add_assoc.
+    rewrite <- Int.neg_add_distr.
+    assert (($ 64) +ᵢ ($ (64 * Z.of_nat (length lfp))) =
+            $ (64 * (Z.of_nat (length lfp) + 1))).
+    {
+      rewrite Int.add_unsigned; eauto.
+      assert (Int.unsigned $ 64 = 64%Z).
+      eauto.
+      rewrite H1.
+      rewrite Int.unsigned_repr; eauto.
+      assert ((64 * (Z.of_nat (length lfp) + 1) = 64 + 64 * Z.of_nat (length lfp))%Z).
+      omega.
+      rewrite H2.
+      eauto.
+      unfolds Int.max_unsigned, Int.modulus, two_power_nat.
+      simpl shift_nat.
+      simpl in H.
+      omega.
+    }
+    rewrite H1.
+    eauto.
 Qed.
   
 (*+ Proof +*)
@@ -387,3 +525,261 @@ Proof.
     eapply in_range_0_7_post_cwp_still; eauto.
 
   introv Hnjp.
+  clear Hiszero Heq7.
+  assert (Hlen_clfp1 : length clfp1 < 8).
+  {
+    destruct Hstk_fm_match as [Hstk_fm_match Hlen_F].
+    eapply stk_fm_match_stk_len_lt_13 with (id := id) (oid := oid); eauto.
+    rewrite app_length; eauto.
+    simpl; omega.
+  }
+
+  unfold iszero in Hnjp.
+  destruct (Int.eq_dec (($ 1) <<ᵢ (post_cwp id)) &ᵢ (($ 1) <<ᵢ vi) $ 0); tryfalse.
+  renames e to Hneq.
+  eapply and_zero_not_eq in Hneq; eauto.
+  inversion Hstk_fm_constraint; tryfalse; subst.
+  match goal with
+  | H1 : stack_frame_constraint' _ (post_cwp id) _ _ _,
+         H2 : get_frame_nth _ 6 = Some (get_stk_addr _), H3 : _ = get_stk_cont _  |- _ =>
+    renames H1 to Hstk_fm_constraint1, H2 to Hpt_stk, H3 to Hlfp
+  end.
+  simpl in Hlfp.
+  subst clfp2.
+  renames lfp to clfp2.
+  simpl get_frame_nth in Hpt_stk.
+  unfold get_stk_addr in Hpt_stk.
+  unfold get_stk_addr in Hstk_fm_constraint1.
+  assert (Hval_sp : w29 = cl -ᵢ ($ (64 * Z.of_nat (length clfp1)))).
+  {
+    inversion Hpt_stk; subst; eauto.
+  }
+
+  (** restore *)
+  hoare_lift_pre 4.
+  unfold FrameState at 1.
+  eapply backward_rule.
+  introv Hs.
+  asrt_to_line_in Hs 3.
+  simpl_sep_liftn_in Hs 4.
+  eapply sep_pure_l_elim in Hs.
+  destruct Hs as [_ Hs].
+  eauto.
+  hoare_lift_pre 3.
+  eapply Pure_intro_rule.
+  introv Hlen_F'.
+  hoare_lift_pre 2.
+  hoare_lift_pre 3.
+  do 2 (destruct F'; simpl in Hlen_F'; tryfalse).
+  eapply seq_rule.
+  TimReduce_simpl.
+  eapply restore_rule_reg; eauto.
+  simpl; eauto.
+  unfold win_masked.
+  destruct (((($ 1) <<ᵢ (post_cwp id)) &ᵢ (($ 1) <<ᵢ vi)) !=ᵢ ($ 0)) eqn:Heqe; tryfalse; eauto.
+  unfold negb in Heqe.
+  destruct (((($ 1) <<ᵢ (post_cwp id)) &ᵢ (($ 1) <<ᵢ vi)) =ᵢ ($ 0)) eqn:Heqe1; tryfalse.
+  eapply int_eq_false_neq in Heqe1; eauto.
+  eapply and_not_zero_eq in Heqe1; tryfalse.
+  eapply in_range_0_7_post_cwp_still; eauto.
+  eauto. 
+  simpl upd_genreg.
+  subst w29.
+
+  hoare_lift_pre 12.
+  unfold stack at 1.
+  eapply backward_rule.
+  introv Hs.
+  eapply stack'_split in Hs.
+  simpl_sep_liftn_in Hs 2.
+  unfold stack' in Hs; fold stack' in Hs.
+  eapply astar_assoc_elim in Hs; eauto.
+  omega.
+
+  destruct fml', fmi'.
+  destruct f, f0.
+  hoare_lift_pre 4.
+
+  (** st l0 (sp + OS_CPU_STACK_FRSME_L0_OFFSET) *)
+  eapply seq_rule.
+  TimReduce_simpl.
+  eapply st_rule_save_stk_l0; eauto.
+  simpl update_frame.
+
+  (** st l1 (sp + OS_CPU_STACK_FRSME_L1_OFFSET) *)
+  eapply seq_rule.
+  TimReduce_simpl.
+  eapply st_rule_save_stk_l1; eauto.
+  simpl update_frame.
+
+  (** st l2 (sp + OS_CPU_STACK_FRSME_L2_OFFSET) *)
+  eapply seq_rule.
+  TimReduce_simpl.
+  eapply st_rule_save_stk_l2; eauto.
+  simpl update_frame.
+
+  (** st l3 (sp + OS_CPU_STACK_FRSME_L3_OFFSET) *)
+  eapply seq_rule.
+  TimReduce_simpl.
+  eapply st_rule_save_stk_l3; eauto.
+  simpl update_frame.
+
+  (** st l4 (sp + OS_CPU_STACK_FRSME_L4_OFFSET) *)
+  eapply seq_rule.
+  TimReduce_simpl.
+  eapply st_rule_save_stk_l4; eauto.
+  simpl update_frame.
+
+  (** st l5 (sp + OS_CPU_STACK_FRSME_L5_OFFSET) *)
+  eapply seq_rule.
+  TimReduce_simpl.
+  eapply st_rule_save_stk_l5; eauto.
+  simpl update_frame.
+
+  (** st l6 (sp + OS_CPU_STACK_FRSME_L6_OFFSET) *)
+  eapply seq_rule.
+  TimReduce_simpl.
+  eapply st_rule_save_stk_l6; eauto.
+  simpl update_frame.
+
+  (** st l7 (sp + OS_CPU_STACK_FRSME_L7_OFFSET) *)
+  eapply seq_rule.
+  TimReduce_simpl.
+  eapply st_rule_save_stk_l7; eauto.
+  simpl update_frame.
+
+  (** st i0 (sp + OS_CPU_STACK_FRSME_I0_OFFSET) *)
+  eapply seq_rule.
+  TimReduce_simpl.
+  eapply st_rule_save_stk_i0; eauto.
+  simpl update_frame.
+
+  (** st i1 (sp + OS_CPU_STACK_FRSME_I1_OFFSET) *)
+  eapply seq_rule.
+  TimReduce_simpl.
+  eapply st_rule_save_stk_i1; eauto.
+  simpl update_frame.
+
+  (** st i2 (sp + OS_CPU_STACK_FRSME_I2_OFFSET) *)
+  eapply seq_rule.
+  TimReduce_simpl.
+  eapply st_rule_save_stk_i2; eauto.
+  simpl update_frame.
+
+  (** st i3 (sp + OS_CPU_STACK_FRSME_i3_OFFSET) *)
+  eapply seq_rule.
+  TimReduce_simpl.
+  eapply st_rule_save_stk_i3; eauto.
+  simpl update_frame.
+
+  (** st i4 (sp + OS_CPU_STACK_FRSME_I4_OFFSET) *)
+  eapply seq_rule.
+  TimReduce_simpl.
+  eapply st_rule_save_stk_i4; eauto.
+  simpl update_frame.
+
+  (** st i5 (sp + OS_CPU_STACK_FRSME_I5_OFFSET) *)
+  eapply seq_rule.
+  TimReduce_simpl.
+  eapply st_rule_save_stk_i5; eauto.
+  simpl update_frame.
+
+  (** st i6 (sp + OS_CPU_STACK_FRSME_I6_OFFSET) *)
+  eapply seq_rule.
+  TimReduce_simpl.
+  eapply st_rule_save_stk_i6; eauto.
+  simpl update_frame.
+
+  (** st i7 (sp + OS_CPU_STACK_FRSME_I7_OFFSET) *)
+  eapply seq_rule.
+  TimReduce_simpl.
+  eapply st_rule_save_stk_i7; eauto.
+  simpl update_frame.
+ 
+  hoare_lift_pre 5.
+  hoare_lift_pre 6.
+  eapply backward_rule.
+  introv Hs.
+  eapply FrameState_combine in Hs; eauto.
+  clear - Hlen_F'.
+  rewrite app_length; simpl; omega.
+  split; eauto.
+  eapply in_range_0_7_post_cwp_still; eauto.
+
+  (** jmpl Ta0_save_usedwindows g0; nop *)
+  eapply J1_rule; eauto.
+  {
+    TimReduce_simpl.
+    introv Hs.
+    simpl.
+    unfold Ta0_save_usedwindows at 1 2.
+    unfold Ta0_save_usedwindows at 1 2.
+    rewrite in_range228; eauto.
+  }
+  {
+    eval_spec.
+  }
+  {
+    TimReduce_simpl.
+    introv Hs.
+    simpl_sep_liftn_in Hs 2.
+    eapply GenRegs_split_one with (rr := g0) in Hs; eauto.
+  }
+  {
+    TimReduce_simpl.
+    eapply nop_rule; eauto.
+    introv Hs.
+    eapply GenRegs_upd_combine_one in Hs; eauto.
+    remember (cl -ᵢ ($ (64 * Z.of_nat (length clfp1)))) as w29'.
+    simpl upd_genreg in Hs.
+    subst w29'.
+    unfold ta0_save_usedwindows_pre.
+    sep_ex_intro.
+    asrt_to_line 20.
+    eapply sep_pure_l_intro; eauto.
+    simpl_sep_liftn 2.
+    eapply GenRegs_split_Regs_Global.
+    sep_cancel1 1 1.
+    sep_cancel1 1 1.
+    sep_cancel1 6 1.
+    sep_cancel1 5 1.
+    sep_cancel1 4 1.
+    do 5 sep_cancel1 4 1.
+    sep_cancel1 4 2.
+    sep_cancel1 4 2.
+    match goal with
+    | H : _ |= _ |- _ => renames H to Hs
+    end.
+    simpl_sep_liftn_in Hs 3.
+    eapply stack'_cons_tail in Hs; eauto.
+    eapply stack'_app in Hs; eauto.
+    sep_cancel1 1 1.
+    instantiate (1 := Aemp).
+    eapply astar_emp_intro_r; eauto.
+
+    eapply sep_pure_l_intro; eauto.
+
+    eapply sep_pure_l_intro.
+    {
+      instantiate (1 := F).
+      instantiate (1 := fmo).
+      instantiate (1 := oid).
+      destruct Hstk_fm_match as [Hstk_fm_match Hlen_F].
+      split; eauto.
+      Print frame_restore.
+ 
+      Lemma stk_fm_match_cons_tail_stable :
+        forall F F' oid id lfp fmo fmo' fml fml' fmi fmi' fm1 fm2,
+          $ 0 <=ᵤᵢ oid <=ᵤᵢ $ 7 -> $ 0 <=ᵤᵢ id <=ᵤᵢ $ 7 ->
+          length F = 13 -> length F' = 11 ->
+          stack_frame_match oid lfp (F ++ fmo :: nil) id ->
+          frame_restore oid (fmo :: fml :: fmi :: F) id
+                        (fmo' :: fml' :: fmi' :: F') ->
+          stack_frame_match oid (lfp ++ (fm1, fm2) :: nil) (F ++ fmo :: nil) (post_cwp id).
+      Proof.
+        intros.
+        do 14 (try destruct F; simpl in H1; tryfalse).
+    }
+  }
+  
+  >>>>>>>>>>>>>>>>>>>>>>>>
