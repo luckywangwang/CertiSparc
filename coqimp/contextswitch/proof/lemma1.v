@@ -61,6 +61,104 @@ Proof.
     eauto.
 Qed.
 
+Lemma trivial_assoc_ls :
+  forall {A : Type} (a : A) l1 l2,
+    a :: l1 ++ l2 = (a :: l1) ++ l2.
+Proof.
+  eauto.
+Qed.
+
+Lemma trivial_assoc_ls2 :
+  forall {A : Type} (a : A) l1 l2,
+    l1 ++ a :: l2 = (l1 ++ a :: nil) ++ l2.
+Proof.
+  intros.
+  rewrite <- app_assoc.
+  simpl; eauto.
+Qed.
+
+Ltac solve_element_vi vi :=
+  match goal with
+  | H : vi = _ \/ _ |- _ =>
+    destruct H as [?a | H]; [subst; tryfalse; eauto | solve_element_vi vi]
+  | H : vi = _ |- _ =>
+    subst; tryfalse; eauto
+  | _ => idtac
+  end.
+
+Ltac solve_element_id id vi :=
+  match goal with
+  | H : id = _ \/ _ |- _ =>
+    destruct H as [?a | H];
+    [subst; solve_element_vi vi | solve_element_id id vi]
+  | H : id = _ |- _ =>
+    subst; solve_element_vi vi
+  | _ => idtac
+  end.
+
+Lemma post_cons_neq_still :
+  forall id vi,
+    $ 0 <=ᵤᵢ id <=ᵤᵢ $ 7 -> $ 0 <=ᵤᵢ vi <=ᵤᵢ $ 7 ->
+    id <> post_cwp vi ->
+    post_cwp id <> post_cwp (post_cwp vi).
+Proof.
+  intros.
+  intro.
+  eapply H1.
+  unfolds post_cwp.
+  eapply in_range_0_7_num in H.
+  eapply in_range_0_7_num in H0.
+  unfolds N.
+  solve_element_id id vi.
+Qed.
+
+Lemma post_cons_neq_still_rev :
+  forall id vi,
+    post_cwp id <> post_cwp (post_cwp vi) ->
+    id <> post_cwp vi.
+Proof.
+  intros.
+  intro.
+  eapply H.
+  subst; eauto.
+Qed.
+
+Lemma post_1_neq' :
+  forall id,
+    $ 0 <=ᵤᵢ id <=ᵤᵢ $ 7 ->
+    id <> post_cwp id.
+Proof.
+  intros.
+  intro.
+  symmetry in H0.
+  eapply post_1_neq in H0; eauto.
+Qed.
+
+Lemma in_range228 : 
+  ($ (-4096)) <=ᵢ ($ 228) && ($ 228) <=ᵢ ($ 4095) = true.
+Proof.
+  eauto.
+Qed.
+
+Ltac solve_post_inrange :=
+  match goal with
+  | |- $ 0 <=ᵤᵢ (post_cwp _) <=ᵤᵢ $ 7 =>
+    eapply in_range_0_7_post_cwp_still; solve_post_inrange
+  | _ => eauto
+  end.
+
+Ltac solve_post_neq :=
+  match goal with
+  | |- post_cwp _ <> post_cwp (post_cwp _) =>
+    eapply post_cons_neq_still;
+    [solve_post_inrange | solve_post_inrange | solve_post_neq]
+  | |- ?id <> post_cwp ?id =>
+    eapply post_1_neq'; solve_post_inrange
+  | |- post_cwp ?id <> ?id =>
+    eapply post_1_neq; solve_post_inrange                  
+  | _ => eauto
+  end.
+
 (*+ Lemmas for asrt +*)
 Lemma asrt_disj_intro :
   forall p1 p2 s,

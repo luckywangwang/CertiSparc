@@ -1,4 +1,4 @@
-Require Import Coqlib.                                
+Require Import Coqlib.                                 
 Require Import Maps.           
 Require Import LibTactics.   
         
@@ -341,7 +341,7 @@ Proof.
     simpl; eauto.
     introv Hneq.
     split.
-    { 
+    {  
       introv Hs.
       unfold ta0_window_ok_pre.
       sep_ex_intro.
@@ -374,10 +374,12 @@ Proof.
       sep_cancel1 1 1.
       match goal with
       | H : _ |= _ |- _ => renames H to Hs
-      end.
+      end. 
       eapply sep_pure_l_elim in Hs.
       destruct Hs as [Hstk_frame_constraint Hs].
       eapply sep_pure_l_intro; eauto.
+      destruct Hstk_frame_constraint as [Hstk_frame_constraint Hpost_valid].
+      split; eauto.
       eapply stack_frame_constraint_pt_same_equal; eauto.
     }
     { 
@@ -402,7 +404,7 @@ Proof.
       match goal with
       | H : _ |= _ |- _ => renames H to Hs
       end. 
-      eapply sep_pure_l_elim in Hs.
+      eapply sep_pure_l_elim in Hs. 
       destruct Hs as [Hctx_save Hs].
       eapply sep_pure_l_intro; eauto.
     }
@@ -512,14 +514,15 @@ Proof.
   unfold stack_frame_constraint in Hstk_fm_constraint.
   simpl get_stk_addr in Hstk_fm_constraint.
   simpl get_stk_cont in Hstk_fm_constraint.
-
+  destruct Hstk_fm_constraint as [Hstk_fm_constraint Hpost_valid].
+ 
   eapply backward_rule.
   introv Hs.
   eapply stk_bottom_pre_pt in Hs.
   Focus 4.
   instantiate (5 := ([[id, w16, w17, w18, w19, w20, w21, w22]])
                           :: ([[w23, w24, w25, w26, w27, w28, w29, w30]])
-                          :: F'').
+                          :: F''). 
   simpl.
   eauto.
   Focus 2.
@@ -823,14 +826,16 @@ Proof.
     unfold stack_frame_constraint.
     simpl get_stk_addr.
     simpl get_stk_cont.
-    rewrite <- app_assoc.
+    rewrite <- app_assoc. 
     simpl.
+    split; eauto.
     eapply stk_fm_constraint_map; eauto.
     simpljoin1; eauto.
     clear - Hlen_F'.
     rewrite app_length in Hlen_F'.
     simpls.
     omega.
+    eapply post_1_neq_pre; eauto.
   }
   {
     unfold ta0_window_ok_post.

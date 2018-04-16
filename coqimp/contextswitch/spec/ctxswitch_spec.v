@@ -272,7 +272,8 @@ Definition os_int_ta0_handler_pre (vl : list logicvar) :=
       context nctx ** stack nstk **
       [| ct <> ($ 0) -> (get_ctx_addr cctx = ct +ᵢ OS_CONTEXT_OFFSET) |] **
       [| get_ctx_addr nctx = nt +ᵢ OS_CONTEXT_OFFSET /\ ctx_pt_stk nctx nstk |] **
-      [| stack_frame_constraint cstk (fml :: fmi :: F ++ (fmo :: nil)) id vi |]
+      [| stack_frame_constraint cstk (fml :: fmi :: F ++ (fmo :: nil)) id vi /\
+         post_cwp id <> vi |]
     )
   ).
 
@@ -305,7 +306,7 @@ Definition os_int_ta0_handler_post (vl : list logicvar) :=
       context nctx ** stack nstk **
       [| (ct <> ($ 0)) ->
          (ctx_pt_stk cctx' cstk' /\ stack_frame_save (F ++ (fmo :: nil)) cstk' cstk id vi /\
-          ctx_win_save cctx (update_frame (update_frame fml 1 ((get_frame_nth' fml 1) +ᵢ ($ 4))) 2
+          ctx_win_save cctx' (update_frame (update_frame fml 1 ((get_frame_nth' fml 1) +ᵢ ($ 4))) 2
                              ((get_frame_nth' fml 2) +ᵢ ($ 4))) fmi fmg vy) |] **
       [| stack_frame_constraint nstk (fml' :: fmi' :: F' ++ (fmo' :: nil)) id' vi' /\
          ctx_win_restore nctx fml' fmi' fmg' vy' |]
@@ -326,19 +327,20 @@ Definition os_ta0_return_post (vl : list logicvar) :=
 
 Definition reg_save_pre (vl : list logicvar) :=
   EX fmg fmo fml fmi cctx l vy retf id vi F,
-  [| vl = logic_fm fmg :: logic_fm fmo :: logic_fm fml :: logic_fm fmi
+  [| vl = logic_fm fmg :: logic_fm fmo :: logic_fm fml :: logic_fm fmi :: logic_lv l
           :: logic_lv id :: logic_lv vi :: logic_fmls F
           :: logic_lv vy :: logic_lv retf :: nil |] **
   GenRegs (fmg, fmo, fml, fmi) ** context cctx ** Rsp Ry |=> vy ** FrameState id vi F **
   [| get_frame_nth fml 5 = Some l /\ get_ctx_addr cctx = l /\ get_frame_nth fmo 7 = Some retf |].
 
 Definition reg_save_post (vl : list logicvar) :=
-  EX fmg fmo fml fmi cctx' vy retf id vi F,
-  [| vl = logic_fm fmg :: logic_fm fmo :: logic_fm fml :: logic_fm fmi
+  EX fmg fmo fml fmi cctx' l vy retf id vi F,
+  [| vl = logic_fm fmg :: logic_fm fmo :: logic_fm fml :: logic_fm fmi :: logic_lv l
           :: logic_lv id :: logic_lv vi :: logic_fmls F
           :: logic_lv vy :: logic_lv retf :: nil |] **
   GenRegs (fmg, fmo, fml, fmi) ** context cctx' ** Rsp Ry |=> vy ** FrameState id vi F **
-  [| ctx_win_save cctx' fml fmi fmg vy /\ get_frame_nth fmo 7 = Some retf |].
+  [| ctx_win_save cctx' fml fmi fmg vy /\ get_ctx_addr cctx' = l /\
+     get_frame_nth fmo 7 = Some retf |].
 
 Definition reg_restore_pre (vl : list logicvar) :=
   EX fmg fmo fml fmi nctx l vy retf id vi F,
@@ -387,7 +389,7 @@ Definition ta0_window_ok_pre (vl : list logicvar) :=
   context nctx ** stack nstk **
   [| ct <> ($ 0) -> (get_ctx_addr cctx = ct +ᵢ OS_CONTEXT_OFFSET) |] **
   [| get_ctx_addr nctx = nt +ᵢ OS_CONTEXT_OFFSET /\ ctx_pt_stk nctx nstk |] **
-  [| stack_frame_constraint cstk (fml :: fmi :: F ++ (fmo :: nil)) id vi |].
+  [| stack_frame_constraint cstk (fml :: fmi :: F ++ (fmo :: nil)) id vi /\ post_cwp id <> vi |].
 
 Definition ta0_window_ok_post (vl : list logicvar) :=
   EX fmg fmg' fmo fmo' fml fml' fmi fmi' id id' F F' vy vy' vi vi' ll
@@ -404,7 +406,7 @@ Definition ta0_window_ok_post (vl : list logicvar) :=
   context nctx ** stack nstk **
   [| (ct <> ($ 0)) ->
      (ctx_pt_stk cctx' cstk' /\ stack_frame_save (F ++ (fmo :: nil)) cstk' cstk id vi /\
-      ctx_win_save cctx fml fmi fmg vy) |] **
+      ctx_win_save cctx' fml fmi fmg vy) |] **
   [| stack_frame_constraint nstk (fml' :: fmi' :: F' ++ (fmo' :: nil)) id' vi' /\
      ctx_win_restore nctx fml' fmi' fmg' vy' |].
 
@@ -491,12 +493,12 @@ Inductive frame_restore :
   Word -> FrameList -> Word -> FrameList -> Prop :=
 | restore_end :
     forall F oid,
-      length F = 13 ->
       frame_restore oid F oid F
 | restore_cons :
     forall F oid id F' fm1 fm2,
-      frame_restore oid F id (fm1 :: fm2 :: F') -> length F' = 11 -> post_cwp id <> oid ->
-      frame_restore oid F (post_cwp id) (F ++ (fm1 :: fm2 :: nil)).
+      post_cwp id <> oid ->  $ 0 <=ᵤᵢ id <=ᵤᵢ $ 7 ->
+      frame_restore oid F id (fm1 :: fm2 :: F') ->
+      frame_restore oid F (post_cwp id) (F' ++ (fm1 :: fm2 :: nil)).
 
 Inductive stack_frame_match :
   Word -> list (Frame * Frame) -> FrameList -> Word -> Prop :=
@@ -509,10 +511,17 @@ Inductive stack_frame_match :
       stack_frame_match (post_cwp id) lfp F vi ->
       stack_frame_match id ((fm1, fm2) :: lfp) (fm1 :: fm2 :: F) vi.
 
+Definition ostk_lfp_rl (stk : stack_val) (l : Address) (lfp1 lfp2 : list (Frame * Frame)) :=
+  let (l', lfp) := stk in
+  exists lfp1', lfp = lfp1' ++ lfp2 /\ length lfp1 = length lfp1' /\ l = l'.
+
 Definition ta0_save_usedwindows_pre (vl : list logicvar) :=
   EX fmg fmg' fmo fmo' fml fml' fmi fmi' oid id F F' vy vi ll i
-     ct cctx cl clfp1 clfp2 nt nctx nstk vz vn,
-  [| vl = logic_lv ll :: logic_lv nt :: logic_ctx nctx :: logic_stk nstk :: nil |] **
+     ct cctx cl clfp1 clfp2 cstk nt nctx nstk vz vn,
+  [| vl = logic_fm fmg :: logic_fm fmo :: logic_fm fml :: logic_fm fmi :: logic_lv vy
+          :: logic_lv ct :: logic_ctx cctx :: logic_stk cstk
+          :: logic_fmls F :: logic_lv oid :: logic_lv vi
+          :: logic_lv ll :: logic_lv nt :: logic_ctx nctx :: logic_stk nstk :: nil |] **
   GlobalRegs fmg' ** Regs fmo' fml' fmi' ** FrameState id vi F' ** Rsp Ry |=> vy **
   z |=> vz ** n |=> vn ** OSTaskCur |-> ct ** OSTaskNew |-> nt **
   OSTaskSwitchFlag |-> OSTRUE ** OSIntNestCnt |-> ll +ᵢ ($ 1) **
@@ -525,20 +534,24 @@ Definition ta0_save_usedwindows_pre (vl : list logicvar) :=
   [| get_frame_nth fmg' 4 = Some i /\ rotate oid id vi i /\ $ 0 <=ᵤᵢ oid <=ᵤᵢ $ 7 /\
      ((i = ($ 1) <<ᵢ id) \/ (i = ((($ 1) <<ᵢ id) <<ᵢ ($ 8)) |ᵢ (($ 1) <<ᵢ id))) /\
      get_frame_nth fmg' 7 = Some (($ 1) <<ᵢ vi) /\ ct <> ($ 0) |] **
-  [| ctx_win_save cctx fml fmi fmg vy /\ ctx_pt_stk cctx (cl, clfp1 ++ clfp2) |].
+  [| ctx_win_save cctx fml fmi fmg vy /\ ctx_pt_stk cctx (cl, clfp1 ++ clfp2) /\
+     ostk_lfp_rl cstk cl clfp1 clfp2 |].
   
 Definition ta0_save_usedwindows_post (vl : list logicvar) :=
   EX fmg fmg' fmo fmo' fml fml' fmi fmi' id id' F F' vy vy' vi vi' ll
-     ct cctx cctx' cstk cstk' nt nctx nstk vz' vn',
-  [| vl = logic_lv ll :: logic_lv nt :: logic_ctx nctx :: logic_stk nstk :: nil |] **
+     ct cctx cstk cstk' nt nctx nstk vz' vn',
+  [| vl = logic_fm fmg :: logic_fm fmo :: logic_fm fml :: logic_fm fmi :: logic_lv vy
+          :: logic_lv ct :: logic_ctx cctx :: logic_stk cstk
+          :: logic_fmls F :: logic_lv id :: logic_lv vi
+          :: logic_lv ll :: logic_lv nt :: logic_ctx nctx :: logic_stk nstk :: nil |] **
   GlobalRegs fmg' ** Regs fmo' (update_frame fml' 0 id') fmi' **
   FrameState id' vi' F' ** Rsp Ry |=> vy' ** z |=> vz' ** n |=> vn' **
   OSTaskCur |-> nt ** OSTaskNew |-> nt ** OSTaskSwitchFlag |-> OSFALSE ** OSIntNestCnt |-> ll **
-  context cctx' ** stack cstk' **
-  [| get_ctx_addr cctx = get_ctx_addr cctx' /\ get_stk_addr cstk = get_stk_addr cstk' |] **
+  context cctx ** stack cstk' **
+  [| get_stk_addr cstk = get_stk_addr cstk' |] **
   context nctx ** stack nstk **
   [| (ct <> ($ 0)) ->
-     (ctx_pt_stk cctx' cstk' /\ stack_frame_save (F ++ (fmo :: nil)) cstk' cstk id vi /\
+     (ctx_pt_stk cctx cstk' /\ stack_frame_save (F ++ (fmo :: nil)) cstk' cstk id vi /\
       ctx_win_save cctx fml fmi fmg vy) |] **
   [| stack_frame_constraint nstk (fml' :: fmi' :: F' ++ (fmo' :: nil)) id' vi' /\
      ctx_win_restore nctx fml' fmi' fmg' vy' |].

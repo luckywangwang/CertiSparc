@@ -1,4 +1,4 @@
-Require Import Coqlib.                                                      
+Require Import Coqlib.                                                              
 Require Import Maps.            
 Require Import LibTactics.   
         
@@ -39,134 +39,118 @@ Open Scope code_scope.
 Open Scope mem_scope.
 
 (*+ Lemmas +*)
-Ltac solve_element_vi vi :=
-  match goal with
-  | H : vi = _ \/ _ |- _ =>
-    destruct H as [?a | H]; [subst; tryfalse; eauto | solve_element_vi vi]
-  | H : vi = _ |- _ =>
-    subst; tryfalse; eauto
-  | _ => idtac
-  end.
 
-Ltac solve_element_id id vi :=
-  match goal with
-  | H : id = _ \/ _ |- _ =>
-    destruct H as [?a | H];
-    [subst; solve_element_vi vi | solve_element_id id vi]
-  | H : id = _ |- _ =>
-    subst; solve_element_vi vi
-  | _ => idtac
-  end.
-
-Lemma post_cons_neq_still :
-  forall id vi,
-    $ 0 <=ᵤᵢ id <=ᵤᵢ $ 7 -> $ 0 <=ᵤᵢ vi <=ᵤᵢ $ 7 ->
-    id <> post_cwp vi ->
-    post_cwp id <> post_cwp (post_cwp vi).
+Lemma rotate_hold_post_id_neq_oid :
+  forall oid id vi i,
+    $ 0 <=ᵤᵢ oid <=ᵤᵢ $ 7 -> $ 0 <=ᵤᵢ id <=ᵤᵢ $ 7 -> $ 0 <=ᵤᵢ vi <=ᵤᵢ $ 7 ->
+    rotate oid id vi i -> post_cwp id <> vi ->
+    post_cwp id <> oid.
 Proof.
   intros.
-  intro.
-  eapply H1.
-  unfolds post_cwp.
-  eapply in_range_0_7_num in H.
-  eapply in_range_0_7_num in H0.
-  unfolds N.
-  solve_element_id id vi.
-Qed.
+  inversion H2; subst.
+  eapply post_1_neq; eauto.
 
-Lemma post_cons_neq_still_rev :
-  forall id vi,
-    post_cwp id <> post_cwp (post_cwp vi) ->
-    id <> post_cwp vi.
-Proof.
-  intros.
-  intro.
-  eapply H.
-  subst; eauto.
-Qed.
+  inversion H4; subst.
+  eapply post_2_neq; eauto.
 
-Lemma post_1_neq' :
-  forall id,
-    $ 0 <=ᵤᵢ id <=ᵤᵢ $ 7 ->
-    id <> post_cwp id.
-Proof.
-  intros.
-  intro.
-  symmetry in H0.
-  eapply post_1_neq in H0; eauto.
-Qed.
+  inversion H7; subst.
+  eapply post_3_neq; eauto.
 
-Lemma in_range228 : 
-  ($ (-4096)) <=ᵢ ($ 228) && ($ 228) <=ᵢ ($ 4095) = true.
-Proof.
-  eauto.
+  inversion H10; subst.
+  eapply post_4_neq; eauto.
+
+  inversion H13; subst.
+  eapply post_5_neq; eauto.
+
+  clear H2 H4 H7 H10 H13.
+  inversion H16; subst.
+  eapply post_6_neq; eauto.
+
+  inversion H2; subst.
+  eapply post_7_eq; eauto.
+
+  inversion H10; subst.
+  { 
+    clear - H H1 H13 H4 H17 H14 H11 H8 H5 H3.
+    eapply post_cwp_step_limit_8 with (id := id0) (vi := vi) in H; eauto.
+    do 7 (destruct H as [a | H]; [subst; tryfalse | idtac]).
+    subst; tryfalse.
+  }
+  { 
+    intro.  
+    clear - H1 H22 H13 H4 H17 H14 H11 H8 H5 H3 H21.
+    eapply post_cwp_step_limit_8 with (id := id) (vi := vi) in H1; eauto.
+    do 7 (destruct H1 as [a | H1]; [subst; tryfalse | idtac]).
+    subst; tryfalse.
+  }
 Qed.
 
 (*+ Lemma for stack frame relation +*)
 
 Lemma stack_frame_match_fm_save :
-  forall fm F oid id cl clfp1 clfp2,
-    $ 0 <=ᵤᵢ oid <=ᵤᵢ $ 7 -> $ 0 <=ᵤᵢ id <=ᵤᵢ $ 7 ->
+  forall fm F oid id cl clfp1 clfp2 cstk,
+    $ 0 <=ᵤᵢ oid <=ᵤᵢ $ 7 -> $ 0 <=ᵤᵢ id <=ᵤᵢ $ 7 -> ostk_lfp_rl cstk cl clfp1 clfp2 ->
     stack_frame_match oid clfp1 (F ++ fm :: nil) id -> length F = 13 ->
     stack_frame_save (F ++ fm :: nil) (cl, clfp1 ++ clfp2)
-                     (cl, clfp1 ++ clfp2) oid (post_cwp id).
+                     cstk oid (post_cwp id).
 Proof.
   intros.
+  destruct cstk.
+  unfolds ostk_lfp_rl.
+  simpljoin1.
   unfold stack_frame_save.
   split; eauto.
-  do 14 (try destruct F; simpl in H2; tryfalse).
-  simpl in H1.
+  do 14 (try destruct F; simpl in H3; tryfalse).
+  simpl in H2.
   
-  inversion H1; subst.
+  inversion H2; subst.
   {
+    destruct x; tryfalse.
     simpl.
     eapply frame_save_end; eauto.
   }
 
-  inversion H10; subst.
+  destruct x; tryfalse.
+  destruct p.
+  inversion H11; subst.
   {
     simpl. 
     eapply frame_save_cons; eauto.
     eapply post_cons_neq_still; eauto.
+    destruct x; simpl in H4; tryfalse.
+    simpl.
     eapply frame_save_end; eauto.
   }
 
-  Ltac solve_post_inrange :=
-    match goal with
-    | |- $ 0 <=ᵤᵢ (post_cwp _) <=ᵤᵢ $ 7 =>
-      eapply in_range_0_7_post_cwp_still; solve_post_inrange
-    | _ => eauto
-    end.
-
-  Ltac solve_post_neq :=
-    match goal with
-    | |- post_cwp _ <> post_cwp (post_cwp _) =>
-      eapply post_cons_neq_still;
-      [solve_post_inrange | solve_post_inrange | solve_post_neq]
-    | |- ?id <> post_cwp ?id =>
-      eapply post_1_neq'; solve_post_inrange
-    | _ => eauto
-    end.
-  
-  inversion H12; subst.
+  destruct x; simpl in H4; tryfalse.
+  destruct p.
+  inversion H13; subst.
   {
-    simpl. 
+    destruct x; simpl in H4; tryfalse.
+    simpl.
     do 2 (eapply frame_save_cons; [solve_post_neq | idtac]).
     eapply frame_save_end; eauto.
   }
-  
-  inversion H14; subst.
+
+  destruct x; simpl in H4; tryfalse.
+  destruct p.
+  inversion H15; subst.
   {
     simpl.
     do 2 (eapply frame_save_cons; [solve_post_neq | idtac]).
     eapply post_cons_neq_still_rev; eauto.
     eapply frame_save_cons; [solve_post_neq | idtac].
+    destruct x; simpl in H4; tryfalse.
+    simpl.
     eapply frame_save_end; eauto.
   }
-  
-  inversion H16; subst.
+
+  destruct x; simpl in H4; tryfalse.
+  destruct p.
+  inversion H17; subst.
   {
     simpl.
+    destruct x; simpl in H4; tryfalse.
     do 3 (eapply frame_save_cons; [solve_post_neq | idtac];
           try eapply post_cons_neq_still_rev; eauto).
     eapply post_cons_neq_still_rev; eauto.
@@ -174,9 +158,11 @@ Proof.
     eapply frame_save_end; eauto.
   }
 
-  inversion H18; subst.
+  destruct x; simpl in H4; tryfalse.
+  destruct p.
+  inversion H19; subst.
   {
-    simpl.
+    destruct x; simpl in H4; tryfalse.
     do 4 (eapply frame_save_cons; [solve_post_neq | idtac];
           do 2 (try eapply post_cons_neq_still_rev; eauto)).
     eapply post_cons_neq_still_rev; eauto.
@@ -185,16 +171,22 @@ Proof.
     eapply frame_save_end; eauto.
   }
 
-  inversion H20; subst.
+  destruct x; simpl in H4; tryfalse.
+  destruct p.
+  inversion H21; subst.
   {
+    destruct x; simpl in H4; tryfalse.
     simpl.
     do 6 (try eapply frame_save_cons; [solve_post_neq | idtac];
           repeat (eapply post_cons_neq_still_rev; eauto)).
     eapply frame_save_end; eauto.
   }
 
-  inversion H22; subst.
+  destruct x; simpl in H4; tryfalse.
+  destruct p.
+  inversion H23; subst.
   {
+    destruct x; simpl in H4; tryfalse.
     simpl.
     do 7 (try eapply frame_save_cons; [solve_post_neq | idtac];
           repeat (eapply post_cons_neq_still_rev; eauto)).
@@ -221,6 +213,36 @@ Proof.
   inversion H22; subst; simpl; try omega.
 Qed.
 
+Lemma stk_fm_match_cons_tail_stable :
+  forall F F' oid id lfp fmo fmo' fml fml' fmi fmi' fm1 fm2,
+    $ 0 <=ᵤᵢ oid <=ᵤᵢ $ 7 -> $ 0 <=ᵤᵢ id <=ᵤᵢ $ 7 ->
+    length F = 13 -> length F' = 11 ->
+    stack_frame_match oid lfp (F ++ fmo :: nil) id ->
+    frame_restore oid (fmo :: fml :: fmi :: F) id
+                  (fmo' :: fml' :: fmi' :: fm1 :: fm2 :: F') ->
+    stack_frame_match oid (lfp ++ (fm1, fm2) :: nil) (F ++ fmo :: nil) (post_cwp id).
+Proof.
+  intros.
+  do 14 (destruct F; simpl in H1; tryfalse).
+  do 12 (destruct F'; simpl in H2; tryfalse).
+  clear H1 H2.
+  
+Admitted.
+
+Lemma stk_fm_contraint_fm_app_stable :
+  forall l id F lfp vi F',
+    stack_frame_constraint' l id F lfp vi ->
+    stack_frame_constraint' l id (F ++ F') lfp vi.
+Proof.
+  intros.
+  generalize dependent F'.
+  induction H; intros.
+  -
+    eapply frame_invalid; eauto.
+  -
+    eapply frame_valid; eauto.
+Qed.
+  
 (*+ Lemmas for Space +*)
 Lemma stack'_split :
   forall lfp1 lfp2 l s p,
@@ -342,12 +364,12 @@ Proof.
   intros.
   unfold ta0_save_usedwindows_pre.
   unfold ta0_save_usedwindows_post.
-  hoare_ex_intro_pre. 
+  hoare_ex_intro_pre.   
   renames x'0 to fmg', x'2 to fmo', x'4 to fml', x'6 to fmi'.
   renames x'8 to id, x'12 to vi, x'10 to F', x'11 to vy.
-  renames x'23 to vz, x'24 to vn, x'15 to ct, x'20 to nt, x'13 to ll.
-  renames x'16 to cctx, x'17 to cl, x'18 to clfp1, x'19 to clfp2.
-  renames x'21 to nctx, x'22 to nstk.
+  renames x'24 to vz, x'25 to vn, x'15 to ct, x'21 to nt, x'13 to ll.
+  renames x'16 to cctx, x'20 to cstk, x'17 to cl, x'18 to clfp1, x'19 to clfp2.
+  renames x'22 to nctx, x'23 to nstk.
   renames x'7 to oid, x'1 to fmo, x'3 to fml, x'5 to fmi, x'9 to F, x'14 to i.
 
   eapply Pure_intro_rule.
@@ -471,9 +493,9 @@ Proof.
   clear Hnxt_invalid.
   renames n to Hnxt_invalid.
   eapply and_not_zero_eq in Hnxt_invalid; eauto.
-
+ 
   split.
-  
+   
     introv Hs.
     unfold ta0_task_switch_newcontext_pre.
     sep_ex_intro.
@@ -490,8 +512,9 @@ Proof.
     sep_cancel1 3 1.
     eapply sep_pure_l_intro; eauto.
     eapply sep_pure_l_intro; eauto.
-
+ 
     introv Hs.
+    destruct Hctx_win_save as [Hctx_win_save [Hctx_pt_stk Hostk_lfp] ].
     unfold ta0_task_switch_newcontext_post in Hs.
     sep_ex_elim_in Hs.
     asrt_to_line_in Hs 13.
@@ -499,29 +522,28 @@ Proof.
     destruct Hs as [Hlgvl1 Hs].
     symmetry in Hlgvl1.
     inversion Hlgvl1; subst.
-    sep_ex_intro.  
+    sep_ex_intro.   
     eapply sep_pure_l_intro; eauto. 
     do 10 sep_cancel1 1 1.
     sep_cancel1 4 1.
-    sep_cancel1 4 1.
+    sep_cancel1 4 1.  
     eapply sep_pure_l_intro; eauto.
     do 2 sep_cancel1 1 1.
-    sep_cancel1 1 2.
-    instantiate (1 := Aemp).
-    eapply astar_emp_intro_r; eauto.
+    clear - Hostk_lfp.
+    unfolds ostk_lfp_rl.
+    destruct cstk.
+    simpljoin1.
+    simpls; eauto.
+    sep_cancel1 1 1.
+    sep_cancel1 1 1.
     eapply sep_pure_l_intro; eauto.
     introv Hct.
-    destruct Hctx_win_save as [Hctx_win_save Hctx_pt_stk].
     split; eauto.
     split; eauto.
-    Print stack_frame_save.
-    instantiate (1 := (post_cwp id)).
-    instantiate (1 := oid).
-    instantiate (2 := F).
-    instantiate (1 := fmo). 
     eapply stack_frame_match_fm_save; eauto.
     simpljoin1; eauto.
     simpljoin1; eauto.
+    eapply astar_emp_elim_r; eauto.
     eapply in_range_0_7_post_cwp_still; eauto.
 
   introv Hnjp.
@@ -738,7 +760,7 @@ Proof.
     asrt_to_line 20.
     eapply sep_pure_l_intro; eauto.
     simpl_sep_liftn 2.
-    eapply GenRegs_split_Regs_Global.
+    eapply GenRegs_split_Regs_Global. 
     sep_cancel1 1 1.
     sep_cancel1 1 1.
     sep_cancel1 6 1.
@@ -750,6 +772,35 @@ Proof.
     match goal with
     | H : _ |= _ |- _ => renames H to Hs
     end.
+
+    assert (Harth : (cl -ᵢ ($ (64 * Z.of_nat (length clfp1)))) -ᵢ ($ 64) =
+                      cl -ᵢ ($ (64 * Z.of_nat (length clfp1 + 1)))).
+    {
+      repeat (rewrite Int.sub_add_opp).
+      rewrite Int.add_assoc.
+      rewrite <- Int.neg_add_distr.
+      assert (Htrivil : ($ (64 * Z.of_nat (length clfp1))) +ᵢ ($ 64) =
+                        $ (64 * Z.of_nat (length clfp1 + 1))).
+      rewrite Int.add_unsigned.
+      assert (Heq64 : Int.unsigned $ 64 = 64%Z).
+      eauto.
+      rewrite Heq64.
+      rewrite Int.unsigned_repr.
+      assert (Htrivil_eq : length clfp1 + 1 = S (length clfp1)).
+      omega.
+      rewrite Htrivil_eq.
+      rewrite Nat2Z.inj_succ.
+      unfold Z.succ.
+      rewrite <- Zred_factor4.
+      eauto.
+      clear - Hlen_clfp1.
+      unfold Int.max_unsigned, Int.modulus, two_power_nat.
+      simpl shift_nat.
+      omega.
+      rewrite Htrivil.
+      eauto.
+    }
+    
     simpl_sep_liftn_in Hs 3.
     eapply stack'_cons_tail in Hs; eauto.
     eapply stack'_app in Hs; eauto.
@@ -758,7 +809,7 @@ Proof.
     eapply astar_emp_intro_r; eauto.
 
     eapply sep_pure_l_intro; eauto.
-
+ 
     eapply sep_pure_l_intro.
     {
       instantiate (1 := F).
@@ -766,20 +817,125 @@ Proof.
       instantiate (1 := oid).
       destruct Hstk_fm_match as [Hstk_fm_match Hlen_F].
       split; eauto.
-      Print frame_restore.
- 
-      Lemma stk_fm_match_cons_tail_stable :
-        forall F F' oid id lfp fmo fmo' fml fml' fmi fmi' fm1 fm2,
-          $ 0 <=ᵤᵢ oid <=ᵤᵢ $ 7 -> $ 0 <=ᵤᵢ id <=ᵤᵢ $ 7 ->
-          length F = 13 -> length F' = 11 ->
-          stack_frame_match oid lfp (F ++ fmo :: nil) id ->
-          frame_restore oid (fmo :: fml :: fmi :: F) id
-                        (fmo' :: fml' :: fmi' :: F') ->
-          stack_frame_match oid (lfp ++ (fm1, fm2) :: nil) (F ++ fmo :: nil) (post_cwp id).
-      Proof.
-        intros.
-        do 14 (try destruct F; simpl in H1; tryfalse).
+      eapply stk_fm_match_cons_tail_stable; eauto.
+      omega.
     }
+    
+    eapply sep_pure_l_intro.
+    {
+      instantiate (1 := fmi).
+      instantiate (1 := fml).
+      do 3 rewrite trivial_assoc_ls.
+      eapply restore_cons; eauto.
+      eapply rotate_hold_post_id_neq_oid; eauto.
+    }
+
+    eapply sep_pure_l_intro.
+    {
+      rewrite app_length.
+      simpl length.
+      rewrite Harth in Hstk_fm_constraint1.
+      unfold stack_frame_constraint.
+      unfold get_stk_addr.
+      unfold get_stk_cont.
+      remember (cl -ᵢ ($ (64 * Z.of_nat (length clfp1 + 1)))) as offset.
+      simpl in Hstk_fm_constraint1.
+      do 3 rewrite trivial_assoc_ls.
+      assert
+        (Htrivial : 
+          (([[w44, w45, w46, w47, w48, w49, w50, w51]])
+             :: (([[w52, w53, w54, w55, w56, w57, w58, w59]]) :: F') ++
+             ([[w7, w8, w9, w10, w11, w12, w13, w14]]) ::
+             ([[w15, w16, w17, w18, w19, w20, w21, w22]]) :: nil) =
+          (([[w44, w45, w46, w47, w48, w49, w50, w51]])
+            :: ([[w52, w53, w54, w55, w56, w57, w58, w59]]) :: F' ++
+          ([[w7, w8, w9, w10, w11, w12, w13, w14]]) :: nil) ++
+          ([[w15, w16, w17, w18, w19, w20, w21, w22]]) :: nil  
+        ).
+      rewrite trivial_assoc_ls2.
+      eauto.
+      rewrite Htrivial.
+      rewrite <- app_assoc.
+      eapply stk_fm_contraint_fm_app_stable; eauto.
+    }
+
+    instantiate (1 := Aemp).
+    eapply sep_pure_l_intro; eauto.
+    simpl get_frame_nth.
+    split; eauto.
+    split.
+    eapply rotate_cons; eauto.
+    split; eauto.
+    split.
+    eapply g4_rot_stable with (oid := oid); eauto.
+    split; eauto.
+
+    eapply sep_pure_l_intro; eauto.
+    split; eauto.
+    simpljoin1; eauto.
+    instantiate (1 := cstk).
+    clear - Hctx_win_save.
+    destruct Hctx_win_save as [_ Hctx_pt_stk].
+    unfolds ctx_pt_stk.
+    simpls. 
+    destruct Hctx_pt_stk as [ [Hstk_len_gt_zero Hpt] Hostk_lfp_rl ].
+    split; eauto.
+    try rewrite app_length in *.
+    rewrite app_length.
+    simpls.
+    simpljoin1.
+    split; eauto.
+    omega.
+
+    clear - Hostk_lfp_rl.
+    unfolds ostk_lfp_rl.
+    destruct cstk.
+    simpljoin1.
+    exists (x ++ ([[w3, w6, w29, w31, w32, w33, w34, w35]],
+             [[w36, w37, w38, w39, w40, w41, w42, w43]]) :: nil).
+    repeat (split; eauto).
+    rewrite <- app_assoc.
+    simpl; eauto.
+
+    match goal with
+    | H : length clfp1 = length _ |- _ =>
+      renames H to Hlen_clfp1
+    end.
+    clear - Hlen_clfp1.
+    repeat rewrite app_length.
+    simpl.
+    rewrite Hlen_clfp1; eauto.
+
+    clear - Hlen_clfp1.
+    rewrite app_length.
+    simpl.
+    assert (Htrivial : length clfp1 + 1 + 0 = S (length clfp1)).
+    omega.
+    rewrite Htrivial.
+    rewrite Nat2Z.inj_succ.
+    unfold Z.succ.
+    omega.
+
+    rewrite Harth.
+    rewrite app_length.
+    simpl length.
+    assert (Htrivial : length clfp1 + 1 + 0 = length clfp1 + 1).
+    eauto.
+    rewrite Htrivial.
+    eauto.
+    omega.
   }
-  
-  >>>>>>>>>>>>>>>>>>>>>>>>
+  {
+    introv Hs.
+    unfold ta0_save_usedwindows_post in Hs.
+    sep_ex_elim_in Hs.
+    asrt_to_line_in Hs 17.
+    sep_ex_intro.
+    do 17 sep_cancel1 1 1.
+    eapply astar_emp_elim_r; eauto.
+  }
+
+  DlyFrameFree_elim.
+  eapply in_range_0_7_post_cwp_still; eauto.
+  DlyFrameFree_elim.
+Qed.
