@@ -2075,3 +2075,36 @@ Proof.
   eapply get_R_merge_still; eauto.
   eapply getR_eq_get_genreg_val; eauto.
 Qed.
+
+(*+ Some Tactic +*)
+Ltac save_reg_unfold' n m rls :=
+  match n with
+  | 0%nat =>
+    destruct rls as [ | ?a rls];
+    [idtac |
+     let H := fresh in
+     simpl save_reg at 1; eapply backward_rule;
+     [
+       introv H; asrt_to_line_in H m; simpl_sep_liftn_in H m; eapply H |
+       eapply Afalse_sep_rule
+     ]
+    ]
+  | S ?n' =>
+    destruct rls as [ | ?a rls];
+    [
+      let H := fresh in
+      simpl save_reg at 1; eapply backward_rule;
+      [
+        introv H; asrt_to_line_in H m;
+        simpl_sep_liftn_in H m; eapply H |
+        eapply Afalse_sep_rule] |
+      save_reg_unfold' n' (S m) rls
+    ]
+  end.
+
+Ltac save_reg_unfold :=
+  match goal with
+  | |- _ |- {{ save_reg ?l ?n ?rls ** ?p }} _ {{ _ }} =>
+    save_reg_unfold' n 1 rls
+  | _ => idtac
+  end.

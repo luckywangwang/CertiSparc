@@ -338,23 +338,22 @@ Definition reg_save_post (vl : list logicvar) :=
   [| vl = logic_fm fmg :: logic_fm fmo :: logic_fm fml :: logic_fm fmi :: logic_lv l
           :: logic_lv id :: logic_lv vi :: logic_fmls F
           :: logic_lv vy :: logic_lv retf :: nil |] **
-  GenRegs (fmg, fmo, fml, fmi) ** context cctx' ** Rsp Ry |=> vy ** FrameState id vi F **
+  GenRegs (fmg, fmo, update_frame fml 6 vy, fmi) **
+  context cctx' ** Rsp Ry |=> vy ** FrameState id vi F **
   [| ctx_win_save cctx' fml fmi fmg vy /\ get_ctx_addr cctx' = l /\
      get_frame_nth fmo 7 = Some retf |].
 
 Definition reg_restore_pre (vl : list logicvar) :=
   EX fmg fmo fml fmi nctx l vy retf id vi F,
-  [| vl = logic_fm fmg :: logic_fm fmo :: logic_fm fml :: logic_fm fmi
-          :: logic_lv id :: logic_lv vi :: logic_fmls F :: logic_ctx nctx
-          :: logic_lv vy :: logic_lv retf :: nil |] **
+  [| vl = logic_lv id :: logic_lv vi :: logic_fmls F :: logic_ctx nctx
+          :: logic_lv retf :: nil |] **
   GenRegs (fmg, fmo, fml, fmi) ** context nctx ** Rsp Ry |=> vy ** FrameState id vi F **
   [| get_frame_nth fml 5 = Some l /\ get_ctx_addr nctx = l /\ get_frame_nth fmo 7 = Some retf |].
 
 Definition reg_restore_post (vl : list logicvar) :=
   EX fmg fmo fml fmi nctx vy retf id vi F,
-  [| vl = logic_fm fmg :: logic_fm fmo :: logic_fm fml :: logic_fm fmi
-          :: logic_lv id :: logic_lv vi :: logic_fmls F :: logic_ctx nctx
-          :: logic_lv vy :: logic_lv retf :: nil |] **
+  [| vl = logic_lv id :: logic_lv vi :: logic_fmls F :: logic_ctx nctx
+          :: logic_lv retf :: nil |] **
   GenRegs (fmg, fmo, fml, fmi) ** context nctx ** Rsp Ry |=> vy ** FrameState id vi F **
   [| ctx_win_restore nctx fml fmi fmg vy /\ get_frame_nth fmo 7 = Some retf |].
 

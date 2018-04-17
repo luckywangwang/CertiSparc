@@ -116,15 +116,11 @@ Proof.
     TimReduce_simpl.
     eapply nop_rule; eauto.
   }
-  {
+  { 
     instantiate
       (1 :=
-         logic_fm ([[w, w0, w1, w2, w3, w4, w5, w6]])
-          :: logic_fm ([[w7, w8, w9, w10, w11, w12, w13, $ 392]])
-          :: logic_fm ([[w15, w16, w17, w18, nt, nt +ᵢ ($ 84), w21, w22]])
-          :: logic_fm ([[w23, w24, w25, w26, w27, w28, w29, w30]])
-          :: logic_lv id :: logic_lv ((post_cwp id)) :: logic_fmls F :: logic_ctx nctx
-          :: logic_lv vy :: logic_lv ($ 392) :: nil
+         logic_lv id :: logic_lv ((post_cwp id)) :: logic_fmls F :: logic_ctx nctx
+          :: logic_lv ($ 392) :: nil
       ).
     unfold reg_restore_pre.
     introv Hs.
@@ -142,6 +138,7 @@ Proof.
     | H : get_frame_nth _ 7 = Some _ |- _ =>
       renames H to Hretf
     end.
+    destruct x0.
     simpl in Hretf.
     inversion Hretf; subst.
     simpl.
@@ -170,7 +167,7 @@ Proof.
   {
     eauto.
   } 
-  {
+  { 
     introv Hs.
     unfolds reg_restore_post.
     sep_ex_elim_in Hs.
@@ -182,6 +179,13 @@ Proof.
     simpl.
     destruct_state s.
     simpl.
+    simpl_sep_liftn_in Hs 5.
+    eapply sep_pure_l_elim in Hs.
+    destruct Hs as [Hctx_win_restore Hs].
+    destruct Hctx_win_restore as [Hctx_win_restore Hretf].
+    destruct x0.
+    simpl in Hretf.
+    inversion Hretf; subst.
     eapply getR_eq_get_genreg_val1 with (rr := r15) in Hs; eauto.
   }
   {
@@ -199,11 +203,12 @@ Proof.
   symmetry in Hlgvl1.
   inversion Hlgvl1; subst.
   clear Hlgvl1.
-
+ 
   hoare_lift_pre 5.
   eapply Pure_intro_rule.
   introv Hctx_win_restore.
   destruct Hctx_win_restore as [Hctx_win_restore Hretf].
+  destruct x', x'0, x'1, x'2.
 
   (** set OSTaskSwitchFlag l4 *)
   eapply seq_rule.
@@ -224,7 +229,7 @@ Proof.
   TimReduce_simpl.
   eapply st_rule_reg; eauto.
   simpl get_genreg_val.
-
+ 
   (** set OSTaskCur l4 *)
   eapply seq_rule.
   TimReduce_simpl.
@@ -669,20 +674,20 @@ Proof.
   sep_cancel1 2 3.
   sep_cancel1 2 3.
   sep_cancel1 2 3.
-  instantiate (3 := ([[w15, w16, w17, w18, OSTaskCur, nt, w21, w22]])).
-  instantiate (2 := ([[w23, w24, w25, w26, w27, w28, lnstk, w30]])).
-  instantiate (1 := ([[($ 0) +ᵢ ($ 0), w0, w1, w2, w3, w4, w5, w6]])).
+  instantiate (3 := ([[w47, w48, w49, w50, OSTaskCur, nt, w53, w54]])).
+  instantiate (2 := ([[w55, w56, w57, w58, w59, w60, lnstk, w62]])).
+  instantiate (1 := ([[($ 0) +ᵢ ($ 0), w32, w33, w34, w35, w36, w37, w38]])).
   simpl update_frame.
   simpl_sep_liftn 2.
   eapply GenRegs_split_Regs_Global; eauto.
-  instantiate (1 := ([[w7, w8, w9, w10, pre_cwp (post_cwp id), ll, w13, $ 392]])).
+  instantiate (1 := ([[w39, w40, w41, w42, pre_cwp (post_cwp id), ll, w45, w46]])).
   sep_cancel1 1 1.
   instantiate (1 := Aemp).
   eapply astar_emp_intro_r.
   eauto.
   rewrite pre_post_stable; eauto.
   simpls.
-  simpljoin1.
+  simpljoin1. 
   repeat (split; eauto).
   unfold stack_frame_constraint.
   simpl get_stk_addr.

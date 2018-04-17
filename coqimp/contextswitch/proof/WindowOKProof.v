@@ -586,9 +586,9 @@ Proof.
   instantiate (1 := [[w7, w8, w9, w10, w11, w12, w13, $ 204]]).
   split; eauto.
   eapply match_end; eauto.
- 
+  
   eapply sep_pure_l_intro.
-  instantiate (2 := [[id, w16, w17, w18, ct, ct +ᵢ ($ 84), w21, w22]]).
+  instantiate (2 := [[id, w16, w17, w18, ct, ct +ᵢ ($ 84), vy, w22]]).
   instantiate (1 := [[w23, w24, w25, w26, w27, w28, w29, w30]]).
   eapply restore_end; eauto.
 
