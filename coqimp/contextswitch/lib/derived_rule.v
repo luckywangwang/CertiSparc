@@ -93,6 +93,20 @@ Proof.
   simpl in Hs; destruct Hs; eauto.
 Qed.
 
+Theorem Afalse_sep_rule :
+  forall p q I Spec,
+    Spec |- {{ Afalse ** p }} I {{ q }}.
+Proof.
+  intros.
+  eapply Seq_conseq_rule.
+  eapply Seq_false_rule; eauto.
+  2 : eauto.
+  introv Hs.
+  sep_star_split_tac.
+  simpls.
+  tryfalse.
+Qed.
+
 Ltac hoare_lift_pre n :=
   let H' := fresh in
   match goal with

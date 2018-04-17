@@ -2075,6 +2075,12 @@ Proof.
     eapply wf_seq_bne_rule; eauto.
 
   -
+    unfold insSeq_sound.
+    intros.
+    simpl in H0.
+    tryfalse.
+
+  -
     eapply wf_seq_frame_rule; eauto.
 
   -

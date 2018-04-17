@@ -39,6 +39,16 @@ Open Scope code_scope.
 Open Scope mem_scope.
 
 (*+ Lemmas +*)
+Lemma neq_rev_still :
+  forall {A : Type} (a b : A),
+    a <> b ->
+    b <> a.
+Proof.
+  intros.
+  intro.
+  symmetry in H0.
+  tryfalse.
+Qed.
 
 Lemma rotate_hold_post_id_neq_oid :
   forall oid id vi i,
@@ -213,21 +223,319 @@ Proof.
   inversion H22; subst; simpl; try omega.
 Qed.
 
+Inductive frame_restore1 : Word -> FrameList -> Word -> FrameList -> Prop :=
+| restore_end1 : forall F id, frame_restore1 id F id F
+| restore_cons1 :
+    forall F F' id vi fm1 fm2,
+      id <> vi ->
+      $ 0 <=ᵤᵢ id <=ᵤᵢ $ 7 -> frame_restore1 (post_cwp id) (F' ++ fm1 :: fm2 :: nil) vi F -> 
+      frame_restore1 id (fm1 :: fm2 :: F') vi F.
+
+Lemma frame_restore_restore1_eq :
+  forall F F' id vi,
+    length F = 16 -> length F' = 16 ->
+    $ 0 <=ᵤᵢ id <=ᵤᵢ $ 7 -> $ 0 <=ᵤᵢ vi <=ᵤᵢ $ 7 ->
+    frame_restore id F vi F' ->
+    frame_restore1 id F vi F'.
+Proof.
+  intros.
+  do 17 (try destruct F; simpl in H; tryfalse).
+  do 17 (try destruct F'; simpl in H0; tryfalse).
+  clear H H0.
+
+  (** step0 *)
+  inversion H3; subst.
+  {
+    eapply restore_end1; eauto.
+  }
+
+  (** step1 *)
+  clear H3.
+  assert (length F' = 14).
+  {
+    assert (length (F' ++ fm1 :: fm2 :: nil) = 16).
+    rewrite H; simpl; eauto.
+    rewrite app_length in H3.
+    simpls; omega.
+  }
+  do 15 (try destruct F'; simpl in H3; tryfalse).
+  simpl in H.
+  inversion H; subst.
+  clear H H3.
+  inversion H8; subst.
+  {
+    simpl.
+    eapply restore_cons1; eauto.
+    eapply restore_end1; eauto.
+  }
+
+  (** step2 *)
+  clear H8.
+  assert (length F' = 14).
+  {
+    assert (length (F' ++ fm1 :: fm2 :: nil) = 16).
+    rewrite H; simpl; eauto.
+    rewrite app_length in H6.
+    simpls; omega.
+  }
+  do 15 (try destruct F'; simpl in H6; tryfalse).
+  simpl in H.
+  inversion H; subst.
+  clear H H6.
+  inversion H10; subst.
+  {
+    do 2 (eapply restore_cons1; try solve_post_neq;
+          repeat (eapply post_cons_neq_still_rev; eauto)).
+    eapply restore_end1; eauto.
+  }
+
+  (** step3 *)
+  clear H10.
+  assert (length F' = 14).
+  {
+    assert (length (F' ++ fm1 :: fm2 :: nil) = 16).
+    rewrite H; simpl; eauto.
+    rewrite app_length in H8.
+    simpls; omega.
+  }
+  do 15 (try destruct F'; simpl in H8; tryfalse).
+  simpl in H.
+  inversion H; subst.
+  clear H H8.
+  inversion H12; subst.
+  {
+    do 3 (eapply restore_cons1; try solve_post_neq;
+          repeat (eapply post_cons_neq_still_rev; eauto)).
+    eapply restore_end1; eauto.
+  }
+
+  (** step4 *)
+  clear H12.
+  assert (length F' = 14).
+  {
+    assert (length (F' ++ fm1 :: fm2 :: nil) = 16).
+    rewrite H; simpl; eauto.
+    rewrite app_length in H10.
+    simpls; omega.
+  }
+  do 15 (try destruct F'; simpl in H10; tryfalse).
+  simpl in H.
+  inversion H; subst.
+  clear H H10.
+  inversion H14; subst.
+  {
+    do 4 (eapply restore_cons1; try solve_post_neq;
+          repeat (eapply post_cons_neq_still_rev; eauto)).
+    eapply restore_end1; eauto.
+  }
+
+  (** step5 *)
+  clear H14.
+  assert (length F' = 14).
+  {
+    assert (length (F' ++ fm1 :: fm2 :: nil) = 16).
+    rewrite H; simpl; eauto.
+    rewrite app_length in H12.
+    simpls; omega.
+  }
+  do 15 (try destruct F'; simpl in H12; tryfalse).
+  simpl in H.
+  inversion H; subst.
+  clear H H12.
+  inversion H16; subst.
+  {
+    do 5 (eapply restore_cons1; try solve_post_neq;
+          repeat (eapply post_cons_neq_still_rev; eauto)).
+    eapply restore_end1; eauto.
+  }
+
+  (** step 6 *)
+  clear H16.
+  assert (length F' = 14).
+  {
+    assert (length (F' ++ fm1 :: fm2 :: nil) = 16).
+    rewrite H; simpl; eauto.
+    rewrite app_length in H14.
+    simpls; omega.
+  }
+  do 15 (try destruct F'; simpl in H14; tryfalse).
+  simpl in H.
+  inversion H; subst.
+  clear H H14.
+  inversion H18; subst.
+  {
+    do 6 (eapply restore_cons1; try solve_post_neq;
+          repeat (eapply post_cons_neq_still_rev; eauto)).
+    eapply restore_end1; eauto.
+  }
+
+  (** step 7 *)
+  clear H18.
+  assert (length F' = 14).
+  {
+    assert (length (F' ++ fm1 :: fm2 :: nil) = 16).
+    rewrite H; simpl; eauto.
+    rewrite app_length in H16.
+    simpls; omega.
+  }
+  do 15 (try destruct F'; simpl in H16; tryfalse).
+  simpl in H.
+  inversion H; subst.
+  clear H H16.
+  inversion H20; subst.
+  {
+    do 7 (eapply restore_cons1; try solve_post_neq;
+          repeat (eapply post_cons_neq_still_rev; eauto)).
+    eapply restore_end1; eauto.
+  }
+
+  (** step 8 *)
+  clear H20.
+  assert (length F' = 14).
+  {
+    assert (length (F' ++ fm1 :: fm2 :: nil) = 16).
+    rewrite H; simpl; eauto.
+    rewrite app_length in H18.
+    simpls; omega.
+  }
+  do 15 (try destruct F'; simpl in H18; tryfalse).
+  simpl in H.
+  inversion H; subst.
+  clear H H18.
+  inversion H22; subst.
+  {
+    clear - H0 H1.
+    rewrite post_8_eq in H0; tryfalse.
+    eauto.
+  }
+  clear - H1 H19 H18 H16 H14 H12 H10 H8 H6 H3.
+  eapply post_cwp_step_limit_8 in H1; eauto.
+  do 7 (destruct H1 as [a | H1]; [subst; tryfalse | idtac]).
+  subst; tryfalse.
+Qed.
+
+Ltac post_nth_neq :=
+  eapply neq_rev_still; try eapply post_1_neq; try eapply post_2_neq;
+  try eapply post_3_neq; try eapply post_4_neq; try eapply post_5_neq;
+  try eapply post_6_neq; try eapply post_7_eq; solve_post_inrange.
+
 Lemma stk_fm_match_cons_tail_stable :
   forall F F' oid id lfp fmo fmo' fml fml' fmi fmi' fm1 fm2,
-    $ 0 <=ᵤᵢ oid <=ᵤᵢ $ 7 -> $ 0 <=ᵤᵢ id <=ᵤᵢ $ 7 ->
+    post_cwp id <> oid -> $ 0 <=ᵤᵢ oid <=ᵤᵢ $ 7 -> $ 0 <=ᵤᵢ id <=ᵤᵢ $ 7 ->
     length F = 13 -> length F' = 11 ->
     stack_frame_match oid lfp (F ++ fmo :: nil) id ->
     frame_restore oid (fmo :: fml :: fmi :: F) id
                   (fmo' :: fml' :: fmi' :: fm1 :: fm2 :: F') ->
     stack_frame_match oid (lfp ++ (fm1, fm2) :: nil) (F ++ fmo :: nil) (post_cwp id).
 Proof.
+  introv Hpost_cwp_neq.
   intros.
   do 14 (destruct F; simpl in H1; tryfalse).
   do 12 (destruct F'; simpl in H2; tryfalse).
   clear H1 H2.
-  
-Admitted.
+
+  simpl in H3.
+  eapply frame_restore_restore1_eq in H4; eauto.
+
+  (** step0 *)
+  inversion H3; subst.
+  {
+    inversion H4; subst; tryfalse.
+    simpl.
+    eapply match_cons; eauto; try solve_post_neq.
+    eapply match_end; eauto.
+  }
+
+  (** step1 *)
+  clear H3.
+  inversion H4; subst; tryfalse.
+  clear H4.
+  inversion H10; subst.
+  {
+    inversion H12; subst; tryfalse.
+    simpl.
+    do 2 (eapply match_cons; eauto; try post_nth_neq).
+    eapply match_end; eauto.
+  }
+
+  (** step2 *)
+  clear H10.
+  inversion H12; subst; tryfalse.
+  clear H12.
+  inversion H13; subst.
+  {
+    simpl in H15.
+    inversion H15; subst; tryfalse.
+    simpl.
+    do 3 (eapply match_cons; eauto; try post_nth_neq).
+    eapply match_end; eauto.
+  }
+
+  (** step3 *)
+  clear H13.
+  inversion H15; subst; tryfalse.
+  clear H15.
+  inversion H16; subst.
+  {
+    simpl in H18.
+    inversion H18; subst; tryfalse.
+    simpl.
+    do 4 (eapply match_cons; eauto; try post_nth_neq).
+    eapply match_end; eauto.
+  }
+
+  (** step4 *)
+  clear H16.
+  inversion H18; subst; tryfalse.
+  clear H18.
+  inversion H19; subst.
+  {
+    simpl in H21.
+    inversion H21; subst; tryfalse.
+    simpl.
+    do 5 (eapply match_cons; eauto; try post_nth_neq).
+    eapply match_end; eauto.
+  }
+
+  (** step5 *)
+  clear H19.
+  inversion H21; subst; tryfalse.
+  clear H21.
+  inversion H22; subst.
+  {
+    simpl in H24.
+    inversion H24; subst; tryfalse.
+    simpl.
+    do 6 (eapply match_cons; eauto; try post_nth_neq).
+    eapply match_end; eauto.
+  }
+
+  (** step6 *)
+  clear H22.
+  inversion H24; subst; tryfalse.
+  clear H24.
+  inversion H25; subst.
+  {
+    simpl in H27.
+    inversion H27; subst; tryfalse.
+    simpl.
+    do 7 (eapply match_cons; eauto; try post_nth_neq).
+    eapply match_end; eauto.
+  }
+
+  (** step7 *)
+  clear H25.
+  inversion H27; subst; tryfalse.
+  clear H27.  
+  inversion H28; subst.
+  {
+    simpl in H30.
+    inversion H30; subst; tryfalse.
+    simpl.
+    rewrite post_8_eq in Hpost_cwp_neq; eauto.
+    tryfalse.
+  }
+Qed.
 
 Lemma stk_fm_contraint_fm_app_stable :
   forall l id F lfp vi F',
@@ -818,6 +1126,7 @@ Proof.
       destruct Hstk_fm_match as [Hstk_fm_match Hlen_F].
       split; eauto.
       eapply stk_fm_match_cons_tail_stable; eauto.
+      eapply rotate_hold_post_id_neq_oid; eauto.
       omega.
     }
     

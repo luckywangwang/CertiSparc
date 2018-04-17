@@ -401,6 +401,9 @@ Inductive wf_seq : funspec -> asrt -> InsSeq -> asrt -> Prop :=
     ((bv =ᵢ ($ 0) = true) -> ((p' ==> fp L ** r) /\ (fq L ** r ==> q))) ->
     wf_seq Spec p (f1 n> bne f ;; f2 n> i ;; I) q
 
+| Seq_false_rule : forall q I Spec,
+    wf_seq Spec Afalse I q
+
 | Seq_frame_rule : forall p q I Spec r,
     wf_seq Spec p I q -> DlyFrameFree r ->
     wf_seq Spec (p ** r) I (q ** r )
