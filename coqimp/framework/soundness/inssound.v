@@ -1,383 +1,190 @@
 Require Import Coqlib.  
-Require Import Maps. 
+Require Import Maps.   
 Require Import LibTactics.
 
-Require Import Integers.
+Require Import Integers. 
 Open Scope Z_scope.  
-Import ListNotations.
-
+Import ListNotations. 
+ 
 Set Asymmetric Patterns.
-  
+   
 Require Import state. 
 Require Import language.
 
-Set Implicit Arguments.
+Set Implicit Arguments. 
 Unset Strict Implicit.
-     
+      
 Require Import logic. 
 Require Import soundness.
  
 Require Import lemmas.
+Require Import lemmas_ins.
 
 Require Import Coq.Logic.FunctionalExtensionality.
 
 Open Scope nat.
 Open Scope code_scope.
 
-(*+ Some Lemma +*)
-
-Lemma regdlySt_set_delay_asrt_stable :
-  forall t s w M R F D rsp v,
-    regdlySt t s w (M, (R, F), D) -> ~ In rsp (getRegs D) ->
-    regdlySt t s w (M, (R, F), set_delay rsp v D).
-Proof.
-  intros t.
-  induction t; intros.
-  -
-    simpls; eauto.
-  -
-    simpls.
-    destruct H.
-    {
-      left.
-      unfolds inDlyBuff.
-      simpljoin1.
-      split.
-      {
-        unfolds set_delay.
-        simpl; eauto.
-      }
-      {
-        clear - H1 H0.
-        unfolds set_delay.
-        simpl.
-        econstructor; eauto.
-      }
-    }
-    {
-      right.
-      eauto.
-    }
-Qed.
-
-Lemma notin_dom_set_delay_asrt_stable :
-  forall p M R F D (rsp : SpReg) v,
-    (M, (R, F), D) |= p ->
-    ~ indom (R rsp) M -> ~ In rsp (getRegs D) ->
-    (M, (R, F), set_delay rsp v D) |= p.
-Proof.
-  intro p.
-  induction p; intros; simpls; eauto.
-
-  -
-    unfolds regSt.
-    simpls.
-    simpljoin1.
-    repeat (split; eauto).
-
-    assert ((R rsp) <> (R r)).
-    {
-      clear - H0.
-      intro.
-      eapply H0.
-      unfold indom.
-      rewrite H.
-      eexists.
-      unfolds MemMap.set.
-      destruct_addreq.
-    }
- 
-    intro.
-    clear - H H3 H2.
-    unfolds regInDlyBuff.
-    destruct r; tryfalse.
-    unfolds set_delay. 
-    simpl in H3.
-    destruct H3; subst. 
-    eapply H; eauto.
-    tryfalse.
-
-  - 
-    simpljoin1.
-    exists x.
-    repeat (split; eauto).
-    destruct H2.
-    { 
-      left.
-      eapply regdlySt_set_delay_asrt_stable; eauto.
-    }
-    {
-      right.
-      unfolds regSt.
-      simpls.
-      simpljoin1.
-      repeat (split; eauto).
-      intro.
-      destruct H3.
-      {
-        subst.
-        eapply H0.
-        unfold indom.
-        exists x.
-        unfold MemMap.set.
-        destruct_addreq.
-      }
-      {
-        tryfalse.
-      }
-    }
-
-  -
-    simpljoin1.
-    eapply IHp1 in H; eauto.
-
-  -
-    destruct H.
-    eapply IHp1 in H; eauto.
-    eapply IHp2 in H; eauto.
-
-  -
-    simpljoin1.
-    destruct_state x.
-    destruct_state x0.
-    simpl in H.
-    simpljoin1.
-    exists (m, (r0, f0), set_delay rsp v d0) (m0, (r0, f0), set_delay rsp v d0).
-    simpl.
-    repeat (split; eauto).
-    eapply IHp1; eauto.
-    clear - H0.
-    intro.
-    eapply H0.
-    eapply indom_merge_still; eauto.
-    eapply IHp2; eauto.
-    clear - H0.
-    intro.
-    eapply H0.
-    eapply indom_merge_still2; eauto.
-
-  -
-    simpljoin1.
-    exists x.
-    eauto.
-Qed.
-    
+(*+ Auxiliary Definition +*)
+  
 (*+ Soundness Proof of instruction +*)
 
-Lemma ld_rule_sound :
+Lemma ld_rule_sound : 
   forall p q aexp l v v' (rd : GenReg),
     p ==> aexp ==ₓ l ->
     p ==> l |-> v ** rd |=> v' ** q ->
     ins_sound p (l |-> v ** rd |=> v ** q) (ld aexp rd).
 Proof.
   intros.
-  unfolds ins_sound.
+  unfold ins_sound.
   intros.
-  lets Ht : H1.
-  eapply H in H1.
-  eapply H0 in Ht.
-  simpl in Ht.
+  lets Haexp : H1.
+  eapply H in Haexp.
+  eapply H0 in H1.
+  sep_star_split_tac.
+  simpl in H4, H5.
   simpljoin1.
-  destruct_state s.
-  destruct_state x.
-  destruct_state x0.
-  destruct_state x1.
-  destruct_state x2.
-  simpl in H2.
-  simpljoin1.
-  simpl in H3.
-  simpl in H4.
-  simpljoin1.
-  eexists.
-  split.
- 
-  Focus 2.
-  simpl.
-  do 2 eexists.
-  repeat split.
-  Focus 2.
-  instantiate (1 := (MemMap.set l (Some v) emp, (r3, f3), d3)).
-  simpl; eauto.
-
-  Focus 2.
-  exists (MemMap.set (r3 rd) (Some v) emp, (r3, f3), d3) (m3, (r3, f3), d3).
-  split.
-  simpl.
-  repeat (split; eauto).
-
-  clear - H4 H5.
-  unfolds regSt.
-  simpljoin1.
-  simpls.
-  subst.
-  eapply MemSet_same_addr_disj_stable; eauto.
-
-  split; eauto.
-  clear - H5.
-  unfolds regSt.
-  simpljoin1.
-  simpls.
-  subst.
+  exists (m ⊎ (m1 ⊎ m2), (r ⊎ ((RegMap.set rd (Some v) r1) ⊎ r2), f2), d2).
   split; eauto.
 
-  simpl.
-  repeat (split; eauto).
-  
-  clear - H5 H4 H2.
-  unfolds regSt.
-  simpljoin1.
-  simpls.
-  subst.
-  clear - H2.
-  unfolds disjoint.
-  intro.
-  specialize (H2 x).
-  destruct (MemMap.set l (Some v) emp x) eqn:Heqe.
-  unfolds merge.
-  clear - H2.
-  unfolds MemMap.set.
-  destruct (AddrEq.eq x (r3 rd)); tryfalse; eauto.
-  unfolds merge.
-  clear - H2.
-  unfolds MemMap.set.
-  destruct (AddrEq.eq x (r3 rd)); tryfalse; eauto.
-
-  econstructor.
-  econstructor; eauto.
-
-  instantiate (1 := l).
+  eapply NormalIns; eauto.
+  eapply Ld_step with (addr := l) (v := v); eauto.
+  simpl in Haexp.
+  simpljoin1; eauto.
+  simpl in Haexp.
+  simpljoin1; eauto.
   clear - H1.
   simpl in H1.
-  destruct H1; eauto.
-  simpl in H1.
-  destruct H1; eauto.
- 
-  instantiate (1 := v).
-  unfold merge, MemMap.set.
-  destruct (AddrEq.eq l l); tryfalse; eauto.
-  
-  clear - H5 H2 H4.
-  unfolds regSt.
   simpljoin1.
-  simpls; subst. 
-  unfold indom.
-  exists v'.
-  unfold merge.
-  eapply disj_merge_disj_sep1 in H2.
+  eapply get_vl_merge_still; eauto.
+  unfold MemMap.set.
+  destruct_addreq.
   clear - H2.
-  eapply memset_disj_neq in H2.
-  unfolds MemMap.set.
-  destruct (AddrEq.eq (r3 rd) l); tryfalse.
-  simpl. 
-  destruct (AddrEq.eq (r3 rd) (r3 rd)); eauto; tryfalse.
-  erewrite indom_setM_merge_eq2; eauto.
-  unfolds regSt.
-  simpljoin1.
-  simpls; subst.
-  clear.
-  rewrite indom_setR_merge_eq; eauto.
-  unfold set_R.
- 
-  assert (is_indom (r3 rd) (MemMap.set (r3 rd) (Some v') emp) = true).
-  {
-    unfolds is_indom, MemMap.set.
-    destruct (AddrEq.eq (r3 rd) (r3 rd)); tryfalse.
-    eauto.
-  }
-  rewrite H; eauto.
-  rewrite memset_twice; eauto.
-
-  unfold indom.
-  eexists.
-  unfolds MemMap.set.
-  destruct_addreq.
-
-  intro.
-  eapply disj_merge_disj_sep1 in H2.
-  unfolds regSt.
-  simpls; simpljoin1; eauto.
-  eapply memset_disj_neq in H2.
-  clear - H2 H3.
-  unfolds indom.
-  simpljoin1.
-  unfolds MemMap.set.
-  destruct_addreq_H.
-
-  clear - H5.
-  unfolds regSt.
-  simpljoin1.
+  eapply indom_merge_still2; eauto.
+  eapply indom_merge_still; eauto.
   simpls.
-  subst.
-  unfold indom.
-  exists v'.
-  unfold merge, MemMap.set.
-  destruct_addreq.
+  unfolds regSt.
+  simpls.
+  simpljoin1.
+  eapply regset_l_l_indom; eauto.
+  rewrite indom_setR_merge_eq2; eauto.
+  rewrite indom_setR_merge_eq1; eauto.
+  rewrite indom_setR_eq_RegMap_set; eauto.
+  clear - H2.
+  simpls.
+  unfolds regSt.
+  simpls.
+  simpljoin1.
+  eapply regset_l_l_indom; eauto.
+  clear - H2.
+  simpls.
+  unfolds regSt.
+  simpls.
+  simpljoin1.
+  eapply regset_l_l_indom; eauto.
+  clear - H1.
+  simpls.
+  simpljoin1.
+  intro.
+  unfold indom in *.
+  simpljoin1.
+  unfolds empR.
+  tryfalse.
+  simpl.
+  do 2 eexists.
+  repeat (split; eauto).
+  Focus 2.
+  do 2 eexists.
+  repeat (split; eauto).
+  instantiate (2 := (empM, (RegMap.set rd (Some v) r1, f2), d2)).
+  simpl. 
+  repeat (split; eauto).
+  clear - H2 H4. 
+  simpls.
+  unfolds regSt.
+  simpls.
+  simpljoin1.
+  eauto.
+  eapply disj_indom_regset_still; eauto.
+  clear - H2.
+  simpls.
+  unfolds regSt.
+  simpls.
+  simpljoin1.
+  eapply regset_l_l_indom; eauto.
+  simpls.
+  clear - H2.
+  unfolds regSt.
+  simpls.
+  simpljoin1.
+  rewrite regset_twice; eauto.
+  simpl; eauto.
+  simpl.
+  simpl in H2.
+  unfolds regSt.
+  simpl in H2.
+  simpljoin1.
+  repeat (split; eauto).
+  rewrite regset_twice; eauto.
+  clear - H6.
+  eapply disj_sep_merge_still; eauto.
+  eapply disj_merge_disj_sep1 in H6; eauto.
+  eapply disj_sym in H6.
+  eapply disj_sym.
+  eapply RegSet_same_addr_disj_stable; eauto.
+  eapply disj_merge_disj_sep2 in H6; eauto.
 Qed.
 
 Lemma st_rule_sound :
   forall l v (rs : GenReg) v1 p aexp,
-    l |-> v ** rs |=> v1 ** p ==> aexp ==ₓ l ->
-    ins_sound (l |-> v ** rs |=> v1 ** p) (l |-> v1 ** rs |=> v1 ** p) (st rs aexp).
+    l |-> v ** p ==> Or rs ==ₑ v1 //\\ aexp ==ₓ l ->
+    ins_sound (l |-> v ** p) (l |-> v1 ** p) (st rs aexp).
 Proof.
   intros.
   unfold ins_sound.
   intros.
-  lets Ht : H0.
+  destruct_state s.
+  lets Haexp : H0.
+  eapply H in Haexp.
+  sep_star_split_tac.
+  simpl in H4.
+  simpljoin1.
+  simpl in Haexp.
+  simpljoin1.
+  exists (MemMap.set l (Some v1) m0 ⊎ m1, (r0 ⊎ r1, f1), d1).
+  split; eauto.
+
+  eapply NormalIns; eauto. 
+  eapply ST_step with (v := v1); eauto.
+  eapply indom_merge_still; eauto.
+  clear - H0.
+  simpls.
+  simpljoin1.
+  eapply memset_l_l_indom; eauto.
+  rewrite indom_memset_merge_eq; eauto.
+  clear - H0.
+  simpls.
+  simpljoin1.
+  eapply memset_l_l_indom; eauto.
+  simpl. 
+  do 2 eexists.
+  repeat (split; eauto).
+  instantiate (1 := (MemMap.set l (Some v1) m0, (r0, f1), d1)).
+  simpl.
+  repeat (split; eauto).
   simpl in H0.
   simpljoin1.
-  destruct_state s.
-  destruct_state x.
-  destruct_state x0.
-  destruct_state x1.
-  destruct_state x2.
-
-  simpl in H2.
-  simpljoin1.
-  simpl in H0, H1.
-  simpljoin1.
-  unfolds regSt.
-  simpl in H3.
-  simpljoin1.
-
-  eexists.
-  split.
-
-  Focus 2.
-  simpl. 
-  exists (MemMap.set l (Some v1) emp, (r3, f3), d3). eexists.
-   
-  repeat split.
-
-  Focus 2.
-  exists (MemMap.set (r3 rs) (Some v1) emp, (r3, f3), d3) (m3, (r3, f3), d3).
-  repeat (split; eauto).
-
-  simpl.
-  repeat (split; eauto).
-  eapply MemSet_same_addr_disj_stable; eauto.
-
-  do 2 econstructor; eauto.
-  eapply H in Ht.
-  simpl in Ht.
-  simpljoin1; eauto.
-  eapply H in Ht.
-  simpl in Ht.
-  simpljoin1; eauto.
-
-  eapply disj_merge_disj_sep1 in H0.
-  eapply memset_disj_neq in H0.
-  instantiate (1 := v1).
-  clear - H0.
-  unfold merge, MemMap.set.
-  destruct_addreq.
-  simpl.
-  destruct_addreq.
-  eapply indom_merge_still; eauto.
-  eapply memset_l_l_indom; eauto.
-
-  rewrite indom_setM_merge_eq; eauto.
   rewrite memset_twice; eauto.
-  eapply memset_l_l_indom; eauto.
+  eapply MemSet_same_addr_disj_stable; eauto.
+  simpl.
+  clear - H0.
+  simpls.
+  simpljoin1.
+  rewrite memset_twice; eauto.
+  simpl.
+  clear - H0.
+  simpls.
+  simpljoin1; eauto.
 Qed.
 
 Lemma add_rule_sound :
@@ -387,54 +194,66 @@ Lemma add_rule_sound :
     ins_sound p (rd |=> v1 +ᵢ v2 ** q) (add rs oexp rd).
 Proof.
   intros.
-  unfolds ins_sound.
+  unfold ins_sound.
   intros.
-  lets Ht : H1.
-  eapply H in H1.
-  eapply H0 in Ht.
-
-  simpl in Ht.
-  simpljoin1.
+  lets Hoexp : H1.
+  lets Hrd : H1.
+  eapply H in Hoexp.
+  eapply H0 in Hrd.
+  simpl in Hoexp.
   destruct_state s.
-  destruct_state x.
-  destruct_state x0.
-
-  simpl in H2.
+  simpl in Hoexp.
+  sep_star_split_tac.
+  simpl in H6.
   simpljoin1.
-  unfolds regSt.
-  simpl in H3.
-  simpljoin1.
-
-  simpl in H1.
-  simpljoin1.
-
-  eexists.
-  split.
-
-  Focus 2.
-  simpl.
-  do 2 eexists.
-
-  split.
-  Focus 2.
-  split.
-  instantiate (1 := (MemMap.set (r1 rd) (Some v1 +ᵢ v2) emp, (r1, f1), d1)).
-  unfold regSt.
-  simpl.
+  exists (m0 ⊎ m1, (RegMap.set rd (Some (v1 +ᵢ v2)) r0 ⊎ r1, f1), d1).
   split; eauto.
-  eauto.
-
-  simpl.
-  repeat (split; eauto).
-  eapply MemSet_same_addr_disj_stable; eauto.
-
-  do 2 econstructor; eauto.
+  eapply NormalIns; eauto.
+  eapply Add_step; eauto.
   eapply indom_merge_still; eauto.
-  eapply memset_l_l_indom; eauto.
-
-  rewrite indom_setM_merge_eq; eauto.
-  rewrite memset_twice; eauto.
-  eapply memset_l_l_indom; eauto.
+  clear - H4.
+  simpls.
+  unfolds regSt.
+  simpls.
+  simpljoin1.
+  eapply regset_l_l_indom; eauto.
+  rewrite indom_setR_merge_eq1; eauto.
+  rewrite indom_setR_eq_RegMap_set; eauto.
+  clear - H4.
+  simpls.
+  unfolds regSt.
+  simpls.
+  simpljoin1.
+  eapply regset_l_l_indom; eauto.
+  clear - H4.
+  simpls.
+  unfolds regSt.
+  simpls.
+  simpljoin1.
+  eapply regset_l_l_indom; eauto.
+  simpl.
+  exists (m0, (RegMap.set rd (Some v1 +ᵢ v2) r0, f1), d1) (m1, (r1, f1), d1).
+  repeat (split; eauto).
+  clear - H4 H3.
+  simpls.
+  unfolds regSt.
+  simpls.
+  simpljoin1.
+  rewrite regset_twice; eauto.
+  eapply RegSet_same_addr_disj_stable; eauto.
+  simpl.
+  clear - H4.
+  simpls.
+  unfolds regSt.
+  simpls.
+  simpljoin1.
+  rewrite regset_twice; eauto.
+  simpl.
+  clear - H4.
+  simpls.
+  unfolds regSt.
+  simpls.
+  simpljoin1.
 Qed.
 
 Lemma sub_rule_sound :
@@ -442,56 +261,68 @@ Lemma sub_rule_sound :
     p ==> Or rs ==ₑ v1 //\\ oexp ==ₑ v2 ->
     p ==> rd |=> v ** q ->
     ins_sound p (rd |=> v1 -ᵢ v2 ** q) (sub rs oexp rd).
-Proof.
+Proof. 
   intros.
-  unfolds ins_sound.
+  unfold ins_sound.
   intros.
-  lets Ht : H1.
-  eapply H in H1.
-  eapply H0 in Ht.
-
-  simpl in Ht.
-  simpljoin1.
+  lets Hoexp : H1.
+  lets Hrd : H1.
+  eapply H in Hoexp.
+  eapply H0 in Hrd.
+  simpl in Hoexp.
   destruct_state s.
-  destruct_state x.
-  destruct_state x0.
-
-  simpl in H2.
+  simpl in Hoexp.
+  sep_star_split_tac.
+  simpl in H6.
   simpljoin1.
-  unfolds regSt.
-  simpl in H3.
-  simpljoin1.
-
-  simpl in H1.
-  simpljoin1.
-
-  eexists.
-  split.
-
-  Focus 2.
-  simpl.
-  do 2 eexists.
-
-  split.
-  Focus 2.
-  split.
-  instantiate (1 := (MemMap.set (r1 rd) (Some v1 -ᵢ v2) emp, (r1, f1), d1)).
-  unfold regSt.
-  simpl.
-  split; eauto.
-  eauto.
-
-  simpl.
-  repeat (split; eauto).
-  eapply MemSet_same_addr_disj_stable; eauto.
-
-  do 2 econstructor; eauto.
+  exists (m0 ⊎ m1, (RegMap.set rd (Some (v1 -ᵢ v2)) r0 ⊎ r1, f1), d1).
+  split; eauto. 
+  eapply NormalIns; eauto.
+  eapply Sub_step; eauto.
   eapply indom_merge_still; eauto.
-  eapply memset_l_l_indom; eauto.
-
-  rewrite indom_setM_merge_eq; eauto.
-  rewrite memset_twice; eauto.
-  eapply memset_l_l_indom; eauto.
+  clear - H4.
+  simpls.
+  unfolds regSt.
+  simpls.
+  simpljoin1.
+  eapply regset_l_l_indom; eauto.
+  rewrite indom_setR_merge_eq1; eauto.
+  rewrite indom_setR_eq_RegMap_set; eauto.
+  clear - H4.
+  simpls.
+  unfolds regSt.
+  simpls.
+  simpljoin1.
+  eapply regset_l_l_indom; eauto.
+  clear - H4.
+  simpls.
+  unfolds regSt.
+  simpls.
+  simpljoin1.
+  eapply regset_l_l_indom; eauto.
+  simpl.
+  exists (m0, (RegMap.set rd (Some v1 -ᵢ v2) r0, f1), d1) (m1, (r1, f1), d1).
+  repeat (split; eauto).
+  clear - H4 H3.
+  simpls.
+  unfolds regSt.
+  simpls.
+  simpljoin1.
+  rewrite regset_twice; eauto.
+  eapply RegSet_same_addr_disj_stable; eauto.
+  simpl.
+  clear - H4.
+  simpls.
+  unfolds regSt.
+  simpls.
+  simpljoin1.
+  rewrite regset_twice; eauto.
+  simpl.
+  clear - H4.
+  simpls.
+  unfolds regSt.
+  simpls.
+  simpljoin1.
 Qed.
 
 Lemma subcc_rule_sound :
@@ -504,164 +335,179 @@ Proof.
   intros.
   unfold ins_sound.
   intros.
-  lets Ht : H2.
-  eapply H in H2.
-  eapply H1 in Ht.
-
-  simpl in Ht.
-  simpljoin1.
+  lets Hoexp : H2.
+  eapply H in Hoexp.
+  eapply H1 in H2.
   destruct_state s.
-  destruct_state x0.
-  destruct_state x.
-  destruct_state x1.
-  destruct_state x2.
-  destruct_state x3.
-  destruct_state x4.
-
+  simpl in Hoexp.
+  simpljoin1.
+  clear H H1.
+  sep_star_split_tac.
+  simpl in H7, H2, H5.
+  simpljoin1.
+  exists (m0 ⊎ (m2 ⊎ (m4 ⊎ m5)),
+     (RegMap.set r2 (Some (v1 -ᵢ v2)) r0 ⊎
+                 (RegMap.set n (Some (get_range 31 31 v1 -ᵢ v2)) r4 ⊎
+                             (RegMap.set z (Some (iszero v1 -ᵢ v2)) r6 ⊎ r7)), f5), d5).
+  repeat (split; eauto).
+  eapply NormalIns; eauto.
+  eapply Subcc_step; eauto.
+  clear - H1.
+  eapply indom_merge_still; eauto.
+  simpl in H1.
   unfolds regSt.
+  simpls.
   simpljoin1.
-  simpl in H3, H4, H5, H6, H7, H0.
+  eapply regset_l_l_indom; eauto.
+  eapply indom_merge_still2; eauto.
+  eapply indom_merge_still; eauto.
+  clear - H.
+  simpls.
+  unfolds regSt.
+  simpls.
   simpljoin1.
+  eapply regset_l_l_indom; eauto.
+  eapply indom_merge_still2; eauto.
+  eapply indom_merge_still2; eauto.
+  eapply indom_merge_still; eauto.
+  clear - H0.
+  simpls.
+  unfolds regSt.
+  simpls.
+  simpljoin1.
+  eapply regset_l_l_indom; eauto.
 
-  eexists.
-  split.
-  
-  Focus 2.
-  simpl.  
-  exists (MemMap.set (r7 r2) (Some v1 -ᵢ v2) emp, (r7, f5), d5).    
-  eexists.
-  split. 
-  Focus 2.
-  split. 
-  unfold regSt.
-  simpl; eauto.
+  unfolds set_Rs.
+  rewrite indom_setR_merge_eq1; eauto.
+  rewrite indom_setR_merge_eq2; eauto.
+  rewrite indom_setR_merge_eq2; eauto.
+  rewrite indom_setR_merge_eq1; eauto.
+  rewrite indom_setR_merge_eq2; eauto.
+  rewrite indom_setR_merge_eq1; eauto.
 
-  exists (MemMap.set (r7 n) (Some (get_range 31 31 v1 -ᵢ v2)) emp, (r7, f5), d5).
-  eexists.
-  
-  split.
-  Focus 2.
-  split.
-  unfold regSt.
-  simpl; eauto.
+  rewrite indom_setR_eq_RegMap_set; eauto.
+  rewrite indom_setR_eq_RegMap_set; eauto.
+  rewrite indom_setR_eq_RegMap_set; eauto.
 
-  exists (MemMap.set (r7 z) (Some (iszero v1 -ᵢ v2)) emp, (r7, f5), d5).
-  eexists.
+  eapply regst_indom; eauto.
+  eapply regst_indom; eauto.
+  eapply regst_indom; eauto.
+  eapply regst_indom; eauto.
 
-  split.
-  Focus 2.
-  split.
-  unfold regSt.
-  simpl; eauto.
-  eauto.
- 
-  simpl.
-  repeat (split; eauto).
-  eapply MemSet_same_addr_disj_stable; eauto.
+  clear - H.
+  simpls.
+  unfolds regSt.
+  simpls.
+  simpljoin1.
+  intro.
+  rewrite indom_setR_eq_RegMap_set in H; eauto.
+  rewrite regset_twice in H; eauto.
+  unfold indom in *.
+  simpljoin1.
+  unfolds RegMap.set.
+  destruct_rneq_H.
+  eapply regset_l_l_indom; eauto.
 
-  simpl.
-  repeat (split; eauto).
+  clear - H12.
+  eapply disjoint_setR_still1; eauto.
+
+  eapply regst_indom; eauto.
+  clear - H1. 
+  simpls.
+  unfolds regSt.
+  simpls. 
+  simpljoin1.
+  intro.
+  rewrite indom_setR_eq_RegMap_set in H; eauto.
+  rewrite regset_twice in H; eauto.
+  unfold indom in *.
+  simpljoin1.
+  unfolds RegMap.set.
+  destruct_rneq_H.
+  eapply regset_l_l_indom; eauto.
+
+  clear - H8.
+  eapply disjoint_setR_still1; eauto.
+  eapply disjoint_setR_still2; eauto.
+
+  clear - H1.
+  simpls.
+  unfolds regSt.
+  simpls.
+  simpljoin1.
+  intro.
+  rewrite indom_setR_eq_RegMap_set in H; eauto.
+  rewrite regset_twice in H; eauto.
+  unfold indom in *.
+  simpljoin1.
+  unfolds RegMap.set.
+  destruct_rneq_H.
+  eapply regset_l_l_indom; eauto.
+
+  clear - H8.
+  eapply disjoint_setR_still1; eauto.
+
+  eapply regst_indom; eauto.
+
+  eapply disj_sep_star_merge; eauto.
+  clear - H1.
+  simpls.
+  unfolds regSt.
+  simpls.
+  simpljoin1.
+  rewrite regset_twice; eauto.
+
+  eapply disj_sep_star_merge; eauto.
+  clear - H.
+  simpls.
+  unfolds regSt.
+  simpls.
+  simpljoin1.
+  rewrite regset_twice; eauto.
+
+  eapply disj_sep_star_merge; eauto.
+  clear - H0.
+  simpls.
+  unfolds regSt.
+  simpls.
+  simpljoin1.
+  rewrite regset_twice; eauto.
+
+  eapply disj_indom_regset_still; eauto.
+  eapply regst_indom; eauto.
+
+  eapply disj_indom_regset_still; eauto.
+  clear - H0 H12.
   eapply disj_sep_merge_still; eauto.
- 
-  clear - H5.
-  eapply disj_merge_disj_sep1 in H5.
-  eapply MemSet_same_addr_disj_stable.
-  eapply MemSet_same_addr_disj_stable2; eauto.  
+  eapply disj_merge_disj_sep1 in H12.
+  eapply disj_sym in H12.
+  eapply disj_sym.
+  eapply disj_indom_regset_still; eauto.
+  eapply regst_indom; eauto.
+  eapply disj_merge_disj_sep2 in H12; eauto.
+  eapply regst_indom; eauto.
 
-  clear - H5.
-  eapply disj_merge_disj_sep2 in H5.
-  eapply MemSet_same_addr_disj_stable; eauto.
+  eapply disj_indom_regset_still; eauto.
+  eapply disj_sep_merge_still; eauto.
+  eapply disj_merge_disj_sep1 in H8; eauto.
+  eapply disj_sym in H8.
+  eapply disj_sym.
+  eapply disj_indom_regset_still; eauto.
+  eapply regst_indom; eauto.
 
-  simpl.
-  repeat (split; eauto).
+  eapply disj_merge_disj_sep2 in H8.
+  eapply disj_sep_merge_still; eauto.
+  eapply disj_merge_disj_sep1 in H8.
+  eapply disj_sym in H8.
+  eapply disj_sym.
+  eapply disj_indom_regset_still; eauto.
 
-  clear - H3.
-  eapply disj_sep_merge_still.
+  eapply regst_indom; eauto.
+  eapply disj_merge_disj_sep2 in H8; eauto.
 
-  eapply disj_merge_disj_sep1 in H3.
-  eapply MemSet_same_addr_disj_stable2; eauto.
-  eapply MemSet_same_addr_disj_stable; eauto.
-
-  eapply disj_sep_merge_still.
-  eapply disj_merge_disj_sep2 in H3.
-  eapply disj_merge_disj_sep1 in H3.
-  eapply MemSet_same_addr_disj_stable.
-  eapply MemSet_same_addr_disj_stable2; eauto.
-
-  eapply disj_merge_disj_sep2 in H3.
-  eapply disj_merge_disj_sep2 in H3.
-  eapply MemSet_same_addr_disj_stable; eauto.
-
-  do 2 econstructor; eauto.
-  {
-    instantiate (1 := v1).
-    clear - H2.
-    simpl in H2.
-    simpljoin1.
-    clear - H.
-    unfolds eval_reg.
-    eauto.
-  }
-  {
-    instantiate (1 := v2).
-    clear - H2.
-    simpl in H2.
-    simpljoin1; eauto.
-  }
-  {
-    eapply indom_merge_still.
-    eapply memset_l_l_indom; eauto.
-  }
-  {
-    eapply indom_merge_still2; eauto.
-    eapply indom_merge_still.
-    eapply memset_l_l_indom; eauto.
-  }
-  {
-    do 2 eapply indom_merge_still2.
-    eapply indom_merge_still.
-    eapply memset_l_l_indom; eauto.
-  } 
-  {
-    unfolds set_Rs.
-    rewrite setR_merge_eq_merge_setR.
-    rewrite notindom_M_setR_merge_eq; eauto.
-    rewrite notindom_M_setR_merge_eq; eauto.
-    rewrite setR_merge_eq_merge_setR.
-    rewrite notindom_M_setR_merge_eq; eauto.
-    rewrite setR_merge_eq_merge_setR.
-    eauto.
-
-    clear - H5.
-    eapply disj_merge_disj_sep1 in H5.
-    eapply memset_disj_neq in H5.
-    intro.
-    unfolds indom.
-    simpljoin1.
-    unfolds MemMap.set.
-    destruct_addreq_H.
-
-    clear - H3.
-    eapply disj_merge_disj_sep2 in H3.
-    eapply disj_merge_disj_sep1 in H3.
-    eapply memset_disj_neq in H3.
-    intro.
-    unfolds indom.
-    simpljoin1.
-    unfolds MemMap.set.
-    destruct_addreq_H.
-
-    clear - H3.
-    eapply disj_merge_disj_sep1 in H3.
-    eapply memset_disj_neq in H3.
-    intro.
-    unfolds indom.
-    simpljoin1.
-    unfolds MemMap.set.
-    destruct_addreq_H.
-  }
+  eapply regst_indom; eauto.
 Qed.
-
+  
 Lemma and_rule_sound :
   forall p (rs rd : GenReg) v1 v2 v oexp q,
     p ==> Or rs ==ₑ v1 //\\ oexp ==ₑ v2 ->
@@ -669,54 +515,66 @@ Lemma and_rule_sound :
     ins_sound p (rd |=> v1 &ᵢ v2 ** q) (and rs oexp rd).
 Proof.
   intros.
-  unfolds ins_sound.
+  unfold ins_sound.
   intros.
-  lets Ht : H1.
-  eapply H in H1.
-  eapply H0 in Ht.
-
-  simpl in Ht.
-  simpljoin1.
+  lets Hoexp : H1.
+  lets Hrd : H1.
+  eapply H in Hoexp.
+  eapply H0 in Hrd.
+  simpl in Hoexp.
   destruct_state s.
-  destruct_state x.
-  destruct_state x0.
-
-  simpl in H2.
+  simpl in Hoexp.
+  sep_star_split_tac.
+  simpl in H6.
   simpljoin1.
-  unfolds regSt.
-  simpl in H3.
-  simpljoin1.
-
-  simpl in H1.
-  simpljoin1.
-
-  eexists.
-  split.
-
-  Focus 2.
-  simpl.
-  do 2 eexists.
-
-  split.
-  Focus 2.
-  split.
-  instantiate (1 := (MemMap.set (r1 rd) (Some v1 &ᵢ v2) emp, (r1, f1), d1)).
-  unfold regSt.
-  simpl.
+  exists (m0 ⊎ m1, (RegMap.set rd (Some (v1 &ᵢ v2)) r0 ⊎ r1, f1), d1).
   split; eauto.
-  eauto.
-
-  simpl.
-  repeat (split; eauto).
-  eapply MemSet_same_addr_disj_stable; eauto.
- 
-  do 2 econstructor; eauto. 
+  eapply NormalIns; eauto.
+  eapply And_step; eauto.
   eapply indom_merge_still; eauto.
-  eapply memset_l_l_indom; eauto.
- 
-  rewrite indom_setM_merge_eq; eauto.
-  rewrite memset_twice; eauto.
-  eapply memset_l_l_indom; eauto.
+  clear - H4.
+  simpls.
+  unfolds regSt.
+  simpls.
+  simpljoin1.
+  eapply regset_l_l_indom; eauto.
+  rewrite indom_setR_merge_eq1; eauto.
+  rewrite indom_setR_eq_RegMap_set; eauto.
+  clear - H4.
+  simpls.
+  unfolds regSt.
+  simpls.
+  simpljoin1.
+  eapply regset_l_l_indom; eauto.
+  clear - H4.
+  simpls.
+  unfolds regSt.
+  simpls.
+  simpljoin1.
+  eapply regset_l_l_indom; eauto.
+  simpl.
+  exists (m0, (RegMap.set rd (Some v1 &ᵢ v2) r0, f1), d1) (m1, (r1, f1), d1).
+  repeat (split; eauto).
+  clear - H4 H3.
+  simpls.
+  unfolds regSt.
+  simpls.
+  simpljoin1.
+  rewrite regset_twice; eauto.
+  eapply RegSet_same_addr_disj_stable; eauto.
+  simpl.
+  clear - H4.
+  simpls.
+  unfolds regSt.
+  simpls.
+  simpljoin1.
+  rewrite regset_twice; eauto.
+  simpl.
+  clear - H4.
+  simpls.
+  unfolds regSt.
+  simpls.
+  simpljoin1.
 Qed.
 
 Lemma andcc_rule_sound :
@@ -729,162 +587,177 @@ Proof.
   intros.
   unfold ins_sound.
   intros.
-  lets Ht : H2.
-  eapply H in H2.
-  eapply H1 in Ht.
-
-  simpl in Ht.
-  simpljoin1.
+  lets Hoexp : H2.
+  eapply H in Hoexp.
+  eapply H1 in H2.
   destruct_state s.
-  destruct_state x0.
-  destruct_state x.
-  destruct_state x1.
-  destruct_state x2.
-  destruct_state x3.
-  destruct_state x4.
-
+  simpl in Hoexp.
+  simpljoin1.
+  clear H H1.
+  sep_star_split_tac.
+  simpl in H7, H2, H5.
+  simpljoin1.
+  exists (m0 ⊎ (m2 ⊎ (m4 ⊎ m5)),
+     (RegMap.set r2 (Some (v1 &ᵢ v2)) r0 ⊎
+                 (RegMap.set n (Some (get_range 31 31 v1 &ᵢ v2)) r4 ⊎
+                             (RegMap.set z (Some (iszero v1 &ᵢ v2)) r6 ⊎ r7)), f5), d5).
+  repeat (split; eauto).
+  eapply NormalIns; eauto.
+  eapply Andcc_step; eauto.
+  clear - H1.
+  eapply indom_merge_still; eauto.
+  simpl in H1.
   unfolds regSt.
+  simpls.
   simpljoin1.
-  simpl in H3, H4, H5, H6, H7, H0.
+  eapply regset_l_l_indom; eauto.
+  eapply indom_merge_still2; eauto.
+  eapply indom_merge_still; eauto.
+  clear - H.
+  simpls.
+  unfolds regSt.
+  simpls.
   simpljoin1.
+  eapply regset_l_l_indom; eauto.
+  eapply indom_merge_still2; eauto.
+  eapply indom_merge_still2; eauto.
+  eapply indom_merge_still; eauto.
+  clear - H0.
+  simpls.
+  unfolds regSt.
+  simpls.
+  simpljoin1.
+  eapply regset_l_l_indom; eauto.
 
-  eexists.
-  split.
-  
-  Focus 2.
-  simpl.  
-  exists (MemMap.set (r7 r2) (Some v1 &ᵢ v2) emp, (r7, f5), d5).    
-  eexists.
-  split. 
-  Focus 2. 
-  split. 
-  unfold regSt.
-  simpl; eauto.
+  unfolds set_Rs.
+  rewrite indom_setR_merge_eq1; eauto.
+  rewrite indom_setR_merge_eq2; eauto.
+  rewrite indom_setR_merge_eq2; eauto.
+  rewrite indom_setR_merge_eq1; eauto.
+  rewrite indom_setR_merge_eq2; eauto.
+  rewrite indom_setR_merge_eq1; eauto.
 
-  exists (MemMap.set (r7 n) (Some (get_range 31 31 v1 &ᵢ v2)) emp, (r7, f5), d5).
-  eexists.
-  
-  split.
-  Focus 2.
-  split.
-  unfold regSt.
-  simpl; eauto.
+  rewrite indom_setR_eq_RegMap_set; eauto.
+  rewrite indom_setR_eq_RegMap_set; eauto.
+  rewrite indom_setR_eq_RegMap_set; eauto.
 
-  exists (MemMap.set (r7 z) (Some (iszero v1 &ᵢ v2)) emp, (r7, f5), d5).
-  eexists.
+  eapply regst_indom; eauto.
+  eapply regst_indom; eauto.
+  eapply regst_indom; eauto.
+  eapply regst_indom; eauto.
 
-  split.
-  Focus 2.
-  split.
-  unfold regSt.
-  simpl; eauto.
-  eauto.
- 
-  simpl.
-  repeat (split; eauto).
-  eapply MemSet_same_addr_disj_stable; eauto.
+  clear - H.
+  simpls.
+  unfolds regSt.
+  simpls.
+  simpljoin1.
+  intro.
+  rewrite indom_setR_eq_RegMap_set in H; eauto.
+  rewrite regset_twice in H; eauto.
+  unfold indom in *.
+  simpljoin1.
+  unfolds RegMap.set.
+  destruct_rneq_H.
+  eapply regset_l_l_indom; eauto.
 
-  simpl.
-  repeat (split; eauto).
+  clear - H12.
+  eapply disjoint_setR_still1; eauto.
+
+  eapply regst_indom; eauto.
+  clear - H1. 
+  simpls.
+  unfolds regSt.
+  simpls. 
+  simpljoin1.
+  intro.
+  rewrite indom_setR_eq_RegMap_set in H; eauto.
+  rewrite regset_twice in H; eauto.
+  unfold indom in *.
+  simpljoin1.
+  unfolds RegMap.set.
+  destruct_rneq_H.
+  eapply regset_l_l_indom; eauto.
+
+  clear - H8.
+  eapply disjoint_setR_still1; eauto.
+  eapply disjoint_setR_still2; eauto.
+
+  clear - H1.
+  simpls.
+  unfolds regSt.
+  simpls.
+  simpljoin1.
+  intro.
+  rewrite indom_setR_eq_RegMap_set in H; eauto.
+  rewrite regset_twice in H; eauto.
+  unfold indom in *.
+  simpljoin1.
+  unfolds RegMap.set.
+  destruct_rneq_H.
+  eapply regset_l_l_indom; eauto.
+
+  clear - H8.
+  eapply disjoint_setR_still1; eauto.
+
+  eapply regst_indom; eauto.
+
+  eapply disj_sep_star_merge; eauto.
+  clear - H1.
+  simpls.
+  unfolds regSt.
+  simpls.
+  simpljoin1.
+  rewrite regset_twice; eauto.
+
+  eapply disj_sep_star_merge; eauto.
+  clear - H.
+  simpls.
+  unfolds regSt.
+  simpls.
+  simpljoin1.
+  rewrite regset_twice; eauto.
+
+  eapply disj_sep_star_merge; eauto.
+  clear - H0.
+  simpls.
+  unfolds regSt.
+  simpls.
+  simpljoin1.
+  rewrite regset_twice; eauto.
+
+  eapply disj_indom_regset_still; eauto.
+  eapply regst_indom; eauto.
+
+  eapply disj_indom_regset_still; eauto.
+  clear - H0 H12.
   eapply disj_sep_merge_still; eauto.
- 
-  clear - H5.
-  eapply disj_merge_disj_sep1 in H5.
-  eapply MemSet_same_addr_disj_stable.
-  eapply MemSet_same_addr_disj_stable2; eauto.  
+  eapply disj_merge_disj_sep1 in H12.
+  eapply disj_sym in H12.
+  eapply disj_sym.
+  eapply disj_indom_regset_still; eauto.
+  eapply regst_indom; eauto.
+  eapply disj_merge_disj_sep2 in H12; eauto.
+  eapply regst_indom; eauto.
 
-  clear - H5.
-  eapply disj_merge_disj_sep2 in H5.
-  eapply MemSet_same_addr_disj_stable; eauto.
+  eapply disj_indom_regset_still; eauto.
+  eapply disj_sep_merge_still; eauto.
+  eapply disj_merge_disj_sep1 in H8; eauto.
+  eapply disj_sym in H8.
+  eapply disj_sym.
+  eapply disj_indom_regset_still; eauto.
+  eapply regst_indom; eauto.
 
-  simpl.
-  repeat (split; eauto).
+  eapply disj_merge_disj_sep2 in H8.
+  eapply disj_sep_merge_still; eauto.
+  eapply disj_merge_disj_sep1 in H8.
+  eapply disj_sym in H8.
+  eapply disj_sym.
+  eapply disj_indom_regset_still; eauto.
 
-  clear - H3.
-  eapply disj_sep_merge_still.
+  eapply regst_indom; eauto.
+  eapply disj_merge_disj_sep2 in H8; eauto.
 
-  eapply disj_merge_disj_sep1 in H3.
-  eapply MemSet_same_addr_disj_stable2; eauto.
-  eapply MemSet_same_addr_disj_stable; eauto.
-
-  eapply disj_sep_merge_still.
-  eapply disj_merge_disj_sep2 in H3.
-  eapply disj_merge_disj_sep1 in H3.
-  eapply MemSet_same_addr_disj_stable.
-  eapply MemSet_same_addr_disj_stable2; eauto.
-
-  eapply disj_merge_disj_sep2 in H3.
-  eapply disj_merge_disj_sep2 in H3.
-  eapply MemSet_same_addr_disj_stable; eauto.
-
-  do 2 econstructor; eauto.
-  {
-    instantiate (1 := v1).
-    clear - H2.
-    simpl in H2.
-    simpljoin1.
-    clear - H.
-    unfolds eval_reg.
-    eauto.
-  }
-  {
-    instantiate (1 := v2).
-    clear - H2.
-    simpl in H2.
-    simpljoin1; eauto.
-  }
-  {
-    eapply indom_merge_still.
-    eapply memset_l_l_indom; eauto.
-  }
-  {
-    eapply indom_merge_still2; eauto.
-    eapply indom_merge_still.
-    eapply memset_l_l_indom; eauto.
-  }
-  {
-    do 2 eapply indom_merge_still2.
-    eapply indom_merge_still.
-    eapply memset_l_l_indom; eauto.
-  } 
-  {
-    unfolds set_Rs.
-    rewrite setR_merge_eq_merge_setR.
-    rewrite notindom_M_setR_merge_eq; eauto.
-    rewrite notindom_M_setR_merge_eq; eauto.
-    rewrite setR_merge_eq_merge_setR.
-    rewrite notindom_M_setR_merge_eq; eauto.
-    rewrite setR_merge_eq_merge_setR.
-    eauto.
-
-    clear - H5.
-    eapply disj_merge_disj_sep1 in H5.
-    eapply memset_disj_neq in H5.
-    intro.
-    unfolds indom.
-    simpljoin1.
-    unfolds MemMap.set.
-    destruct_addreq_H.
-
-    clear - H3.
-    eapply disj_merge_disj_sep2 in H3.
-    eapply disj_merge_disj_sep1 in H3.
-    eapply memset_disj_neq in H3.
-    intro.
-    unfolds indom.
-    simpljoin1.
-    unfolds MemMap.set.
-    destruct_addreq_H.
-
-    clear - H3.
-    eapply disj_merge_disj_sep1 in H3.
-    eapply memset_disj_neq in H3.
-    intro.
-    unfolds indom.
-    simpljoin1.
-    unfolds MemMap.set.
-    destruct_addreq_H.
-  }
+  eapply regst_indom; eauto.
 Qed.
 
 Lemma or_rule_sound :
@@ -894,54 +767,66 @@ Lemma or_rule_sound :
     ins_sound p (rd |=> v1 |ᵢ v2 ** q) (or rs oexp rd).
 Proof.
   intros.
-  unfolds ins_sound.
+  unfold ins_sound.
   intros.
-  lets Ht : H1.
-  eapply H in H1.
-  eapply H0 in Ht.
-
-  simpl in Ht.
-  simpljoin1.
+  lets Hoexp : H1.
+  lets Hrd : H1.
+  eapply H in Hoexp.
+  eapply H0 in Hrd.
+  simpl in Hoexp.
   destruct_state s.
-  destruct_state x.
-  destruct_state x0.
-
-  simpl in H2.
+  simpl in Hoexp.
+  sep_star_split_tac.
+  simpl in H6.
   simpljoin1.
-  unfolds regSt.
-  simpl in H3.
-  simpljoin1.
-
-  simpl in H1.
-  simpljoin1.
-
-  eexists.
-  split.
-
-  Focus 2.
-  simpl.
-  do 2 eexists.
-
-  split.
-  Focus 2.
-  split.
-  instantiate (1 := (MemMap.set (r1 rd) (Some v1 |ᵢ v2) emp, (r1, f1), d1)).
-  unfold regSt.
-  simpl.
+  exists (m0 ⊎ m1, (RegMap.set rd (Some (v1 |ᵢ v2)) r0 ⊎ r1, f1), d1).
   split; eauto.
-  eauto.
-
-  simpl.
-  repeat (split; eauto).
-  eapply MemSet_same_addr_disj_stable; eauto.
- 
-  do 2 econstructor; eauto. 
+  eapply NormalIns; eauto.
+  eapply Or_step; eauto.
   eapply indom_merge_still; eauto.
-  eapply memset_l_l_indom; eauto.
- 
-  rewrite indom_setM_merge_eq; eauto.
-  rewrite memset_twice; eauto.
-  eapply memset_l_l_indom; eauto.
+  clear - H4.
+  simpls.
+  unfolds regSt.
+  simpls.
+  simpljoin1.
+  eapply regset_l_l_indom; eauto.
+  rewrite indom_setR_merge_eq1; eauto.
+  rewrite indom_setR_eq_RegMap_set; eauto.
+  clear - H4.
+  simpls.
+  unfolds regSt.
+  simpls.
+  simpljoin1.
+  eapply regset_l_l_indom; eauto.
+  clear - H4.
+  simpls.
+  unfolds regSt.
+  simpls.
+  simpljoin1.
+  eapply regset_l_l_indom; eauto.
+  simpl.
+  exists (m0, (RegMap.set rd (Some v1 |ᵢ v2) r0, f1), d1) (m1, (r1, f1), d1).
+  repeat (split; eauto).
+  clear - H4 H3.
+  simpls.
+  unfolds regSt.
+  simpls.
+  simpljoin1.
+  rewrite regset_twice; eauto.
+  eapply RegSet_same_addr_disj_stable; eauto.
+  simpl.
+  clear - H4.
+  simpls.
+  unfolds regSt.
+  simpls.
+  simpljoin1.
+  rewrite regset_twice; eauto.
+  simpl.
+  clear - H4.
+  simpls.
+  unfolds regSt.
+  simpls.
+  simpljoin1.
 Qed.
 
 Lemma nop_rule_sound :
@@ -964,137 +849,205 @@ Proof.
   intros.
   unfolds ins_sound.
   intros.
-  destruct_state s.
-  simpl in H.
-  simpljoin1.
-  destruct_state x0.
-  destruct_state x.
-  destruct_state x1.
-  destruct_state x2.
+  sep_star_split_tac.
 
-  simpl in H.
+  simpl in H2, H3.
   simpljoin1.
-  simpl in H1.
-  simpljoin1.
-
+ 
+  exists (m ⊎ (m1 ⊎ m2), (r ⊎ (RegMap.set r1 (Some v) r2 ⊎ r3), f2), d2).
+  split; eauto.
+  eapply NormalIns; eauto.
+  eapply Rd_step with (v := v); eauto.
+  eapply get_R_merge_still; eauto.
+  clear - H.
+  simpls.
   unfolds regSt.
   simpls.
   simpljoin1.
-
-  eexists.
-  split.
-  Focus 2.
-  exists (MemMap.set (r4 rsp) (Some v) emp, (r4, f3), d3).
-  eexists.
-
-  split.
-  Focus 2.
-  split.
-  unfold regSt; simpl.
-  split; eauto.
-
-  exists (MemMap.set (r4 r1) (Some v) emp, (r4, f3), d3). eexists.
-  split.
-  Focus 2.
-  unfold regSt.
-  simpls; eauto.
-  repeat (split; eauto). 
-  eapply MemSet_same_addr_disj_stable; eauto.
-
-  simpl.
-  repeat (split; simpl; eauto).
-  eapply disj_sep_merge_still.
-  eapply disj_merge_disj_sep1 in H. 
-  eapply MemSet_same_addr_disj_stable2; eauto.
-  eapply disj_merge_disj_sep2 in H.
-  eapply MemSet_same_addr_disj_stable; eauto.
-
-  do 2 econstructor.
-  instantiate (1 := v).
-  unfold merge, MemMap.set.
-  destruct_addreq.
-  eapply indom_merge_still2.
-  eapply indom_merge_still.
-  eapply memset_l_l_indom; eauto.
-
-  rewrite indom_setM_merge_eq2; eauto.
-  rewrite setR_merge_eq_merge_setR; eauto.
-
+  rewrite get_R_rn_neq_r0; eauto.
+  unfolds RegMap.set.
+  destruct_rneq.
   intro.
-  eapply disj_merge_disj_sep1 in H.
-  eapply memset_disj_neq in H; eauto.
-  clear - H0 H.
-  unfolds indom.
+  tryfalse.
+  eapply indom_merge_still2; eauto.
+  eapply indom_merge_still; eauto.
+  clear - H0.
+  simpls.
+  unfolds regSt.
+  simpls.
   simpljoin1.
-  unfolds MemMap.set.
-  destruct_addreq_H.
+  eapply regset_l_l_indom; eauto.
 
-  eapply indom_merge_still.
-  eapply memset_l_l_indom; eauto.
+  rewrite indom_setR_merge_eq2; eauto.
+  rewrite indom_setR_merge_eq1; eauto.
+  rewrite indom_setR_eq_RegMap_set; eauto.
+  eapply regst_indom; eauto.
+  eapply regst_indom; eauto.
+
+  clear - H.
+  simpls.
+  unfolds regSt.
+  simpls.
+  simpljoin1.
+  intro.
+  unfold indom in *.
+  simpljoin1.
+  unfolds RegMap.set.
+  destruct_rneq_H.
+
+  eapply disj_sep_star_merge; eauto.
+  eapply disj_sep_star_merge; eauto.
+  clear - H0.
+  simpls.
+  unfolds regSt.
+  simpls.
+  simpljoin1.
+  repeat (split; eauto).
+  rewrite regset_twice; eauto.
+  eapply disj_indom_regset_still; eauto.
+  eapply regst_indom; eauto.
+  eapply disj_sep_merge_still; eauto.
+  eapply disj_sym; eauto.
+  eapply disj_indom_regset_still; eauto.
+  eapply disj_merge_disj_sep1 in H4; eauto.
+  eapply disj_sym; eauto.
+  eapply regst_indom; eauto.
+  eapply disj_merge_disj_sep2 in H4; eauto.
 Qed.
 
 Lemma wr_rule_sound :
   forall (rsp : SpReg) v p (rs : GenReg) oexp v1 v2,
     rsp |=> v ** p ==> Or rs ==ₑ v1 //\\ oexp ==ₑ v2 ->
-    ins_sound (rsp |=> v ** p) (3 @ rsp |==> v1 xor v2 ** p) (wr rs oexp rsp).
+    ins_sound (rsp |=> v ** p)
+              (3 @ rsp |==> (set_spec_reg rsp v1 xor v2) ** p) (wr rs oexp rsp).
 Proof.
   intros.
-  unfolds ins_sound.
+  unfold ins_sound.
   intros.
-  destruct_state s.
-  lets Ht : H0.
-  eapply H in H0.
-  simpl in Ht.
+  lets Hoexp : H0.
+  eapply H in Hoexp.
+  sep_star_split_tac.
+  simpl in H4.
   simpljoin1.
-  destruct_state x.
-  destruct_state x0.
-
-  simpl in H1.
+  simpl in Hoexp.
   simpljoin1.
-  unfolds regSt.
-  simpl in H2.
-  simpljoin1.
-  eexists.
- 
-  split.
-  Focus 2.  
-  exists (MemMap.set (r1 rsp) (Some v) emp, (r1, f1), set_delay rsp v1 xor v2 d1).
-  eexists.
-
-  split.
-  Focus 2.
-  instantiate (1 := (m1, (r1, f1), set_delay rsp v1 xor v2 d1)).
+  exists (m ⊎ m0, (r ⊎ r0, f0), set_delay rsp (set_spec_reg rsp v1 xor v2) d0).
   split; eauto.
-  simpl.
-  exists v.
-  repeat (split; eauto).
-  eapply notin_dom_set_delay_asrt_stable; eauto.
-  clear - H1.
-  intro.
-  unfolds indom.
-  simpljoin1.
-  unfolds disjoint.
-  specialize (H1 (r1 rsp)).
-  unfolds MemMap.set.
-  destruct_addreq_H.
-  rewrite H in H1.
-  tryfalse.
-  
-  simpl.
-  repeat (split; eauto).
 
-  eapply Wr.
-  instantiate (1 := v1).
-  clear - H0.
-  simpl in H0.
-  simpljoin1; eauto.
-  simpl in H0.
-  simpljoin1; eauto.
-  eauto.
-
+  eapply Wr; eauto.
   eapply indom_merge_still; eauto.
-  eapply memset_l_l_indom; eauto.
+  eapply regst_indom; eauto.
+  simpl.
+  exists (m, (r, f0), set_delay rsp (set_spec_reg rsp v1 xor v2) d0)
+    (m0, (r0, f0), set_delay rsp (set_spec_reg rsp v1 xor v2) d0). 
+  simpls.
+  repeat (split; eauto).
+  exists v.
+  unfold regSt in H0.
+  simpls.
+  simpljoin1.
+  unfold set_delay, X.
+  repeat (split; eauto).
+  unfold inDlyBuff.
+  simpls.
+  do 2 left.
+  split; eauto.
+  unfold noDup.
+  simpl.
+  destruct (sep_reg_dec rsp rsp); tryfalse.
   eauto.
+  eapply notin_dom_set_delay_asrt_stable; eauto.
+  clear - H0 H2.
+  unfolds regSt.
+  simpls.
+  simpljoin1.
+  intro.
+  unfold indom in *.
+  simpljoin1.
+  unfold disjoint in *.
+  specialize (H2 rsp).
+  unfolds RegMap.set.
+  destruct_rneq_H.
+  rewrite H in H2; tryfalse.
+  clear - H0.
+  unfolds regSt.
+  simpls.
+  simpljoin1.
+  eauto.
+Qed.
+
+Lemma getcwp_rule_sound :
+  forall p id F (rd : GenReg) v' p1,
+    p ==> {|id, F|} ** rd |=> v' ** p1 ->
+    ins_sound p ({|id, F|} ** rd |=> id ** p1) (getcwp rd).
+Proof.
+  intros.
+  unfold ins_sound.
+  intros.
+  eapply H in H0.
+  sep_star_split_tac.
+  simpl in H3, H4.
+  simpljoin1.
+  exists (m ⊎ (m1 ⊎ m2), (r ⊎ (set_R r1 rd id ⊎ r2), f2), d2).
+  repeat (split; eauto). 
+  eapply NormalIns; eauto.
+  eapply GetCwp_step; eauto. 
+  eapply get_R_merge_still; eauto.
+  instantiate (1 := id).
+  rewrite get_R_rn_neq_r0; eauto.
+  Focus 2.
+  intro; tryfalse.
+  clear - H0.
+  simpls.
+  unfolds regSt.
+  simpls.
+  simpljoin1.
+  unfold RegMap.set.
+  destruct_rneq.
+  eapply indom_merge_still2; eauto.
+  eapply indom_merge_still; eauto.
+  clear - H1.
+  simpls.
+  unfolds regSt.
+  simpls.
+  simpljoin1.
+  eapply regset_l_l_indom; eauto.
+  rewrite indom_setR_merge_eq2; eauto.
+  rewrite indom_setR_merge_eq1; eauto.
+  clear - H1.
+  simpls.
+  unfolds regSt.
+  simpls.
+  simpljoin1.
+  eapply regset_l_l_indom; eauto.
+  clear - H0.
+  simpls.
+  unfolds regSt.
+  simpls.
+  simpljoin1.
+  intro.
+  unfold indom in H.
+  simpljoin1.
+  unfolds RegMap.set.
+  destruct_rneq_H.
+  eapply disj_sep_star_merge; eauto.
+  eapply disj_sep_star_merge; eauto.
+  clear - H1.
+  simpls.
+  unfolds regSt.
+  simpls.
+  simpljoin1.
+  repeat (split; eauto).
+  rewrite indom_setR_eq_RegMap_set; eauto.
+  rewrite regset_twice; eauto.
+  eapply regset_l_l_indom; eauto.
+  eapply disjoint_setR_still1; eauto.
+  eapply disj_sep_merge_still; eauto.
+  eapply disj_merge_disj_sep1 in H5.
+  eapply disj_sym in H5.
+  eapply disj_sym.
+  eapply disjoint_setR_still1; eauto.
+  eapply disj_merge_disj_sep2 in H5; eauto.
 Qed.
   
 Lemma save_rule_sound :
@@ -1124,60 +1077,61 @@ Proof.
   simpljoin1.
   destruct_state x.
   destruct_state x0.
-
-  simpl in H7.
+ 
+  simpl in H8.
   simpljoin1.
-  eapply sep_star_split in H6; eauto.
+  eapply sep_star_split in H7; eauto.
   simpljoin1.
   destruct_state x.
   destruct_state x0.
-  simpl in H9.
+  simpl in H11.
   simpljoin1.
- 
+
   assert (f1 = F ++ [fm1; fm2]).
-  {
-    clear - H4.
-    simpl in H4.
+  { 
+    clear - H6.
+    simpl in H6.
     simpljoin1; eauto.
   }
 
-  subst. 
-  lets Hf : H4.
+  subst.  
+  lets Hf : H6.
   eapply frame_asrt_upd with (id' := pre_cwp id) (F' := fml :: fmi :: F) in Hf; eauto.
   simpljoin1.
-  rename x into m'.
+  rename x into r'.
 
-  lets Hreg : H6. 
+  lets Hreg : H7.
   eapply Regs_asrt_upd with
   (F' := fml :: fmi :: F) (fm1' := fm1) (fm2' := fm2) (fm3' := fmo) in Hreg.
+
   simpljoin1.
-  rename x into m1'. 
-  eapply asrt_FrmFree_changefrm_stable with (F' := fml :: fmi :: F) in H8; eauto.
+  rename x into r1'.
+  eapply asrt_FrmFree_changefrm_stable with (F' := fml :: fmi :: F) in H10; eauto.
 
   Focus 2.
-  clear - H4 H7.
-  eapply disj_merge_disj_sep2 in H7.
+  clear - H6 H9. 
+  eapply disj_merge_disj_sep2 in H9.
   intro.
-  simpl in H4.
+  simpl in H6.
   simpljoin1.
   unfolds regSt.
   simpls.
   simpljoin1.
-  unfolds disjoint.
-  specialize (H7 (r1 cwp)).
-  unfolds MemMap.set.
-  destruct_addreq_H.
-  unfolds indom; simpljoin1.
-  rewrite H in H7; tryfalse.
-  
+  unfold disjoint in *.
+  specialize (H9 cwp).
+  unfolds RegMap.set. 
+  destruct_rneq_H.
+  unfold indom in *; simpljoin1.
+  rewrite H in H9; tryfalse.
+
   assert
     (Htt : 
-      ((merge m' (merge m1' m3)), (r1, fml :: fmi :: F), d1) |=
+      ((merge m (merge m1 m3)), (merge r' (merge r1' r3), fml :: fmi :: F), d1) |=
       {|pre_cwp id, fml :: fmi :: F|} ** Regs fm1 fm2 fmo ** p1
     ).
-  { 
+  {  
     eapply disj_sep_star_merge; eauto.
-    eapply disj_sep_star_merge; eauto.
+    eapply disj_sep_star_merge; eauto. 
     eapply disj_dom_eq_still.
     2 : eauto. 
     eauto.
@@ -1185,9 +1139,9 @@ Proof.
     
     eauto.
     eapply disj_sep_merge_still; eauto.
-    eapply disj_merge_disj_sep1 in H7; eauto.
+    eapply disj_merge_disj_sep1 in H9; eauto.
     eapply disj_dom_eq_still; eauto.
-    eapply disj_merge_disj_sep2 in H7; eauto.
+    eapply disj_merge_disj_sep2 in H9; eauto.
     eapply disj_dom_eq_still; eauto.
     eapply same_m_dom_eq; eauto.
   }
@@ -1202,7 +1156,7 @@ Proof.
   destruct_state x.
   destruct_state x0.
   unfolds regSt.
-  simpl in H5, H15.
+  simpl in H5, H17.
   simpljoin1.
   
   eexists.
@@ -1210,7 +1164,7 @@ Proof.
   Focus 2.
   simpl.
  
-  exists (MemMap.set (r0 Rwim) (Some v) emp, (r0, fml :: fmi :: F), d0).
+  exists (empM, (RegMap.set Rwim (Some v) empR, fml :: fmi :: F), d0).
   eexists.
   split.
 
@@ -1219,8 +1173,8 @@ Proof.
   unfold regSt.
   simpl.
   repeat (split; eauto).
-
-  exists (MemMap.set (r0 rd) (Some (v1 +ᵢ v2)) emp, (r0, fml :: fmi :: F), d0).
+ 
+  exists (empM, (RegMap.set rd (Some (v1 +ᵢ v2)) empR, fml :: fmi :: F), d0).
   eexists.
   split.
   Focus 2.
@@ -1228,165 +1182,150 @@ Proof.
   unfold regSt.
   simpl.
   split; eauto.
-
+   
   simpl.
   repeat (split; eauto).
-  eapply MemSet_same_addr_disj_stable; eauto.
-
+  eapply RegSet_same_addr_disj_stable; eauto.
+ 
   simpl.
   repeat (split; eauto).
-  clear - H1 H11 H13 H21.
-  eapply disj_dom_eq_still; eauto.
-  eapply same_m_dom_eq; eauto.
-  eapply dom_eq_merge_subst1; eauto.
-  instantiate (1 := m').
-  eapply dom_eq_sym; eauto.
-  eapply dom_eq_trans with (m2 := merge m' (merge m1' m3)).
-  eapply dom_eq_merge_still; eauto.
-  eapply same_m_dom_eq; eauto.
-  eapply dom_eq_merge_still; eauto.
-  eapply same_m_dom_eq; eauto.
-  rewrite H21.
-  eapply dom_eq_merge_still; eauto.
+  eapply disj_dom_eq_still with (m1 := RegMap.set Rwim (Some v) empR)
+                                  (m2 := r ⊎ (r1 ⊎ r3)); eauto.
   eapply dom_eq_memset_same_addr_stable; eauto.
-  eapply dom_eq_emp.
-  eapply same_m_dom_eq.
-
+  eapply dom_eq_emp; eauto.
+  eapply dom_eq_trans with (m2 := merge r' (merge r1' r3)).
+  repeat (eapply dom_eq_merge_still; eauto).
+  eapply same_m_dom_eq; eauto.
+  rewrite H28; eauto.
+  eapply dom_eq_merge_some_addr_stable; eauto.
+  eapply same_m_dom_eq; eauto.
+ 
+  rewrite H27.
   eapply SSave; eauto.
-  {  
-    clear - H4 H1 H7.
-    eapply disj_in_m2_merge_still; eauto.
-    eapply disj_in_m1_merge_still; eauto.
-    simpl in H4.
+  {
+    rewrite get_R_rn_neq_r0; eauto.
+    2 : intro; tryfalse.
+    eapply get_vl_merge_still2; eauto.
+    eapply get_vl_merge_still; eauto.
+    clear - H6.
+    simpls.
     unfolds regSt.
     simpls.
     simpljoin1.
-    unfold MemMap.set.
-    destruct_addreq.
-  } 
+    unfold RegMap.set.
+    destruct_rneq.
+  }
   {
-    eapply disj_in_m1_merge_still; eauto.
-    clear.
-    unfold MemMap.set.
-    destruct_addreq.
+    rewrite get_R_rn_neq_r0; eauto.
+    2 : intro; tryfalse.
+    eapply get_vl_merge_still; eauto.
+    unfold RegMap.set.
+    destruct_rneq.
   }
   {
     instantiate (1 := fmo).
-    clear - H1 H6 H7 H9. 
     eapply fetch_disj_merge_still2; eauto.
     eapply fetch_disj_merge_still2; eauto.
     eapply fetch_disj_merge_still1; eauto.
     eapply Regs_fetch; eauto.
-  }  
-  { 
+  }
+  {
     eapply indom_merge_still2; eauto.
-    assert (indom (r0 rd) (merge (MemMap.set (r0 rd) (Some v') emp) m2)).
-    {
-      eapply indom_merge_still; eauto.
-      eapply memset_l_l_indom; eauto.
-    }
-    rewrite <- H21 in H15.
-    eapply indom_dom_eq_merge_subst with (m1 := m'); eauto.
-    eapply indom_dom_eq_merge_subst2 with (m2 := (merge m1' m3)); eauto.
+    eapply indom_dom_eq_subst with (m := (r' ⊎ (r1' ⊎ r3))).
+    rewrite H28.
+    eapply indom_merge_still; eauto.
+    eapply regset_l_l_indom; eauto.
+    eapply dom_eq_merge_still; eauto.
+    eapply dom_eq_sym; eauto.
     eapply dom_eq_merge_still; eauto.
     eapply dom_eq_sym; eauto.
     eapply same_m_dom_eq; eauto.
-    eapply dom_eq_sym; eauto.
   }
   {
     instantiate (1 := v1).
-    clear - H H1 Ht.
+    clear - H H4 Ht.
     eapply H in Ht; eauto.
     simpl in Ht.
     simpljoin1.
-    eapply get_vl_merge_still2; eauto.
+    eapply get_R_merge_still2; eauto.
   }
   {
     instantiate (1 := v2).
-    clear - H H1 Ht.
+    clear - H H4 Ht.
     eapply H in Ht; eauto.
     simpl in Ht.
     simpljoin1.
     eapply eval_opexp_merge_still2; eauto.
   }
-  {
+  { 
     rewrite set_win_merge2; eauto.
     rewrite set_win_merge2; eauto.
     rewrite set_win_merge1; eauto.
-    erewrite set_window_res with (M' := m1'); eauto.
+    erewrite set_window_res with (R' := r1'); eauto.
 
     unfold set_Rs.
-    assert
-      (
-        set_R r0 (merge (MemMap.set (r0 Rwim) (Some v) emp) (merge m (merge m1' m3))) cwp
-              (pre_cwp id) =
-        merge (MemMap.set (r0 Rwim) (Some v) emp) (merge m' (merge m1' m3))
-      ).
+    rewrite indom_setR_merge_eq2; eauto. 
+    assert (set_R (r ⊎ (r1' ⊎ r3)) cwp (pre_cwp id) =
+            (set_R r cwp (pre_cwp id)) ⊎ (r1' ⊎ r3)).
     {
-      erewrite indom_setR_merge_eq2; eauto.
-      rewrite indom_setR_merge_eq; eauto.
-
-      assert (set_R r0 m cwp (pre_cwp id) = m').
-      {
-        clear - H4 H10.
-        simpls.
-        simpljoin1.
-        unfolds regSt.
-        simpls.
-        simpljoin1.
-        rewrite indom_memset_setR_eq; eauto.
-        rewrite memset_twice; eauto.
-        eapply memset_l_l_indom; eauto.
-      }
-
-      rewrite H15; eauto.
-      clear - H4.
+      rewrite indom_setR_merge_eq1; eauto.
+      clear - H6.
       simpls.
       unfolds regSt.
       simpls.
       simpljoin1.
-      eapply memset_l_l_indom; eauto.
-
-      eapply indom_merge_still; eauto.
-      clear - H4.
+      eapply regset_l_l_indom; eauto.
+    }
+    rewrite H17; eauto.
+    assert (set_R r cwp (pre_cwp id) = r').
+    {
+      clear - H6 H13.
       simpls.
       unfolds regSt.
       simpls.
-      simpljoin1; eauto.
-      eapply memset_l_l_indom; eauto.
-
-      eapply disj_sep_merge_still; eauto. 
-      eapply disj_merge_disj_sep1 in H1; eauto.
-      eapply disj_sep_merge_still; eauto.
-      eapply disj_dom_eq_still with (m1 := (MemMap.set (r0 Rwim) (Some v) emp)) (m2 := m1);
-        eauto.
-      eapply disj_merge_disj_sep2 in H1; eauto.
-      eapply disj_merge_disj_sep1 in H1; eauto.
-      eapply same_m_dom_eq; eauto.
-      do 2 eapply disj_merge_disj_sep2 in H1; eauto.
+      simpljoin1.
+      rewrite indom_setR_eq_RegMap_set; eauto.
+      rewrite regset_twice; eauto.
+      eapply regset_l_l_indom; eauto.
     }
-
-    rewrite H15.
-    rewrite H21.
+    rewrite H20.
+    rewrite H28.
     rewrite indom_setR_merge_eq2; eauto.
-    rewrite indom_setR_merge_eq; eauto.
-    rewrite indom_memset_setR_eq; eauto.
-    rewrite memset_twice; eauto.
+    rewrite indom_setR_merge_eq1; eauto.
+    rewrite indom_setR_eq_RegMap_set; eauto.
+    rewrite regset_twice; eauto.
+    eapply regset_l_l_indom; eauto.
+    eapply regset_l_l_indom; eauto.
 
-    eapply memset_l_l_indom; eauto.
-    eapply memset_l_l_indom; eauto.
-    eapply indom_merge_still; eauto.
-    eapply memset_l_l_indom; eauto.
+    clear.
+    unfold indom.
+    intro.
+    simpljoin1.
+    unfolds RegMap.set.
+    destruct_rneq_H.
 
-    eapply disj_dom_eq_still with (m1' := MemMap.set (r0 Rwim) (Some v) emp)
-                                    (m2' := merge m' (merge m1' m3)) in H1; eauto.
-    rewrite <- H21; eauto.
+    rewrite <- H28.
+    eapply disj_dom_eq_still with (m2 := (r ⊎ (r1 ⊎ r3))); eauto.
     eapply same_m_dom_eq; eauto.
     eapply dom_eq_merge_still; eauto.
     eapply dom_eq_merge_still; eauto.
     eapply same_m_dom_eq; eauto.
 
-    clear - H12.
+    clear.
+    unfold indom.
+    intro.
+    simpljoin1.
+    unfolds RegMap.set.
+    destruct_rneq_H.
+
+    eapply disj_dom_eq_still with (m2 := (r ⊎ (r1 ⊎ r3))); eauto.
+    eapply same_m_dom_eq; eauto.
+    eapply dom_eq_merge_still; eauto.
+    eapply same_m_dom_eq; eauto.
+    eapply dom_eq_merge_still; eauto.
+    eapply same_m_dom_eq; eauto.
+
+    clear - H15.
     eapply Regs_frm_free; eauto.
     eapply Regs_indom_Fmr; eauto.
     eapply indoms_merge_still1; eauto.
@@ -1396,7 +1335,7 @@ Proof.
     eapply Regs_indom_Fmr; eauto.
   }
 Qed.
-
+  
 Lemma resotre_rule_sound :
   forall p q (rs rd : GenReg) v1 v2 v v' id id' F fm1 fm2 fmo fml fmi p1 oexp,
     p ==> Or rs ==ₑ v1 //\\ oexp ==ₑ v2 ->
@@ -1424,60 +1363,61 @@ Proof.
   simpljoin1.
   destruct_state x.
   destruct_state x0.
-
-  simpl in H7.
+ 
+  simpl in H8.
   simpljoin1.
-  eapply sep_star_split in H6; eauto.
+  eapply sep_star_split in H7; eauto.
   simpljoin1.
   destruct_state x.
   destruct_state x0.
-  simpl in H9.
+  simpl in H11.
   simpljoin1.
-  
+
   assert (f1 = fm1 :: fm2 :: F).
-  {
-    clear - H4.
-    simpl in H4.
+  { 
+    clear - H6.
+    simpl in H6.
     simpljoin1; eauto.
   }
 
-  subst. 
-  lets Hf : H4. 
-  eapply frame_asrt_upd with (id' := post_cwp id) (F' := F ++ fmo :: fml :: nil) in Hf; eauto.
+  subst.  
+  lets Hf : H6.
+  eapply frame_asrt_upd with (id' := post_cwp id) (F' := F ++ [fmo; fml]) in Hf; eauto.
   simpljoin1.
-  rename x into m'.
+  rename x into r'.
 
-  lets Hreg : H6. 
+  lets Hreg : H7. 
   eapply Regs_asrt_upd with
   (F' := F ++ [fmo; fml]) (fm1' := fmi) (fm2' := fm1) (fm3' := fm2) in Hreg.
+ 
   simpljoin1.
-  rename x into m1'. 
-  eapply asrt_FrmFree_changefrm_stable with (F' := F ++ fmo :: fml :: nil) in H8; eauto.
+  rename x into r1'.
+  eapply asrt_FrmFree_changefrm_stable with (F' := F ++ [fmo; fml]) in H10; eauto.
 
   Focus 2.
-  clear - H4 H7.
-  eapply disj_merge_disj_sep2 in H7.
+  clear - H6 H9. 
+  eapply disj_merge_disj_sep2 in H9.
   intro.
-  simpl in H4.
+  simpl in H6.
   simpljoin1.
   unfolds regSt.
   simpls.
   simpljoin1.
-  unfolds disjoint.
-  specialize (H7 (r1 cwp)).
-  unfolds MemMap.set.
-  destruct_addreq_H.
-  unfolds indom; simpljoin1.
-  rewrite H in H7; tryfalse.
-  
+  unfold disjoint in *.
+  specialize (H9 cwp).
+  unfolds RegMap.set. 
+  destruct_rneq_H.
+  unfold indom in *; simpljoin1.
+  rewrite H in H9; tryfalse.
+
   assert
     (Htt : 
-      ((merge m' (merge m1' m3)), (r1, F ++ fmo :: fml :: nil), d1) |=
+      ((merge m (merge m1 m3)), (merge r' (merge r1' r3), F ++ [fmo; fml]), d1) |=
       {|post_cwp id, F ++ [fmo; fml]|} ** Regs fmi fm1 fm2 ** p1
     ).
-  { 
+  {  
     eapply disj_sep_star_merge; eauto.
-    eapply disj_sep_star_merge; eauto.
+    eapply disj_sep_star_merge; eauto. 
     eapply disj_dom_eq_still.
     2 : eauto. 
     eauto.
@@ -1485,9 +1425,9 @@ Proof.
     
     eauto.
     eapply disj_sep_merge_still; eauto.
-    eapply disj_merge_disj_sep1 in H7; eauto.
+    eapply disj_merge_disj_sep1 in H9; eauto.
     eapply disj_dom_eq_still; eauto.
-    eapply disj_merge_disj_sep2 in H7; eauto.
+    eapply disj_merge_disj_sep2 in H9; eauto.
     eapply disj_dom_eq_still; eauto.
     eapply same_m_dom_eq; eauto.
   }
@@ -1502,7 +1442,7 @@ Proof.
   destruct_state x.
   destruct_state x0.
   unfolds regSt.
-  simpl in H5, H15.
+  simpl in H5, H17.
   simpljoin1.
   
   eexists.
@@ -1510,7 +1450,7 @@ Proof.
   Focus 2.
   simpl.
  
-  exists (MemMap.set (r0 Rwim) (Some v) emp, (r0, F ++ fmo :: fml :: nil), d0).
+  exists (empM, (RegMap.set Rwim (Some v) empR, F ++ [fmo; fml]), d0).
   eexists.
   split.
 
@@ -1519,8 +1459,8 @@ Proof.
   unfold regSt.
   simpl.
   repeat (split; eauto).
-
-  exists (MemMap.set (r0 rd) (Some (v1 +ᵢ v2)) emp, (r0, F ++ fmo :: fml :: nil), d0).
+ 
+  exists (empM, (RegMap.set rd (Some (v1 +ᵢ v2)) empR, F ++ [fmo; fml]), d0).
   eexists.
   split.
   Focus 2.
@@ -1528,165 +1468,150 @@ Proof.
   unfold regSt.
   simpl.
   split; eauto.
-
+   
   simpl.
   repeat (split; eauto).
-  eapply MemSet_same_addr_disj_stable; eauto.
-
+  eapply RegSet_same_addr_disj_stable; eauto.
+ 
   simpl.
   repeat (split; eauto).
-  clear - H1 H11 H13 H21.
-  eapply disj_dom_eq_still; eauto.
-  eapply same_m_dom_eq; eauto.
-  eapply dom_eq_merge_subst1; eauto.
-  instantiate (1 := m').
-  eapply dom_eq_sym; eauto.
-  eapply dom_eq_trans with (m2 := merge m' (merge m1' m3)).
-  eapply dom_eq_merge_still; eauto.
-  eapply same_m_dom_eq; eauto.
-  eapply dom_eq_merge_still; eauto.
-  eapply same_m_dom_eq; eauto.
-  rewrite H21.
-  eapply dom_eq_merge_still; eauto.
+  eapply disj_dom_eq_still with (m1 := RegMap.set Rwim (Some v) empR)
+                                  (m2 := r ⊎ (r1 ⊎ r3)); eauto.
   eapply dom_eq_memset_same_addr_stable; eauto.
-  eapply dom_eq_emp.
-  eapply same_m_dom_eq.
+  eapply dom_eq_emp; eauto.
+  eapply dom_eq_trans with (m2 := merge r' (merge r1' r3)).
+  repeat (eapply dom_eq_merge_still; eauto).
+  eapply same_m_dom_eq; eauto.
+  rewrite H28; eauto.
+  eapply dom_eq_merge_some_addr_stable; eauto.
+  eapply same_m_dom_eq; eauto.
 
+  rewrite H27. 
   eapply RRestore; eauto.
-  {  
-    clear - H4 H1 H7.
-    eapply disj_in_m2_merge_still; eauto.
-    eapply disj_in_m1_merge_still; eauto.
-    simpl in H4.
+  { 
+    eapply get_R_merge_still2; eauto.
+    eapply get_R_merge_still; eauto.
+    clear - H6.
+    simpls.
     unfolds regSt.
     simpls.
     simpljoin1.
-    unfold MemMap.set.
-    destruct_addreq.
-  } 
-  {
-    eapply disj_in_m1_merge_still; eauto.
-    clear.
-    unfold MemMap.set.
-    destruct_addreq.
+    rewrite get_R_rn_neq_r0; eauto.
+    2 : intro; tryfalse.
+    unfold RegMap.set.
+    destruct_rneq.
   }
   { 
+    eapply get_R_merge_still; eauto.
+    rewrite get_R_rn_neq_r0; eauto.
+    2 : intro; tryfalse.
+    unfold RegMap.set.
+    destruct_rneq.
+  }
+  {
     instantiate (1 := fmi).
-    clear - H1 H6 H7 H9. 
     eapply fetch_disj_merge_still2; eauto.
     eapply fetch_disj_merge_still2; eauto.
     eapply fetch_disj_merge_still1; eauto.
     eapply Regs_fetch; eauto.
-  }  
-  { 
+  }
+  {
     eapply indom_merge_still2; eauto.
-    assert (indom (r0 rd) (merge (MemMap.set (r0 rd) (Some v') emp) m2)).
-    {
-      eapply indom_merge_still; eauto.
-      eapply memset_l_l_indom; eauto.
-    }
-    rewrite <- H21 in H15.
-    eapply indom_dom_eq_merge_subst with (m1 := m'); eauto.
-    eapply indom_dom_eq_merge_subst2 with (m2 := (merge m1' m3)); eauto.
+    eapply indom_dom_eq_subst with (m := (r' ⊎ (r1' ⊎ r3))).
+    rewrite H28.
+    eapply indom_merge_still; eauto.
+    eapply regset_l_l_indom; eauto.
+    eapply dom_eq_merge_still; eauto.
+    eapply dom_eq_sym; eauto.
     eapply dom_eq_merge_still; eauto.
     eapply dom_eq_sym; eauto.
     eapply same_m_dom_eq; eauto.
-    eapply dom_eq_sym; eauto.
   }
   {
     instantiate (1 := v1).
-    clear - H H1 Ht.
+    clear - H H4 Ht.
     eapply H in Ht; eauto.
     simpl in Ht.
     simpljoin1.
-    eapply get_vl_merge_still2; eauto.
+    eapply get_R_merge_still2; eauto.
   }
   {
     instantiate (1 := v2).
-    clear - H H1 Ht.
+    clear - H H4 Ht.
     eapply H in Ht; eauto.
     simpl in Ht.
     simpljoin1.
     eapply eval_opexp_merge_still2; eauto.
   }
-  {
+  { 
     rewrite set_win_merge2; eauto.
     rewrite set_win_merge2; eauto.
     rewrite set_win_merge1; eauto.
-    erewrite set_window_res with (M' := m1'); eauto.
+    erewrite set_window_res with (R' := r1'); eauto.
 
     unfold set_Rs.
-    assert
-      (
-        set_R r0 (merge (MemMap.set (r0 Rwim) (Some v) emp) (merge m (merge m1' m3))) cwp
-              (post_cwp id) =
-        merge (MemMap.set (r0 Rwim) (Some v) emp) (merge m' (merge m1' m3))
-      ).
+    rewrite indom_setR_merge_eq2; eauto. 
+    assert (set_R (r ⊎ (r1' ⊎ r3)) cwp (post_cwp id) =
+            (set_R r cwp (post_cwp id)) ⊎ (r1' ⊎ r3)).
     {
-      erewrite indom_setR_merge_eq2; eauto.
-      rewrite indom_setR_merge_eq; eauto.
-
-      assert (set_R r0 m cwp (post_cwp id) = m').
-      {
-        clear - H4 H10.
-        simpls.
-        simpljoin1.
-        unfolds regSt.
-        simpls.
-        simpljoin1.
-        rewrite indom_memset_setR_eq; eauto.
-        rewrite memset_twice; eauto.
-        eapply memset_l_l_indom; eauto.
-      }
-
-      rewrite H15; eauto.
-      clear - H4.
+      rewrite indom_setR_merge_eq1; eauto.
+      clear - H6.
       simpls.
       unfolds regSt.
       simpls.
       simpljoin1.
-      eapply memset_l_l_indom; eauto.
-
-      eapply indom_merge_still; eauto.
-      clear - H4.
+      eapply regset_l_l_indom; eauto.
+    }
+    rewrite H17; eauto.
+    assert (set_R r cwp (post_cwp id) = r').
+    {
+      clear - H6 H13.
       simpls.
       unfolds regSt.
       simpls.
-      simpljoin1; eauto.
-      eapply memset_l_l_indom; eauto.
-
-      eapply disj_sep_merge_still; eauto. 
-      eapply disj_merge_disj_sep1 in H1; eauto.
-      eapply disj_sep_merge_still; eauto.
-      eapply disj_dom_eq_still with (m1 := (MemMap.set (r0 Rwim) (Some v) emp)) (m2 := m1);
-        eauto.
-      eapply disj_merge_disj_sep2 in H1; eauto.
-      eapply disj_merge_disj_sep1 in H1; eauto.
-      eapply same_m_dom_eq; eauto.
-      do 2 eapply disj_merge_disj_sep2 in H1; eauto.
+      simpljoin1.
+      rewrite indom_setR_eq_RegMap_set; eauto.
+      rewrite regset_twice; eauto.
+      eapply regset_l_l_indom; eauto.
     }
-
-    rewrite H15.
-    rewrite H21.
+    rewrite H20.
+    rewrite H28.
     rewrite indom_setR_merge_eq2; eauto.
-    rewrite indom_setR_merge_eq; eauto.
-    rewrite indom_memset_setR_eq; eauto.
-    rewrite memset_twice; eauto.
+    rewrite indom_setR_merge_eq1; eauto.
+    rewrite indom_setR_eq_RegMap_set; eauto.
+    rewrite regset_twice; eauto.
+    eapply regset_l_l_indom; eauto.
+    eapply regset_l_l_indom; eauto.
 
-    eapply memset_l_l_indom; eauto.
-    eapply memset_l_l_indom; eauto.
-    eapply indom_merge_still; eauto.
-    eapply memset_l_l_indom; eauto.
+    clear.
+    unfold indom.
+    intro.
+    simpljoin1.
+    unfolds RegMap.set.
+    destruct_rneq_H.
 
-    eapply disj_dom_eq_still with (m1' := MemMap.set (r0 Rwim) (Some v) emp)
-                                    (m2' := merge m' (merge m1' m3)) in H1; eauto.
-    rewrite <- H21; eauto.
+    rewrite <- H28.
+    eapply disj_dom_eq_still with (m2 := (r ⊎ (r1 ⊎ r3))); eauto.
     eapply same_m_dom_eq; eauto.
     eapply dom_eq_merge_still; eauto.
     eapply dom_eq_merge_still; eauto.
     eapply same_m_dom_eq; eauto.
 
-    clear - H12.
+    clear.
+    unfold indom.
+    intro.
+    simpljoin1.
+    unfolds RegMap.set.
+    destruct_rneq_H.
+
+    eapply disj_dom_eq_still with (m2 := (r ⊎ (r1 ⊎ r3))); eauto.
+    eapply same_m_dom_eq; eauto.
+    eapply dom_eq_merge_still; eauto.
+    eapply same_m_dom_eq; eauto.
+    eapply dom_eq_merge_still; eauto.
+    eapply same_m_dom_eq; eauto.
+
+    clear - H15.
     eapply Regs_frm_free; eauto.
     eapply Regs_indom_Fmr; eauto.
     eapply indoms_merge_still1; eauto.
@@ -1695,6 +1620,163 @@ Proof.
     eapply indoms_merge_still1; eauto.
     eapply Regs_indom_Fmr; eauto.
   }
+Qed.
+
+Lemma sll_rule_sound :
+  forall p (rs rd : GenReg) v v1 v2 oexp q,
+    p ==> Or rs ==ₑ v1 //\\ oexp ==ₑ v2 ->
+    p ==> rd |=> v ** q ->
+    ins_sound p (rd |=> v1 <<ᵢ (get_range 0 4 v2) ** q) (sll rs oexp rd).
+Proof.
+  unfold ins_sound.
+  intros.
+  lets Hexp : H1.
+  lets Hrd : H1.
+  eapply H in Hexp.
+  eapply H0 in Hrd.
+  sep_star_split_tac.
+  simpl in H6.
+  simpljoin1.
+  exists (m ⊎ m0, (set_R r rd (v1 <<ᵢ (get_range 0 4 v2)) ⊎ r0, f0), d0).
+  repeat (split; eauto).
+  eapply NormalIns; eauto.
+  eapply Sll_step; eauto.
+  instantiate (1 := v1).
+  clear - Hexp.
+  simpl in Hexp.
+  simpljoin1; eauto.
+  instantiate (1 := v2).
+  clear - Hexp.
+  simpl in Hexp.
+  simpljoin1; eauto.
+  clear - H4.
+  simpls.
+  unfolds regSt.
+  simpls.
+  simpljoin1.
+  eapply indom_merge_still; eauto.
+  eapply regset_l_l_indom; eauto.
+  rewrite indom_setR_merge_eq1; eauto.
+  clear - H4.
+  simpls.
+  unfolds regSt.
+  simpls.
+  simpljoin1.
+  eapply regset_l_l_indom; eauto.
+  simpl.
+  exists (m, (set_R r rd v1 <<ᵢ (get_range 0 4 v2), f0), d0).
+  exists (m0, (r0, f0), d0).
+  simpls.
+  repeat (split; eauto).
+  eapply disjoint_setR_still1; eauto.
+  simpl.
+  clear - H4.
+  unfolds regSt.
+  simpls.
+  simpljoin1.
+  rewrite indom_setR_eq_RegMap_set; eauto.
+  rewrite regset_twice; eauto.
+  eapply regset_l_l_indom; eauto.
+  simpl; eauto.
+  clear - H4.
+  unfolds regSt.
+  simpls; eauto.
+  simpljoin1; eauto.
+Qed.
+
+Lemma srl_rule_sound :
+  forall p (rs rd : GenReg) v v1 v2 oexp q,
+    p ==> Or rs ==ₑ v1 //\\ oexp ==ₑ v2 ->
+    p ==> rd |=> v ** q ->
+    ins_sound p (rd |=> v1 >>ᵢ (get_range 0 4 v2) ** q) (srl rs oexp rd).
+Proof.
+  unfold ins_sound.
+  intros.
+  lets Hexp : H1.
+  lets Hrd : H1.
+  eapply H in Hexp.
+  eapply H0 in Hrd.
+  sep_star_split_tac.
+  simpl in H6.
+  simpljoin1.
+  exists (m ⊎ m0, (set_R r rd (v1 >>ᵢ (get_range 0 4 v2)) ⊎ r0, f0), d0).
+  repeat (split; eauto).
+  eapply NormalIns; eauto.
+  eapply Srl_step; eauto.
+  instantiate (1 := v1).
+  clear - Hexp.
+  simpl in Hexp.
+  simpljoin1; eauto.
+  instantiate (1 := v2).
+  clear - Hexp.
+  simpl in Hexp.
+  simpljoin1; eauto.
+  clear - H4.
+  simpls.
+  unfolds regSt.
+  simpls.
+  simpljoin1.
+  eapply indom_merge_still; eauto.
+  eapply regset_l_l_indom; eauto.
+  rewrite indom_setR_merge_eq1; eauto.
+  clear - H4.
+  simpls.
+  unfolds regSt.
+  simpls.
+  simpljoin1.
+  eapply regset_l_l_indom; eauto.
+  simpl.
+  exists (m, (set_R r rd v1 >>ᵢ (get_range 0 4 v2), f0), d0).
+  exists (m0, (r0, f0), d0).
+  simpls.
+  repeat (split; eauto).
+  eapply disjoint_setR_still1; eauto.
+  simpl.
+  clear - H4.
+  unfolds regSt.
+  simpls.
+  simpljoin1.
+  rewrite indom_setR_eq_RegMap_set; eauto.
+  rewrite regset_twice; eauto.
+  eapply regset_l_l_indom; eauto.
+  simpl; eauto.
+  clear - H4.
+  unfolds regSt.
+  simpls; eauto.
+  simpljoin1; eauto.
+Qed.
+
+Lemma set_rule_sound :
+  forall p q (rd : GenReg) v w,
+    p ==> rd |=> v ** q ->
+    ins_sound p (rd |=> w ** q) (sett w rd).
+Proof.
+  unfold ins_sound.
+  intros.
+  eapply H in H0.
+  sep_star_split_tac.
+  simpls.
+  simpljoin1.
+  unfolds regSt.
+  simpls.
+  simpljoin1.
+  exists (empM ⊎ m0,
+     (set_R (RegMap.set rd (Some v) empR) rd w ⊎ r0, f0), d0).
+  repeat (split; eauto).
+  eapply NormalIns; eauto.
+  eapply Set_step; eauto.
+  eapply indom_merge_still; eauto.
+  eapply regset_l_l_indom; eauto.
+  rewrite indom_setR_merge_eq1; eauto.
+  eapply regset_l_l_indom; eauto.
+  exists (empM, (set_R (RegMap.set rd (Some v) empR) rd w, f0), d0).
+  exists (m0, (r0, f0), d0).
+  simpls.
+  repeat (split; eauto).
+  eapply disjoint_setR_still1; eauto.
+  rewrite indom_setR_eq_RegMap_set; eauto.
+  rewrite regset_twice; eauto.
+  eapply regset_l_l_indom; eauto.
 Qed.
 
 Lemma conj_ins_sound : forall p1 p2 q1 q2 i,
@@ -1708,7 +1790,7 @@ Proof.
   destruct H1 as [s1 [Hstep1 Hq1] ].
   eapply H0 in H2; eauto.
   destruct H2 as [s2 [Hstep2 Hq2] ].
-
+  
   assert (s1 = s2).
   {
     eapply ins_exec_deterministic; eauto.
@@ -1811,8 +1893,17 @@ Proof.
   - (* andcc *)
     eapply andcc_rule_sound; eauto.
 
+  - (* sll *)
+    eapply sll_rule_sound; eauto.
+
+  - (* srl *)
+    eapply srl_rule_sound; eauto.
+      
   - (* or *)
     eapply or_rule_sound; eauto.
+
+  - (* set *)
+    eapply set_rule_sound; eauto.
 
   - (* nop *)
     eapply nop_rule_sound; eauto.
@@ -1822,6 +1913,9 @@ Proof.
  
   - (* wr *)
     eapply wr_rule_sound; eauto.
+
+  - (* getcwp *)
+    eapply getcwp_rule_sound; eauto.
 
   - (* save *)
     eapply save_rule_sound; eauto.

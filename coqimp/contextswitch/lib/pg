@@ -1,0 +1,5 @@
+ROOT=../../
+RELATIVE=contextswitch/lib/
+
+cd ${ROOT}
+sh pg ${RELATIVE}$1

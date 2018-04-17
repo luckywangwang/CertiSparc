@@ -1,4 +1,4 @@
-Require Import Coqlib.  
+Require Import Coqlib.   
 Require Import Maps. 
 
 Require Import Integers.
@@ -9,6 +9,8 @@ Set Asymmetric Patterns.
 
 Require Import state. 
 Require Import language.
+
+Require Import LibTactics.
 
 Set Implicit Arguments.
 Unset Strict Implicit.
@@ -93,46 +95,64 @@ Definition regInDlyBuff (rn : RegName) (D : DelayList) :=
   | Rsp rsp => In rsp (getRegs D)
   end.
 
-Inductive noDup (A : Type) : list A -> Prop :=
-| NoDup_nil : noDup nil
-| NoDup_cons : forall x l,
-    ~ In x l -> noDup l -> noDup (x :: l).
+Lemma sep_reg_dec :
+  forall (s s' : SpReg),
+    {s = s'} + {s <> s'}.
+Proof.
+  intros.
+  destruct s; destruct s'; eauto;
+    try solve [right; intro; tryfalse].
+  destruct a; destruct a0; eauto;
+    try solve [right; intro; tryfalse].
+Qed.
+
+Fixpoint remove_one {A : Type} (eq_dec : forall (x y : A), {x = y} + {x <> y})
+         (a : A) (l : list A) :=
+  match l with
+  | x :: l => if eq_dec a x then l else x :: remove_one eq_dec a l
+  | nil => nil
+  end.
+
+Definition noDup (rn : SpReg) (l : list SpReg) : Prop :=
+  ~ In rn (remove_one sep_reg_dec rn l).
 
 Definition inDlyBuff (d : DelayItem) (D : DelayList) :=
-  In d D /\ noDup (getRegs D).
+  In d D /\ noDup (snd (fst d)) (getRegs D).
 
 (* $ rn = v hold if the value v locates in memory with address R(rn) *)
 Definition regSt (rn : RegName) (v : Word) (s : State) :=
-  getmem s = MemMap.set (getregs s rn) (Some v) emp /\
+  getregs s = RegMap.set rn (Some v) empR /\ getmem s = empM /\
   ~ (regInDlyBuff rn (getdlyls s)).
 
 Fixpoint regdlySt (n : nat) (rsp : SpReg) (v : Word) (s : State) :=
   match n with
-  | 0%nat => True
-  | (S n')%nat => inDlyBuff (n', rsp, v) (getdlyls s) \/ regdlySt n' rsp v s
+  | 0%nat => inDlyBuff (0, rsp, v) (getdlyls s)
+  | (S n')%nat => inDlyBuff (n, rsp, v) (getdlyls s) \/ regdlySt n' rsp v s
   end.
 
-(* S1 S2 can be union if their register state and delaylist are same 
-and memory states are disjoint *)
+(* S1 S2 can be union if their delaylist is same 
+and memory states and register state are disjoint *)
 Definition state_union (s1 s2 s : State) :=
   match s1, s2 with
-  | (M1, Q1, D1), (M2, Q2, D2) =>
-    disjoint M1 M2 /\ s = (merge M1 M2, Q1, D1) /\ Q1 = Q2 /\ D1 = D2
+  | (M1, (R1, F1), D1), (M2, (R2, F2), D2) =>
+    disjoint M1 M2 /\ disjoint R1 R2 /\
+    s = (merge M1 M2, (merge R1 R2, F1), D1) /\ F1 = F2 /\ D1 = D2
   end.
 
 (* semantics of assertion language *)
 Fixpoint sat (s : State) (p : asrt) {struct p} : Prop :=
   match p with
-  | Aemp => getmem s = emp
-  | Amapsto l v => getmem s = MemMap.set l (Some v) emp
-  | Aaexpevl aexp addr => eval_addrexp (getregs s) (getmem s) aexp = Some addr /\
+  | Aemp => getmem s = empM /\ getregs s = empR
+  | Amapsto l v => getmem s = MemMap.set l (Some v) empM /\
+                  getregs s = empR /\ word_aligned l = true
+  | Aaexpevl aexp addr => eval_addrexp (getregs s) aexp = Some addr /\
                           word_aligned addr = true
-  | Aoexpevl oexp v => eval_opexp (getregs s) (getmem s) oexp = Some v
+  | Aoexpevl oexp v => eval_opexp (getregs s) oexp = Some v
   | Areg rn v => regSt rn v s
   | Aregdly t rsp v =>
-    exists v', getmem s = MemMap.set ((getregs s) rsp) (Some v') emp /\
+    exists v', getregs s = RegMap.set rsp (Some v') empR /\ getmem s = empM /\
           (regdlySt t rsp v s \/ regSt rsp v s)
-  | Apure p => p
+  | Apure p => p /\ getmem s = empM /\ getregs s = empR
   | Aframe id F => regSt cwp id s /\ getframelst s = F
   | Atrue => True
   | Afalse => False
@@ -151,8 +171,6 @@ Notation "p ==> q" :=
 Notation "p <==> q" :=
   (forall s, s |= p <-> s |= q)
     (at level 33, right associativity).
-
-(*** Inference Rule *)
 
 Definition OutRegs (fm : Frame) : asrt :=
   match fm with
@@ -198,9 +216,9 @@ Inductive wf_ins : asrt -> ins -> asrt -> Prop :=
     wf_ins p (ld aexp rd) (l |-> v ** rd |=> v ** q)
 
 | st_rule : forall p aexp l v v1 (rs : GenReg),
-    l |-> v ** rs |=> v1 ** p ==> aexp ==ₓ l ->
-    wf_ins (l |-> v ** rs |=> v1 ** p) (st rs aexp)
-           (l |-> v1 ** rs |=> v1 ** p)
+    l |-> v  ** p ==> ((Or rs) ==ₑ v1 //\\ aexp ==ₓ l) ->
+    wf_ins (l |-> v  ** p) (st rs aexp)
+           (l |-> v1 ** p)
 
 | add_rule : forall p q oexp (rs rd : GenReg) v1 v2 v,
     p ==> ((Or rs) ==ₑ v1 //\\ oexp ==ₑ v2) ->
@@ -229,10 +247,24 @@ Inductive wf_ins : asrt -> ins -> asrt -> Prop :=
     wf_ins p (andcc r1 oexp r2)
            (r2 |=> v ** n |=> (get_range 31 31 v) ** z |=> (iszero v) ** q)
 
+| sll_rule : forall p q oexp (rs rd : GenReg) v1 v2 v,
+    p ==> ((Or rs) ==ₑ v1 //\\ oexp ==ₑ v2) ->
+    p ==> rd |=> v ** q ->
+    wf_ins p (sll rs oexp rd) (rd |=> (v1 <<ᵢ (get_range 0 4 v2)) ** q)
+
+| srl_rule : forall p q oexp (rs rd : GenReg) v1 v2 v,
+    p ==> ((Or rs) ==ₑ v1 //\\ oexp ==ₑ v2) ->
+    p ==> rd |=> v ** q ->
+    wf_ins p (srl rs oexp rd) (rd |=> (v1 >>ᵢ (get_range 0 4 v2)) ** q)
+
 | or_rule : forall p q oexp (rs rd : GenReg) v1 v2 v,
     p ==> ((Or rs) ==ₑ v1 //\\ oexp ==ₑ v2) ->
     p ==> rd |=> v ** q ->
     wf_ins p (or rs oexp rd) (rd |=> (v1 |ᵢ v2) ** q)
+
+| set_rule : forall p q (rd : GenReg) w v,
+    p ==> rd |=> v ** q ->
+    wf_ins p (sett w rd) (rd |=> w ** q)
 
 | nop_rule : forall p q,
     p ==> q ->
@@ -244,7 +276,12 @@ Inductive wf_ins : asrt -> ins -> asrt -> Prop :=
 
 | wr_rule : forall (rsp : SpReg) (rs : GenReg) p v v1 v2 oexp,
     rsp |=> v ** p ==> ((Or rs) ==ₑ v1 //\\ oexp ==ₑ v2) ->
-    wf_ins (rsp |=> v ** p) (wr rs oexp rsp) ((3 @ rsp |==> (v1 xor v2)) ** p)
+    wf_ins (rsp |=> v ** p) (wr rs oexp rsp)
+           ((3 @ rsp |==> (set_spec_reg rsp (v1 xor v2))) ** p)
+
+| getcwp_rule : forall p F p1 id v' (rd : GenReg),
+    p ==> {| id, F |} ** rd |=> v' ** p1 ->
+    wf_ins p (getcwp rd) ({| id, F |} ** rd |=> id ** p1)
 
 | save_rule : forall p p1 q (rs rd : GenReg) id id' F fm1 fm2 fmo fml fmi v1 v2 v v' oexp,
     p ==> ((Or rs) ==ₑ v1 //\\ oexp ==ₑ v2) ->
@@ -280,12 +317,18 @@ Notation " '|-' '{{' p '}}' i '{{' q '}}' " := (wf_ins p i q) (at level 50).
 
 (*+ Well-formed Sequence +*)
 
+Definition stack_val : Type := Address * list (Frame * Frame).
+Definition ctx_val : Type := Address * (list Word * list Word * list Word * Word).
+
 Inductive logicvar : Type :=
 | logic_lv : Word -> logicvar
 | logic_llv : list Word -> logicvar
 | logic_reg : RegName -> logicvar
 | logic_fm : Frame -> logicvar
-| logic_fmls : FrameList -> logicvar.
+| logic_fmls : FrameList -> logicvar
+| logic_flp : list (Frame * Frame) -> logicvar
+| logic_stk : stack_val -> logicvar
+| logic_ctx : ctx_val -> logicvar.
 
 Definition fpre := list logicvar -> asrt.
 Definition fpost := list logicvar -> asrt.
@@ -311,8 +354,8 @@ Notation "p ↓" := (TimReduce p) (at level 40).
 
 Definition fretSta (p1 p2 : asrt) :=
   forall s s', s |= p1 -> s' |= p2 ->
-          (exists v, (getmem s) ((getregs s) r15) = Some v /\
-                (getmem s') ((getregs s) r15) = Some v).
+          (exists v, (getregs s) r15 = Some v /\
+                (getregs s') r15 = Some v).
 
 Inductive wf_seq : funspec -> asrt -> InsSeq -> asrt -> Prop :=
 | seq_rule : forall f i I p p' q Spec,
@@ -322,8 +365,9 @@ Inductive wf_seq : funspec -> asrt -> InsSeq -> asrt -> Prop :=
 | call_rule : forall f f1 f2 i I p p1 p2 p' q r fp fq (L : list logicvar) v (Spec : funspec),
     Spec (f, f +ᵢ ($ 4)) = Some (fp, fq) ->
     (p ↓) ==> r15 |=> v ** p1 ->
-    |- {{ (r15 |=> f1 ** p1) ↓ }} i {{ p2 }} -> p2 ==> ((Or r15) ==ₑ f1) ->
-    p2 ==> fp L ** r -> fq L ** r ==> p'-> fq L ==> ((Or r15) ==ₑ f1) -> DlyFrameFree r ->  
+    |- {{ (r15 |=> f1 ** p1) ↓ }} i {{ p2 }} -> fp L ==> ((Or r15) ==ₑ f1) ->
+    p2 ==> fp L ** r -> fq L ** r ==> p'-> fq L ==> ((Or r15) ==ₑ f1) ->
+    DlyFrameFree r -> wf_seq Spec p' I q ->
     wf_seq Spec p (f1 c> call f ;; f2 c> i ;; I) q
 
 | retl_rule : forall p p' q f1 f2 i Spec,
@@ -339,23 +383,26 @@ Inductive wf_seq : funspec -> asrt -> InsSeq -> asrt -> Prop :=
 | J2_rule : forall p p1 p2 q r fp fq L aexp1 aexp2 f1 f1' f2 f2' (r1 r2 : GenReg) v1 v2 Spec,
     (p ↓) ==> (aexp1 ==ₓ f1') -> (p ↓) ==> r1 |=> v1 ** p1 ->
     ((r1 |=> f1 ** p1) ↓) ==> (aexp2 ==ₓ f2') -> ((r1 |=> f1 ** p1) ↓) ==> r2 |=> v2 ** p2 ->
-    Spec (f1, f2) = Some (fp, fq) ->
-    (r2 |=> f2 ** p2) ↓ ==> fp L ** r -> fq L ** r ==> q -> DlyFrameFree r ->
+    Spec (f1', f2') = Some (fp, fq) ->
+    (r2 |=> f2 ** p2) ==> fp L ** r -> fq L ** r ==> q -> DlyFrameFree r ->
     wf_seq Spec p (consJ2 f1 aexp1 r1 f2 aexp2 r2) q
 
-| Be_rule : forall p p' q r aexp f1 f2 f bv fp fq L i I Spec,
-    (p ↓) ==> (aexp ==ₓ f) -> Spec (f, f +ᵢ ($ 4)) = Some (fp, fq) ->
-    |- {{ p ↓ }} i {{ p' }} -> (p ↓) ==> z |=> bv ** Atrue ->
-    wf_seq Spec ( p' //\\ [| bv =ᵢ ($ 0) = true |] ) I q ->
+| Be_rule : forall p p' q r f1 f2 f bv fp fq L i I Spec,
+    Spec (f, f +ᵢ ($ 4)) = Some (fp, fq) ->
+    |- {{ p ↓↓ }} i {{ p' }} -> (p ↓) ==> z |=> bv ** Atrue ->
+    (bv =ᵢ ($ 0) = true -> wf_seq Spec p' I q) -> DlyFrameFree r ->
     ((bv =ᵢ ($ 0) = false) -> ((p' ==> fp L ** r) /\ (fq L ** r ==> q))) ->
-    wf_seq Spec p (f1 e> be aexp ;; f2 e> i ;; I) q
+    wf_seq Spec p (f1 e> be f ;; f2 e> i ;; I) q
 
-| Bne_rule : forall p p' q r aexp f1 f2 f bv fp fq L i I Spec,
-    (p ↓) ==> (aexp ==ₓ f) -> Spec (f, f +ᵢ ($ 4)) = Some (fp, fq) ->
-    |- {{ p ↓ }} i {{ p' }} -> (p ↓) ==> z |=> bv ** Atrue ->
-    wf_seq Spec ( p' //\\ [| bv =ᵢ ($ 0) = false |] ) I q ->
+| Bne_rule : forall p p' q r f1 f2 f bv fp fq L i I Spec,
+    Spec (f, f +ᵢ ($ 4)) = Some (fp, fq) ->
+    |- {{ p ↓↓ }} i {{ p' }} -> (p ↓) ==> z |=> bv ** Atrue ->
+    (bv =ᵢ ($ 0) = false -> wf_seq Spec p' I q) -> DlyFrameFree r ->
     ((bv =ᵢ ($ 0) = true) -> ((p' ==> fp L ** r) /\ (fq L ** r ==> q))) ->
-    wf_seq Spec p (f1 n> bne aexp ;; f2 n> i ;; I) q
+    wf_seq Spec p (f1 n> bne f ;; f2 n> i ;; I) q
+
+| Seq_false_rule : forall q I Spec,
+    wf_seq Spec Afalse I q
 
 | Seq_frame_rule : forall p q I Spec r,
     wf_seq Spec p I q -> DlyFrameFree r ->
@@ -363,7 +410,19 @@ Inductive wf_seq : funspec -> asrt -> InsSeq -> asrt -> Prop :=
 
 | Ex_intro_rule : forall q I {tp:Type} p Spec,
     (forall x', wf_seq Spec (p x') I q) ->
-    wf_seq Spec (EX x : tp, p x) I q.
+    wf_seq Spec (EX x : tp, p x) I q
+
+| Seq_conseq_rule : forall p p' q q' I Spec,
+    wf_seq Spec p' I q' -> p ==> p' -> q' ==> q ->
+    wf_seq Spec p I q
+
+| Seq_disj_rule : forall p1 p2 q1 q2 I Spec,
+    wf_seq Spec p1 I q1 -> wf_seq Spec p2 I q2 ->
+    wf_seq Spec (p1 \\// p2) I (q1 \\// q2)
+
+| Pure_intro_rule : forall p q (pu : Prop) I Spec,
+    (pu -> wf_seq Spec p I q) ->
+    wf_seq Spec ([| pu |] ** p) I q.
 
 Notation " Spec '|-' '{{' p '}}' I '{{' q '}}' " :=
   (wf_seq Spec p I q) (at level 55).
