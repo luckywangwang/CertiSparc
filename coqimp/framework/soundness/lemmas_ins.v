@@ -687,11 +687,370 @@ Proof.
   rewrite regset_twice; eauto.
 Qed.
 
+Fixpoint rm_rsp_dlyls (D : DelayList) (rsp : SpReg) :=
+  match D with
+  | nil => nil
+  | (t, rsp1, w) :: D' =>
+    if (sep_reg_dec rsp rsp1) then
+      rm_rsp_dlyls D' rsp
+    else
+      (t, rsp1, w) :: rm_rsp_dlyls D' rsp
+  end.
+
+Lemma notindom_after_exedly_pre_still :
+  forall R R' D D' rsp,
+    (R', D') = exe_delay R D ->
+    ~ indom rsp R' -> ~ indom rsp R.
+Proof.
+  intros.
+  eapply exe_delay_dom_eq in H.
+  unfold dom_eq in *.
+  simpljoin1.
+  intro.
+  eapply H in H2.
+  tryfalse.
+Qed.
+
+Lemma inDlyBuff_rm_not_still :
+  forall D rn (rsp : SpReg),
+    regInDlyBuff rn (rm_rsp_dlyls D rsp) ->
+    regInDlyBuff rn D.
+Proof.
+  intro D.
+  induction D; intros.
+  -
+    simpls.
+    eauto.
+  -
+    destruct a, p.
+    simpl in H.
+    destruct (sep_reg_dec rsp s).
+    {
+      subst.
+      eapply IHD in H.
+      unfolds regInDlyBuff.
+      destruct rn; tryfalse.
+      simpl; eauto.
+    }
+    {
+      specialize (IHD rn).
+      unfolds regInDlyBuff.
+      destruct rn; tryfalse.
+      simpls.
+      destruct H; eauto.
+    }
+Qed.
+
+Lemma neq_rm_dlyls_still :
+  forall D s1 s2 t w,
+    s1 <> s2 ->
+    In (t, s1, w) D -> In (t, s1, w) (rm_rsp_dlyls D s2).
+Proof.
+  intro D.
+  induction D; intros.
+  -
+    simpls; tryfalse.
+  -
+    destruct a, p.
+    simpl in H0.
+    destruct H0.
+    {
+      inversion H0; subst.
+      simpl.
+      destruct (sep_reg_dec s2 s1); tryfalse.
+      simpl; eauto.
+    }
+    {
+      simpl.
+      destruct (sep_reg_dec s2 s); eauto.
+      simpl.
+      eauto.
+    }
+Qed.
+
+Lemma neq_rm_dlyls_stillin :
+  forall D s1 s2,
+    s1 <> s2 ->
+    In s1 (getRegs (rm_rsp_dlyls D s2)) ->
+    In s1 (getRegs D).
+Proof.
+  intro D.
+  induction D; intros.
+  -
+    simpls; eauto.
+  - 
+    destruct a, p.
+    simpls.
+    destruct (sep_reg_dec s2 s); tryfalse.
+    {
+      subst; eauto.
+    }
+    {
+      simpls.
+      destruct H0; eauto.
+    }
+Qed.
+    
+Lemma neq_rm_dlyls_noDup_still' :
+  forall D s1 s2,
+    s1 <> s2 ->
+    In s1 (remove_one sep_reg_dec s1 (getRegs (rm_rsp_dlyls D s2))) ->
+    In s1 (remove_one sep_reg_dec s1 (getRegs D)).
+Proof.
+  intro D.
+  induction D; intros.
+  -
+    simpls.
+    tryfalse.
+  -
+    destruct a, p.
+    simpls.
+    destruct (sep_reg_dec s2 s); tryfalse.
+    {
+      subst; eauto.
+      destruct (sep_reg_dec s1 s); tryfalse.
+      simpl; eauto.
+    }
+    {
+      destruct (sep_reg_dec s1 s); tryfalse.
+      subst; eauto.
+      simpls.
+      destruct (sep_reg_dec s s); tryfalse.
+      eapply neq_rm_dlyls_stillin; eauto.
+      simpls.
+      destruct (sep_reg_dec s1 s); tryfalse.
+      simpls; eauto.
+      destruct H0; eauto.
+    }
+Qed.
+    
+Lemma neq_rm_dlyls_noDup_still :
+  forall D s1 s2,
+    s1 <> s2 ->
+    noDup s1 (getRegs D) ->
+    noDup s1 (getRegs (rm_rsp_dlyls D s2)).
+Proof.
+  intros.
+  unfolds noDup.
+  intro.
+  eapply H0.
+  eapply neq_rm_dlyls_noDup_still'; eauto.
+Qed.
+  
+Lemma regdlySt_not_indom_rm_still :
+  forall n s w M (R : RegFile) F D (rsp : SpReg),
+    s <> rsp ->
+    regdlySt n s w (M, (R, F), D) ->
+    regdlySt n s w (M, (R, F), rm_rsp_dlyls D rsp).
+Proof.
+  intro n.
+  induction n; intros.
+  -
+    simpls.
+    unfolds inDlyBuff.
+    simpls.
+    simpljoin1.
+    split; eauto.
+    eapply neq_rm_dlyls_still; eauto.
+    eapply neq_rm_dlyls_noDup_still; eauto.
+  -
+    simpls.
+    destruct H0; eauto.
+    left.
+    unfolds inDlyBuff.
+    simpls.
+    simpljoin1.
+    split; eauto.
+    eapply neq_rm_dlyls_still; eauto.
+    eapply neq_rm_dlyls_noDup_still; eauto.
+Qed.
+
+Lemma noindom_exe_delay_rm_dlyls_stable :
+  forall D (R R' : RegFile) D' (rsp : SpReg),
+    exe_delay R D = (R', D') ->
+    ~ indom rsp R ->
+    exe_delay R (rm_rsp_dlyls D rsp) = (R', rm_rsp_dlyls D' rsp).
+Proof.
+  intro D.
+  induction D; intros.
+  -
+    simpls.
+    inversion H; subst; tryfalse.
+    simpl; eauto.
+  -
+    destruct a, p.
+    simpl in H.
+    destruct d.
+    {
+      destruct (exe_delay R D) eqn:Hexe_delay1.
+      inversion H; subst.
+      simpl.
+      destruct (sep_reg_dec rsp s); tryfalse.
+      {
+        subst.
+        assert (~ indom s (fun x : SpReg => r x)).
+        {
+          clear - Hexe_delay1 H0.
+          intro.
+          eapply H0.
+          symmetry in Hexe_delay1.
+          eapply exe_delay_dom_eq in Hexe_delay1; eauto.
+          unfold dom_eq in *.
+          simpljoin1; eauto.
+          eapply H2; eauto.
+        }
+        rewrite not_indom_set_R_stable; eauto.
+      }
+      {
+        simpl.
+        assert (~ indom rsp (fun x : SpReg => r x)).
+        {
+          clear - Hexe_delay1 H0.
+          intro.
+          eapply H0.
+          symmetry in Hexe_delay1.
+          eapply exe_delay_dom_eq in Hexe_delay1; eauto.
+          unfold dom_eq in *.
+          simpljoin1.
+          eapply H2; eauto.
+        }
+        eapply IHD in Hexe_delay1; eauto.
+        rewrite Hexe_delay1; eauto.
+      }
+    }
+    {
+      destruct (exe_delay R D) eqn:Hexe_delay.
+      inversion H; subst.
+      simpl.
+      destruct (sep_reg_dec rsp s); eauto.
+      simpl.
+      eapply IHD in Hexe_delay; eauto.
+      rewrite Hexe_delay; eauto.
+    }
+Qed.
+    
+Lemma noindom_rm_from_dlyls_stable :
+  forall p D M R F (rsp : SpReg),
+    (M, (R, F), D) |= p ->
+    ~ indom rsp R ->
+    (M, (R, F), rm_rsp_dlyls D rsp) |= p.
+Proof.
+  intro p.
+  induction p; intros;
+    try solve [simpls; simpljoin1; eauto].
+  -
+    simpls.
+    unfolds regSt.
+    simpls.
+    simpljoin1.
+    repeat (split; eauto).
+    intro.
+    eapply H2.
+    eapply inDlyBuff_rm_not_still; eauto.
+  -
+    simpls.
+    simpljoin1.
+    exists x.
+    repeat (split; eauto).
+    assert (s <> rsp).
+    {
+      intro.
+      subst.
+      eapply H0.
+      eapply regset_l_l_indom; eauto.
+    }
+    destruct H2.
+    {
+      left.
+      eapply regdlySt_not_indom_rm_still; eauto.
+    }
+    {
+      right.
+      unfolds regSt.
+      simpls.
+      simpljoin1.
+      repeat (split; eauto).
+      intro.
+      eapply H3.
+      eapply neq_rm_dlyls_stillin; eauto.
+    }
+  -
+    simpls.
+    simpljoin1.
+    lets Ht : H.
+    symmetry in Ht.
+    eapply notindom_after_exedly_pre_still with (rsp := rsp) in Ht; eauto.
+    eapply IHp with (rsp := rsp) in H1; eauto.
+    do 2 eexists.
+    split; eauto.
+    eapply noindom_exe_delay_rm_dlyls_stable; eauto.
+  -
+    simpls.
+    destruct H; eauto.
+  -
+    sep_star_split_tac.
+    simpl in H4.
+    simpljoin1.
+    eapply IHp1 with (rsp := rsp) in H; eauto.
+    eapply IHp2 with (rsp := rsp) in H3; eauto.
+    eapply disj_sep_star_merge; eauto.
+    intro.
+    eapply H0.
+    eapply indom_merge_still2; eauto.
+    intro.
+    eapply H0.
+    eapply indom_merge_still; eauto.
+Qed.
+
+Lemma rm_not_in_dlyls :
+  forall D rsp,
+    ~ In rsp (getRegs (rm_rsp_dlyls D rsp)).
+Proof.
+  intro D.
+  induction D; intros.
+  -
+    simpls.
+    intro; tryfalse.
+  -
+    destruct a, p.
+    simpl.
+    destruct (sep_reg_dec rsp s); tryfalse.
+    {
+      subst.
+      eauto.
+    }
+    {
+      simpl.
+      intro.
+      destruct H; subst; tryfalse.
+      eapply IHD; eauto.
+    }
+Qed.
+
+Lemma not_indlyls_rm_stable :
+  forall D s,
+    ~ In s (getRegs D) ->
+    rm_rsp_dlyls D s = D.
+Proof.
+  intro D.
+  induction D; intros.
+  -
+    simpls; eauto.
+  -
+    destruct a, p.
+    simpls.
+    eapply Decidable.not_or in H.
+    simpljoin1.
+    destruct (sep_reg_dec s s0); tryfalse.
+    eapply IHD in H0.
+    rewrite H0; eauto.
+Qed.
+    
 Lemma notin_dom_set_delay_asrt_stable :
-  forall p M R F D (rsp : SpReg) v,
+  forall p M R F D (rsp : SpReg) v n,
     (M, (R, F), D) |= p ->
     ~ indom rsp R -> ~ In rsp (getRegs D) ->
-    (M, (R, F), set_delay rsp v D) |= p.
+    (M, (R, F), (n, rsp, v) :: D) |= p.
 Proof.
   intro p.
   induction p; intros;
@@ -754,6 +1113,24 @@ Proof.
     }
 
   -
+    simpls.
+    simpljoin1.
+    symmetry in H.
+    eapply notindom_after_exedly_pre_still in H0; eauto. 
+    lets Ht : H2.
+    eapply noindom_rm_from_dlyls_stable with (rsp := rsp) in Ht; eauto.
+    eapply IHp with (n := S n) (rsp := rsp) (v := v) in Ht; eauto.
+    Focus 2.
+    eapply rm_not_in_dlyls; eauto.
+    symmetry in H.
+    exists x ((S n, rsp, v) :: rm_rsp_dlyls x0 rsp).
+    simpl.
+    eapply noindom_exe_delay_rm_dlyls_stable with (rsp := rsp) in H; eauto.
+    rewrite H; eauto.
+    split; eauto.
+    rewrite not_indlyls_rm_stable; eauto.
+    
+  -
     simpl in H.
     simpljoin1.
     simpl; eauto.
@@ -763,12 +1140,12 @@ Proof.
     simpl.
     destruct H; eauto.
 
-  -
+  - 
     sep_star_split_tac.
     simpl in H5.
     simpljoin1.
     simpl.
-    exists (m, (r, f0), set_delay rsp v d0) (m0, (r0, f0), set_delay rsp v d0).
+    exists (m, (r, f0), (n, rsp, v) :: d0) (m0, (r0, f0), (n, rsp, v) :: d0).
     simpl.
     repeat (split; eauto).
     eapply IHp1; eauto.
@@ -789,10 +1166,10 @@ Proof.
 Qed.
 
 Lemma dlyfrmfree_notin_changeDly_still :
-  forall p M R F D (rsp : SpReg) v,
+  forall p M R F D (rsp : SpReg) v n,
     (M, (R, F), D) |= p -> DlyFrameFree p ->
     ~ indom rsp R ->
-    (M, (R, F), set_delay rsp v D) |= p.
+    (M, (R, F), (n, rsp, v) :: D) |= p.
 Proof.
   intro p.
   induction p; intros;
@@ -821,6 +1198,18 @@ Proof.
     destruct H; subst; tryfalse; eauto.
 
   -
+    simpl in H0.
+    simpls.
+    simpljoin1.
+    exists x ((S n, rsp, v) :: x0).
+    simpls.
+    rewrite H.
+    split; eauto.
+    lets Ht : H1.
+    eapply notindom_after_exedly_pre_still in Ht; eauto.
+    eapply IHp; eauto.
+    
+  -
     simpl in H, H0.
     simpljoin1.
     simpl; eauto.
@@ -838,7 +1227,7 @@ Proof.
     simpl in H6.
     simpljoin1.
     simpl.
-    exists (m, (r, f0), set_delay rsp v d0) (m0, (r0, f0), set_delay rsp v d0).
+    exists (m, (r, f0), (n, rsp, v) :: d0) (m0, (r0, f0), (n, rsp, v) :: d0).
     simpl.
     repeat (split; eauto).
     eapply IHp1; eauto.
@@ -1369,10 +1758,13 @@ Lemma dlyfrmfree_changeFrm_stable :
     DlyFrameFree p ->
     (M, (R, F), D) |= p ->
     (M, (R, F'), D) |= p.
-Proof. 
+Proof.  
   intro p.
   induction p; intros; simpls; eauto; tryfalse.
 
+  simpljoin1.
+  do 2 eexists; eauto.
+  
   simpljoin1. 
   eapply IHp1 in H0; eauto.
 
@@ -1447,6 +1839,15 @@ Proof.
     destruct H2.
     left.
     eapply regdlySt_changeFrm_stable; eauto.
+    eauto.
+
+  -
+    simpls.
+    simpljoin1.
+    do 2 eexists; eauto.
+    split; eauto.
+    lets Ht : H0.
+    eapply notindom_after_exedly_pre_still in Ht; eauto.
     eauto.
 
   - 

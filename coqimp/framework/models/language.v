@@ -42,41 +42,44 @@ Inductive command: Type :=
 
 (* Instruction Sequence *)
 Inductive InsSeq : Type :=
-| consSeq : Label -> ins -> InsSeq -> InsSeq
-| consJ1 : Label -> AddrExp -> GenReg ->
-       Label -> ins -> InsSeq
-| consJ2 : Label -> AddrExp -> GenReg ->
-       Label -> AddrExp -> GenReg -> InsSeq
-| consCall : Label -> Label -> Label -> ins -> InsSeq -> InsSeq
-| consRetl : Label -> Label -> ins -> InsSeq
-| consBe : Label -> Label -> Label -> ins -> InsSeq -> InsSeq
-| consBne : Label -> Label -> Label -> ins -> InsSeq -> InsSeq.
+| consSeq : ins -> InsSeq -> InsSeq
+| consJ : AddrExp -> GenReg -> ins -> InsSeq
+| consCall : Label -> ins -> InsSeq -> InsSeq
+| consRetl : ins -> InsSeq
+| consBe : Label -> ins -> InsSeq -> InsSeq
+| consBne : Label -> ins -> InsSeq -> InsSeq.
 
-Notation "f1 # i ;; I" := (consSeq f1 i I) (at level 90, right associativity,
+(* Verified Instruction Sequence *)
+Inductive vInsSeq : Type :=
+| vSeq : Label -> InsSeq -> vInsSeq.
+
+Notation "i ;; I" := (consSeq i I) (at level 90, right associativity,
                                               format
-                                                "f1 # i ;; '//' I"
+                                                "i ;; '//' I"
                                              ): code_scope.
-Notation "f1 > 'jmpl' addr rr ;; f2 > i" := (consJ1 f1 addr rr f2 i)
-                                                  (at level 78, right associativity): code_scope.
-Notation "f1 >> 'Jmpl' addr1 rr1 ;; f2 >> 'Jmpl' addr2 rr2" :=
-  (consJ2 f1 addr1 rr1 f2 addr2 rr2) (at level 78, right associativity): code_scope.
-Notation "f1 c> 'call' f ;; f2 c> i ;; I" :=
-  (consCall f1 f f2 i I) (at level 90, right associativity,
-                                             format
-                                             "f1 c> 'call' f ;; f2 c> i ;; '//' I"
-                         ): code_scope.
-Notation "f1 r> 'retl' ;; f2 r> i" :=
-  (consRetl f1 f2 i) (at level 80, right associativity): code_scope.
-Notation "f1 e> 'be' addr ;; f2 e> i ;; I" :=
-  (consBe f1 addr f2 i I) (at level 90, right associativity,
-                           format
-                             "f1 e> 'be' addr ;; f2 e> i ;; '//' I"
-                          ): code_scope.
-Notation "f1 n> 'bne' addr ;; f2 n> i ;; I" :=
-  (consBne f1 addr f2 i I) (at level 90, right associativity,
-                            format
-                              "f1 n> 'bne' addr ;; f2 n> i ;; '//' I"
-                           ): code_scope.
+Notation "'jmpl' addr rr ;; i" := (consJ addr rr i)
+                                    (at level 78, right associativity): code_scope.
+
+Notation " 'call' f # i # I" :=
+  (consCall f i I) (at level 90, right associativity,
+                    format
+                      "'call' '/' f # i # '//' I"
+                   ): code_scope.
+
+Notation "'retl' ;; i" :=
+  (consRetl i) (at level 80, right associativity): code_scope.
+
+Notation "'be' f # i # I" :=
+  (consBe f i I) (at level 90, right associativity,
+                     format
+                       "'be' '/' f # i # '//' I"
+                 ): code_scope.
+
+Notation "'bne' f # i # I" :=
+  (consBne f i I) (at level 90, right associativity,
+                   format
+                     "'bne' '/' f # i # '//' I"
+                  ): code_scope.
 
 (* Test code *)
 Definition f1 := ($ 1).
@@ -85,64 +88,62 @@ Definition f3 := ($ 3).
 Definition f4 := ($ 4).
 
 Definition code : InsSeq := 
-  consJ1 f3 (Ao (Or r1)) r3 f4 nop. 
+  consJ (Ao (Or r1)) r3 nop. 
 Print code.
 
 Definition code1 : InsSeq :=
-  consSeq f1 (add r1 (Or r2) r3) (consJ1 f3 (Ao (Or r1)) r3 f4 nop).
+  consSeq (add r1 (Or r2) r3) (consJ (Ao (Or r1)) r3 nop).
 Print code1.
 
 Definition code2 : InsSeq :=
-  f1 r> retl ;; f2 r> nop.
+  retl ;; nop.
 
 Definition code3 : InsSeq :=
-  f1 # nop ;; f2 # (add r1 (Or r1) r2) ;;
-                                       f3 r> retl ;; f4 r> nop.
+  nop ;; (add r1 (Or r1) r2) ;;
+      retl ;; nop.
 
 Definition code4 : InsSeq :=
-  f1 c> call f3 ;; f2 c> nop ;; f1 r> retl ;; f2 r> nop.
+  call f3 # nop # code3.
+
+Definition code5 : InsSeq :=
+  be f3 # nop # code3.
 
 Open Scope code_scope.
 
 (*+ Code Heap +*)
 (* The definition of code heap *)
-Definition CodeHeap := MemMap.t (option command). 
+Definition CodeHeap := MemMap.t (option command).
 
 (* basic code block constructor *)
-Inductive LookupC : CodeHeap -> Label -> Label -> InsSeq -> Prop :=
+Inductive LookupC : CodeHeap -> Label -> InsSeq -> Prop :=
 | lookupNoTransIns :
-    forall C f1 f2 I i,
-      C f1 = Some (cntrans i) -> LookupC C f2 (f2 +ᵢ ($ 4)) I ->
-      LookupC C f1 f2 (f1 # i ;; I)
-| lookupJmp1 :
-    forall C f1 f2 i aexp rr,
-      C f1 = Some (cjumpl aexp rr) ->
-      C f2 = Some (cntrans i) ->
-      LookupC C f1 f2 (consJ1 f1 aexp rr f2 i)
-| lookupJmp2 :
-    forall C f1 f2 aexp1 aexp2 rr1 rr2,
-      C f1 = Some (cjumpl aexp1 rr1) ->
-      C f2 = Some (cjumpl aexp2 rr2) ->
-      LookupC C f1 f2 (consJ2 f1 aexp1 rr1 f2 aexp2 rr2)
+    forall C f I i,
+      C f = Some (cntrans i) -> LookupC C (f +ᵢ ($ 4)) I ->
+      LookupC C f (i ;; I)
+| LookupJmp :
+    forall C f i aexp rr,
+      C f = Some (cjumpl aexp rr) ->
+      C (f +ᵢ ($ 4)) = Some (cntrans i) ->
+      LookupC C f (consJ aexp rr i)
 | lookupRetl :
-    forall C f1 f2 i,
-      C f1 = Some (cretl) -> C f2 = Some (cntrans i) ->
-      LookupC C f1 f2 (f1 r> retl ;; f2 r> i)
+    forall C f i,
+      C f = Some (cretl) -> C (f +ᵢ ($ 4)) = Some (cntrans i) ->
+      LookupC C f (retl ;; i)
 | lookupCall :
-    forall C f1 f2 f i I,
-      C f1 = Some (ccall f) -> C f2 = Some (cntrans i) -> f2 = (f1 +ᵢ ($ 4)) ->
-      LookupC C (f2 +ᵢ ($ 4)) (f2 +ᵢ ($ 8)) I ->
-      LookupC C f1 f2 (f1 c> call f ;; f2 c> i ;; I)
+    forall C f f' i I,
+      C f = Some (ccall f') -> C (f +ᵢ ($ 4)) = Some (cntrans i) ->
+      LookupC C (f +ᵢ ($ 8)) I ->
+      LookupC C f (call f' # i # I)
 | lookupBe :
-    forall C f1 f2 i I f,
-      C f1 = Some (cbe f) -> C f2 = Some (cntrans i) ->
-      LookupC C (f2 +ᵢ ($ 4)) (f2 +ᵢ ($ 8)) I ->
-      LookupC C f1 f2 (f1 e> be f ;; f2 e> i ;; I)
+    forall C f f' i I,
+      C f = Some (cbe f') -> C (f +ᵢ ($ 4)) = Some (cntrans i) ->
+      LookupC C (f +ᵢ ($ 8)) I ->
+      LookupC C f (be f' # i # I)
 | lookupBne :
-    forall C f1 f2 i I f,
-      C f1 = Some (cbne f) -> C f2 = Some (cntrans i) ->
-      LookupC C (f2 +ᵢ ($ 4)) (f2 +ᵢ ($ 8)) I ->
-      LookupC C f1 f2 (f1 n> bne f ;; f2 n> i ;; I).
+    forall C f f' i I,
+      C f = Some (cbne f') -> C (f +ᵢ ($ 4)) = Some (cntrans i) ->
+      LookupC C (f +ᵢ ($ 8)) I ->
+      LookupC C f (bne f' # i # I).
 
 (*+ Operational Semantics +*)
 

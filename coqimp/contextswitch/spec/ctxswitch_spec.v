@@ -535,7 +535,7 @@ Definition ta0_save_usedwindows_pre (vl : list logicvar) :=
      get_frame_nth fmg' 7 = Some (($ 1) <<ᵢ vi) /\ ct <> ($ 0) |] **
   [| ctx_win_save cctx fml fmi fmg vy /\ ctx_pt_stk cctx (cl, clfp1 ++ clfp2) /\
      ostk_lfp_rl cstk cl clfp1 clfp2 |].
-  
+
 Definition ta0_save_usedwindows_post (vl : list logicvar) :=
   EX fmg fmg' fmo fmo' fml fml' fmi fmi' id id' F F' vy vy' vi vi' ll
      ct cctx cstk cstk' nt nctx nstk vz' vn',

@@ -192,7 +192,7 @@ Proof.
   -
     econstructor; eauto.
 
-  -
+  - 
     inversion H; subst.
 
     + 
@@ -238,17 +238,14 @@ Proof.
       simpls.
       simpljoin1.
       simpls.
-      eapply H13 in H7; eauto.
+      eapply H13 in H; eauto.
       simpls.
       simpljoin1.
       rewrite get_R_rn_neq_r0; eauto.
       2 : intro; tryfalse.
-      rewrite get_R_rn_neq_r0 in H3; eauto.
+      rewrite get_R_rn_neq_r0 in H; eauto.
       2 : intro; tryfalse.
-      rewrite get_R_rn_neq_r0 in H4; eauto.
-      2 : intro; tryfalse.
-      unfold merge.
-      rewrite H4; eauto.
+      eapply disj_in_m1_merge_still; eauto.
       intros.
       eapply IHn; eauto.
       intros.
@@ -440,26 +437,18 @@ Proof.
       eapply wf_seq_frame_rule in H6; eauto.
       unfolds insSeq_sound.
       eapply H6; eauto.
-      simpl.
+      simpl. 
       exists (m, (r0, f1), d0) (m0, (r1, f1), d0).
-      repeat (split; eauto).
-      intros.
-      clear - H9 H6 H12.
+      repeat (split; eauto). 
+      intros. 
+      clear - H6 H12.
       sep_star_split_tac.
       simpls.
       simpljoin1.
       simpls.
-      eapply H12 in H; eauto.
+      eapply H12 in H1; eauto.
       simpls.
-      simpljoin1.
-      rewrite get_R_rn_neq_r0; eauto.
-      2 : intro; tryfalse.
-      rewrite get_R_rn_neq_r0 in H; eauto.
-      2 : intro; tryfalse.
-      rewrite get_R_rn_neq_r0 in H5; eauto.
-      2 : intro; tryfalse.
-      unfold merge. 
-      rewrite H5; eauto. 
+      eapply get_R_merge_still; eauto.
 
     +
       econstructor; intros; get_ins_diff_false.

@@ -52,13 +52,11 @@ Inductive safety_insSeq : CodeHeap -> State -> Label -> Label -> asrt -> funspec
         (
           exists fp fq L r,
             pc2 = f /\ npc2 = f +ᵢ ($ 4) /\
-            Spec (f, f +ᵢ ($ 4)) = Some (fp, fq) /\ S2 |= (fp L) ** r /\
+            Spec f = Some (fp, fq) /\ S2 |= (fp L) ** r /\
             DlyFrameFree r /\
             (forall S', S' |= (fq L) ** r ->
                         safety_insSeq C S' (pc +ᵢ ($ 8)) (pc +ᵢ ($ 12)) q Spec) /\
-            (forall S' S'', S' |= fp L -> S'' |= fq L ->
-                            (get_R (getregs S') r15 = Some pc /\
-                             get_R (getregs S'') r15 = Some pc))
+            (forall S', S' |= fq L -> get_R (getregs S') r15 = Some pc)
         )
     ) ->
     safety_insSeq C S pc npc q Spec
@@ -76,8 +74,8 @@ Inductive safety_insSeq : CodeHeap -> State -> Label -> Label -> asrt -> funspec
         P__ C (S1, pc1, npc1) (S2, pc2, npc2) ->
         (
           exists fp fq L r,
-            Spec (pc2, npc2) = Some (fp, fq) /\ S2 |= (fp L) ** r /\ (fq L) ** r ==> q /\
-            DlyFrameFree r
+            Spec pc2 = Some (fp, fq) /\ S2 |= (fp L) ** r /\ (fq L) ** r ==> q /\
+            DlyFrameFree r /\ npc2 = pc2 +ᵢ ($ 4)
         )
     ) ->
     safety_insSeq C S pc npc q Spec
@@ -99,8 +97,8 @@ Inductive safety_insSeq : CodeHeap -> State -> Label -> Label -> asrt -> funspec
             v <> ($ 0) ->
             (
               exists fp fq L r,
-                Spec (pc2, npc2) = Some (fp, fq) /\ S2 |= (fp L) ** r /\
-                (fq L ** r) ==> q /\ DlyFrameFree r
+                Spec pc2 = Some (fp, fq) /\ S2 |= (fp L) ** r /\
+                (fq L ** r) ==> q /\ DlyFrameFree r /\ npc2 = pc2 +ᵢ ($ 4)
             )
           ) /\
           ( 
@@ -128,8 +126,8 @@ Inductive safety_insSeq : CodeHeap -> State -> Label -> Label -> asrt -> funspec
             v = ($ 0) ->
             (
               exists fp fq L r,
-                Spec (pc2, npc2) = Some (fp, fq) /\ S2 |= (fp L) ** r /\
-                (fq L ** r) ==> q /\ DlyFrameFree r
+                Spec pc2 = Some (fp, fq) /\ S2 |= (fp L) ** r /\
+                (fq L ** r) ==> q /\ DlyFrameFree r /\ npc2 = pc2 +ᵢ ($ 4)
             )
           ) /\
           ( 
@@ -318,13 +316,13 @@ Definition cdhp_subst (Spec Spec' : funspec) :=
   forall f fsp, Spec f = Some fsp -> Spec' f = Some fsp.
 
 (** Instruction Sequence rule Sound *)
-Definition insSeq_sound (Spec : funspec) (p : asrt) (I : InsSeq) (q : asrt) :=
-  forall C S pc npc,
-    LookupC C pc npc I -> S |= p -> safety_insSeq C S pc npc q Spec.
+Definition insSeq_sound (Spec : funspec) (p : asrt) (f : Label) (I : InsSeq) (q : asrt) :=
+  forall C S,
+    LookupC C f I -> S |= p -> safety_insSeq C S f (f +ᵢ ($ 4)) q Spec.
 
 (** Code Heap Sound *)
 Definition cdhp_sound (Spec : funspec) (C : CodeHeap) (Spec' : funspec) :=
-  forall f1 f2 fp fq L S,
-    Spec' (f1, f2) = Some (fp, fq) -> S |= (fp L) ->
+  forall f fp fq L S,
+    Spec' f = Some (fp, fq) -> S |= (fp L) ->
     cdhp_subst Spec Spec' ->
-    exists I, LookupC C f1 f2 I /\ insSeq_sound Spec (fp L) I (fq L).
+    exists I, LookupC C f I /\ insSeq_sound Spec (fp L) f I (fq L).
