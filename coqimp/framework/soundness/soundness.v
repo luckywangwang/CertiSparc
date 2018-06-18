@@ -138,8 +138,29 @@ Inductive safety_insSeq : CodeHeap -> State -> Label -> Label -> asrt -> funspec
     ) ->
     safety_insSeq C S pc npc q Spec
 
-| ret_seq : forall C S pc npc q Spec,
+| retl_seq : forall C S pc npc q Spec,
     C pc = Some (cretl) ->
+    (
+      exists S1 S2 pc1 npc1 pc2 npc2,
+        P__ C (S, pc, npc) (S1, pc1, npc1) /\
+        P__ C (S1, pc1, npc1) (S2, pc2, npc2)
+    ) ->
+    (
+      forall S1 S2 pc1 npc1 pc2 npc2,
+        P__ C (S, pc, npc) (S1, pc1, npc1) ->
+        P__ C (S1, pc1, npc1) (S2, pc2, npc2) ->
+        (
+          S2 |= q /\
+          (exists f,
+              get_R (getregs S2) r15 = Some f /\
+              pc2 = f +ᵢ ($ 8) /\ npc2 = f +ᵢ ($ 12)
+          )
+        )
+    ) ->
+    safety_insSeq C S pc npc q Spec
+
+| ret_seq : forall C S pc npc q Spec,
+    C pc = Some (cret) ->
     (
       exists S1 S2 pc1 npc1 pc2 npc2,
         P__ C (S, pc, npc) (S1, pc1, npc1) /\
@@ -247,6 +268,24 @@ Inductive safety : nat -> CodeHeap -> State -> Label -> Label -> asrt -> nat -> 
     ) ->
     (
       C pc = Some (cretl) ->
+      (
+        (
+          exists S1 S2 pc1 npc1 pc2 npc2,
+            P__ C (S, pc, npc) (S1, pc1, npc1) /\ P__ C (S1, pc1, npc1) (S2, pc2, npc2)
+        ) /\
+        (
+          forall S1 S2 pc1 pc2 npc1 npc2,
+            P__ C (S, pc, npc) (S1, pc1, npc1) ->
+            P__ C (S1, pc1, npc1) (S2, pc2, npc2) ->
+            (
+              (Nat.eqb k 0 = true /\ S2 |= q) \/
+              (Nat.eqb k 0 = false /\ safety n C S2 pc2 npc2 q (Nat.pred k))
+            )
+        )
+      )
+    ) ->
+    (
+      C pc = Some (cret) ->
       (
         (
           exists S1 S2 pc1 npc1 pc2 npc2,

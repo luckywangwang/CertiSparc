@@ -1,4 +1,4 @@
-Require Import Coqlib.             
+Require Import Coqlib.               
 Require Import Maps.       
 Require Import LibTactics.  
         
@@ -29,29 +29,29 @@ Open Scope code_scope.
 Open Scope mem_scope.
 
 Theorem forward_rule :
-  forall p q q' Spec I,
+  forall p q q' Spec I f,
     q ==> q' ->
-    Spec |- {{ p }} I {{ q }} ->
-    Spec |- {{ p }} I {{ q' }}.
+    Spec |- {{ p }} f # I {{ q }} ->
+    Spec |- {{ p }} f # I {{ q' }}.
 Proof.
   intros.
   eapply Seq_conseq_rule; eauto.
 Qed.
 
 Theorem backward_rule :
-  forall p p' q Spec I,
+  forall p p' q Spec I f,
     p' ==> p ->
-    Spec |- {{ p }} I {{ q }} ->
-    Spec |- {{ p' }} I {{ q }}.
+    Spec |- {{ p }} f # I {{ q }} ->
+    Spec |- {{ p' }} f # I {{ q }}.
 Proof.
   intros.
   eapply Seq_conseq_rule; eauto.
 Qed.
   
 Theorem ex_intro_rule' :
-  forall I {tp : Type} (p q : tp -> asrt) (Spec : funspec),
-    (forall x' : tp, Spec |- {{ p x' }} I {{ q x' }}) ->
-    Spec |- {{ EX x : tp, p x }} I {{ EX x : tp, q x }}.
+  forall I {tp : Type} (p q : tp -> asrt) (Spec : funspec) f,
+    (forall x' : tp, Spec |- {{ p x' }} f # I {{ q x' }}) ->
+    Spec |- {{ EX x : tp, p x }} f # I {{ EX x : tp, q x }}.
 Proof.
   intros.
   eapply Ex_intro_rule; eauto.
@@ -63,13 +63,13 @@ Proof.
 Qed.
 
 Theorem disj_sep_rule :
-  forall p1 p2 p q I Spec,
-    Spec |- {{ p1 ** p }} I {{ q }} ->
-           Spec |- {{ p2 ** p }} I {{ q }} ->
-                  Spec |- {{ (p1 \\// p2) ** p }} I {{ q }}.
+  forall p1 p2 p q I Spec f,
+    Spec |- {{ p1 ** p }} f # I {{ q }} ->
+           Spec |- {{ p2 ** p }} f # I {{ q }} ->
+                  Spec |- {{ (p1 \\// p2) ** p }} f # I {{ q }}.
 Proof.
   intros.
-  assert (Ht : Spec |- {{(p1 ** p) \\// (p2 ** p)}} I {{q \\// q}}).
+  assert (Ht : Spec |- {{(p1 ** p) \\// (p2 ** p)}} f # I {{q \\// q}}).
   {
     eapply Seq_disj_rule; eauto.
   }
@@ -94,8 +94,8 @@ Proof.
 Qed.
 
 Theorem Afalse_sep_rule :
-  forall p q I Spec,
-    Spec |- {{ Afalse ** p }} I {{ q }}.
+  forall p q I Spec f,
+    Spec |- {{ Afalse ** p }} f # I {{ q }}.
 Proof.
   intros.
   eapply Seq_conseq_rule.
@@ -110,7 +110,7 @@ Qed.
 Ltac hoare_lift_pre n :=
   let H' := fresh in
   match goal with
-  | |- _ |- {{ _ }} _ {{ _ }} =>
+  | |- _ |- {{ _ }} _ # _ {{ _ }} =>
     eapply backward_rule;
     [ introv H'; simpl_sep_liftn_in H' n; eapply H' | idtac]
   | _ => idtac
@@ -408,10 +408,10 @@ Proof.
   repeat (split; eauto).
 Qed.
 
-Lemma hoare_pure_gen' : forall P Q (pu:Prop) Spec I,
+Lemma hoare_pure_gen' : forall P Q (pu:Prop) Spec I f,
     (forall S, S |= P -> pu) ->
-    Spec |- {{ [| pu |] ** P }} I {{ Q }} ->
-    Spec |- {{ P }} I {{ Q }}.
+    Spec |- {{ [| pu |] ** P }} f # I {{ Q }} ->
+    Spec |- {{ P }} f # I {{ Q }}.
 Proof.
   intros.
   eapply backward_rule with (p := ([| pu |] ** P)); eauto.
@@ -422,9 +422,9 @@ Proof.
 Qed.
 
 Theorem ex_intro_l_rule :
-  forall {tp : Type} (p : tp -> asrt) p' q I Spec,
-    (forall x' : tp, Spec |- {{ p x' ** p' }} I {{ q }}) ->
-    Spec |- {{ (EX x : tp, p x) ** p' }} I {{ q }}.
+  forall {tp : Type} (p : tp -> asrt) p' q I Spec f,
+    (forall x' : tp, Spec |- {{ p x' ** p' }} f # I {{ q }}) ->
+    Spec |- {{ (EX x : tp, p x) ** p' }} f # I {{ q }}.
 Proof.
   intros.
   eapply backward_rule.
@@ -435,7 +435,7 @@ Qed.
   
 Ltac hoare_ex_intro :=
   match goal with
-  | |- _ |- {{ EX _, _ }} _ {{ EX _, _ }} =>
+  | |- _ |- {{ EX _, _ }} _ # _ {{ EX _, _ }} =>
     eapply ex_intro_rule'; try intros;
     hoare_ex_intro
   | _ => idtac
@@ -443,10 +443,10 @@ Ltac hoare_ex_intro :=
 
 Ltac hoare_ex_intro_pre :=
   match goal with
-  | |- _ |- {{ EX _, _ }} _ {{ _ }} =>
+  | |- _ |- {{ EX _, _ }} _ # _ {{ _ }} =>
     eapply Ex_intro_rule; try intros;
     hoare_ex_intro_pre
-  | |- _ |- {{ (EX _, _) ** _ }} _ {{ _ }} =>
+  | |- _ |- {{ (EX _, _) ** _ }} _ # _ {{ _ }} =>
     eapply ex_intro_l_rule; try intros;
     hoare_ex_intro_pre
   | _ => idtac

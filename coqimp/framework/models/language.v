@@ -37,6 +37,7 @@ Inductive command: Type :=
 | ccall : Label -> command
 | cjumpl : AddrExp -> GenReg -> command
 | cretl : command
+| cret : command
 | cbe : Label -> command
 | cbne : Label -> command.
 
@@ -46,6 +47,7 @@ Inductive InsSeq : Type :=
 | consJ : AddrExp -> GenReg -> ins -> InsSeq
 | consCall : Label -> ins -> InsSeq -> InsSeq
 | consRetl : ins -> InsSeq
+| consRet : ins -> InsSeq
 | consBe : Label -> ins -> InsSeq -> InsSeq
 | consBne : Label -> ins -> InsSeq -> InsSeq.
 
@@ -68,6 +70,9 @@ Notation " 'call' f # i # I" :=
 
 Notation "'retl' ;; i" :=
   (consRetl i) (at level 80, right associativity): code_scope.
+
+Notation "'ret' ;; i" :=
+  (consRet i) (at level 80, right associativity): code_scope.
 
 Notation "'be' f # i # I" :=
   (consBe f i I) (at level 90, right associativity,
@@ -129,6 +134,10 @@ Inductive LookupC : CodeHeap -> Label -> InsSeq -> Prop :=
     forall C f i,
       C f = Some (cretl) -> C (f +ᵢ ($ 4)) = Some (cntrans i) ->
       LookupC C f (retl ;; i)
+| lookupRet :
+    forall C f i,
+      C f = Some (cret) -> C (f +ᵢ ($ 4)) = Some (cntrans i) ->
+      LookupC C f (ret ;; i)
 | lookupCall :
     forall C f f' i I,
       C f = Some (ccall f') -> C (f +ᵢ ($ 4)) = Some (cntrans i) ->
@@ -318,6 +327,11 @@ Inductive H__ : CodeHeap -> State * Label * Label -> State * Label * Label -> Pr
 | Retl :
     forall C M (R : RegFile) F D pc npc f,
       C pc = Some (cretl) -> get_R R r15 = Some f ->
+      H__ C ((M, (R, F), D), pc, npc) ((M, (R, F), D), npc, f +ᵢ ($ 8))
+
+| Ret :
+    forall C M (R : RegFile) F D pc npc f,
+      C pc = Some (cret) -> get_R R r31 = Some f ->
       H__ C ((M, (R, F), D), pc, npc) ((M, (R, F), D), npc, f +ᵢ ($ 8))
 
 | Be_true :

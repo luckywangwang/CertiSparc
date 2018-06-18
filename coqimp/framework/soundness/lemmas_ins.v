@@ -1,4 +1,4 @@
-Require Import Coqlib.  
+Require Import Coqlib.   
 Require Import Maps.  
 Require Import LibTactics.
 
@@ -3824,6 +3824,14 @@ Proof.
     eapply get_R_merge_still; eauto.
     simpl.
     repeat (split; eauto).
+  - (** ret *)
+    do 2 eexists.
+    split.
+    econstructor; eauto.
+    eapply Ret; eauto.
+    eapply get_R_merge_still; eauto.
+    simpl.
+    repeat (split; eauto).
   - (** be-true *)
     do 2 eexists.
     split.
@@ -3865,7 +3873,7 @@ Lemma program_step_deterministic :
   forall s s1 s2 C pc npc pc1 npc1 pc2 npc2,
     P__ C (s, pc, npc) (s1, pc1, npc1) -> P__ C (s, pc, npc) (s2, pc2, npc2) ->
     s1 = s2 /\ pc1 = pc2 /\ npc1 = npc2.
-Proof.
+Proof. 
   intros.
   inversion H; subst.
   inversion H0; subst.
@@ -3878,7 +3886,10 @@ Proof.
   -
     rewrite H19 in H23.
     inversion H23; eauto.
-  - 
+  -  
+    rewrite H19 in H21.
+    inversion H21; subst; eauto.
+  -
     rewrite H19 in H21.
     inversion H21; subst; eauto.
 Qed.

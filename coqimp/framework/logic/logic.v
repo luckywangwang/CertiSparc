@@ -355,13 +355,18 @@ Definition fretSta (p1 p2 : asrt) :=
           (exists v, (getregs s) r15 = Some v /\
                 (getregs s') r15 = Some v).
 
+Definition fretStoreSta (p1 p2 : asrt) :=
+  forall s s', s |= p1 -> s' |= p2 ->
+          (exists v, (getregs s) r31 = Some v /\
+                (getregs s') r15 = Some v).
+
 Inductive wf_seq : funspec -> asrt -> Label -> InsSeq -> asrt -> Prop :=
 | seq_rule : forall f i I p p' q Spec,
-    |- {{ p ↓ }} i {{ p' }} -> wf_seq Spec p' f I q ->
+    |- {{ p ↓ }} i {{ p' }} -> wf_seq Spec p' (f +ᵢ ($ 4)) I q ->
     wf_seq Spec p f (i ;; I) q
 
 | call_rule : forall f f' i I p p1 p2 p' q r fp fq (L : list logicvar) v (Spec : funspec),
-    Spec f = Some (fp, fq) ->
+    Spec f' = Some (fp, fq) ->
     (p ↓) ==> r15 |=> v ** p1 ->
     |- {{ (r15 |=> f ** p1) ↓ }} i {{ p2 }} ->
     p2 ==> fp L ** r -> fq L ** r ==> p'-> fq L ==> ((Or r15) ==ₑ f) ->
@@ -372,9 +377,13 @@ Inductive wf_seq : funspec -> asrt -> Label -> InsSeq -> asrt -> Prop :=
     |- {{ (p ↓) ↓ }} i {{ p' }} -> p' ==> q -> fretSta ((p ↓) ↓) p' ->
     wf_seq Spec p f (retl ;; i) q
 
+| ret_rule : forall p p' q f i Spec,
+    |- {{ (p ↓) ↓ }} i {{ p' }} -> p' ==> q -> fretStoreSta ((p ↓) ↓) p' ->
+    wf_seq Spec p f (ret ;; i) q
+
 | J_rule : forall p p1 p' q (r1 : GenReg) f f' aexp Spec fp fq L v r i,
     (p ↓) ==> aexp ==ₓ f' -> Spec f' = Some (fp, fq) ->
-    (p ↓) ==> r1 |=> v ** p1 -> |- {{ (r1 |=> f' ** p1) ↓ }} i {{ p' }} ->
+    (p ↓) ==> r1 |=> v ** p1 -> |- {{ (r1 |=> f ** p1) ↓ }} i {{ p' }} ->
     p' ==> fp L ** r -> fq L ** r ==> q -> DlyFrameFree r ->
     wf_seq Spec p f (consJ aexp r1 i) q
 
@@ -390,7 +399,7 @@ Inductive wf_seq : funspec -> asrt -> Label -> InsSeq -> asrt -> Prop :=
     p ==> z |=> bv ** Atrue -> |- {{ p ↓↓ }} i {{ p' }} ->
     (bv =ᵢ ($ 0) = false -> wf_seq Spec p' (f +ᵢ ($ 8)) I q) -> DlyFrameFree r ->
     ((bv =ᵢ ($ 0) = true) -> ((p' ==> fp L ** r) /\ (fq L ** r ==> q))) ->
-    wf_seq Spec p f (be f' # i # I) q
+    wf_seq Spec p f (bne f' # i # I) q
 
 | Seq_false_rule : forall q I f Spec,
     wf_seq Spec Afalse f I q
@@ -415,7 +424,7 @@ Inductive wf_seq : funspec -> asrt -> Label -> InsSeq -> asrt -> Prop :=
     (pu -> wf_seq Spec p f I q) ->
     wf_seq Spec ([| pu |] ** p) f I q.
 
-Notation " Spec '|-' '{{' p '}}' f ':' I '{{' q '}}' " :=
+Notation " Spec '|-' '{{' p '}}' f '#' I '{{' q '}}' " :=
   (wf_seq Spec p f I q) (at level 55).
 
 (*+ Well-formed Code Heap +*)

@@ -1,5 +1,5 @@
 ROOT:=../../
-RELATIVE:=contextswitch/spec/
+RELATIVE:=example/spec/
 
 SRCFILES := $(shell find "." -type f -name "*.v")
 FORAC := $(patsubst %.v, %.vo, $(SRCFILES))

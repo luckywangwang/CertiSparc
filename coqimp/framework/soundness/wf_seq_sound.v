@@ -1,4 +1,4 @@
-Require Import Coqlib.        
+Require Import Coqlib.             
 Require Import Maps.      
 Require Import LibTactics.  
        
@@ -183,8 +183,18 @@ Proof.
     eapply IHI; eauto.
     rewrite <- H5.
     eauto.
-
+ 
   - (** retl *)
+    inversion H; subst.
+    inversion H0; get_ins_diff_false.
+    eapply retl_seq; eauto.
+    clear H2 H4.
+    intros.
+    eapply H5 in H4; eauto.
+    simpljoin1; eauto.
+    split; eauto.
+ 
+  - (** ret *)
     inversion H; subst.
     inversion H0; get_ins_diff_false.
     eapply ret_seq; eauto.
@@ -452,7 +462,7 @@ Proof.
     inversion H; subst.
     inversion H4; subst; get_ins_diff_false.
     clear H H5.
-    eapply ret_seq; eauto.
+    eapply retl_seq; eauto.
     {
       simpljoin1.
       eapply program_step_safety_property with (s := (m1 ⊎ m0, (r1 ⊎ r0, f0), d0))
@@ -512,6 +522,70 @@ Proof.
       simpl; eauto.
     }
 
+  - (** ret *)
+    inversion H; subst.
+    inversion H4; subst; get_ins_diff_false.
+    clear H H5.
+    eapply ret_seq; eauto.
+    {
+      simpljoin1.
+      eapply program_step_safety_property with (s := (m1 ⊎ m0, (r1 ⊎ r0, f0), d0))
+        in H; eauto.
+      simpljoin1.
+      destruct_state x.
+      destruct_state x6.
+      simpl in H7.
+      simpljoin1.
+      eapply program_step_safety_property with (s := (m ⊎ m2, (r2 ⊎ r3, f1), d1))
+        in H5; eauto.
+      simpljoin1.
+      destruct_state x0.
+      destruct_state x5.
+      simpl in H12.
+      simpljoin1.
+      do 6 eexists.
+      eauto.
+      simpl; eauto.
+      simpl; eauto.
+    }
+    {
+      simpljoin1.
+      lets Hp : H.
+      eapply H8 with (S1 := x) in Hp; eauto.
+      simpljoin1.
+      clear H8.
+      eapply program_step_safety_property with
+      (s := (m1 ⊎ m0, (r1 ⊎ r0, f0), d0)) (r := r) in H; eauto.
+      simpljoin1.
+      destruct_state x.
+      destruct_state x4.
+      simpl in H8.
+      simpljoin1.
+      eapply program_step_safety_property with
+      (s := (m ⊎ m2, (r2 ⊎ r3, f1), d1)) (r := r) in H5; eauto.
+      simpljoin1.
+      destruct_state x0.
+      destruct_state x3.
+      simpl in H13.
+      simpljoin1.
+      simpls.
+      intros.
+      eapply program_step_deterministic in H; eauto.
+      simpljoin1.
+      eapply program_step_deterministic in H5; eauto.
+      simpljoin1.
+      split; eauto.
+      exists (m3, (r4, f2), d2) (m4, (r5, f2), d2).
+      simpl.
+      repeat (split; eauto).
+      exists x5.
+      split; eauto.
+      simpl.
+      eapply get_R_merge_still; eauto.
+      simpl; eauto.
+      simpl; eauto.
+    }
+    
   - (** be f *)
     inversion H; subst.
     inversion H4; subst; get_ins_diff_false.
@@ -755,6 +829,16 @@ Proof.
   - (** retl *)
     inversion H; subst.
     inversion H0; get_ins_diff_false.
+    eapply retl_seq; eauto.
+    intros.
+    lets Hq1 : H6.
+    eapply H4 with (S1 := S1) in Hq1; eauto.
+    simpljoin1.
+    split; simpl; eauto.
+
+  - (** ret *)
+    inversion H; subst.
+    inversion H0; get_ins_diff_false.
     eapply ret_seq; eauto.
     intros.
     lets Hq1 : H6.
@@ -893,6 +977,16 @@ Proof.
     eauto.
 
   - (** retl *)
+    inversion H; subst.
+    inversion H0; get_ins_diff_false.
+    eapply retl_seq; eauto.
+    intros.
+    lets Hq1 : H6.
+    eapply H4 with (S1 := S1) in Hq1; eauto.
+    simpljoin1.
+    split; simpl; eauto.
+
+  - (** ret *)
     inversion H; subst.
     inversion H0; get_ins_diff_false.
     eapply ret_seq; eauto.
@@ -1103,7 +1197,7 @@ Proof.
   rewrite Int.add_assoc in H16; eauto.
 Qed.
 
-Theorem wf_seq_ret_rule :
+Theorem wf_seq_retl_rule :
   forall p p' q i Spec f,
     ins_sound ((p ↓) ↓) p' i ->
     p' ==> q -> fretSta ((p ↓) ↓) p' ->
@@ -1113,7 +1207,7 @@ Proof.
   unfolds insSeq_sound.
   intros.
   inversion H2; subst.
-  eapply ret_seq; eauto.
+  eapply retl_seq; eauto.
 
   (** progress *)
   destruct_state S.
@@ -1183,6 +1277,93 @@ Proof.
   rewrite get_R_rn_neq_r0 in H24; eauto.
   2 : intro; tryfalse.
   eapply exe_delay_general_reg_stable with (r := r15) in Hexe_delay2; eauto.
+  eapply Hexe_delay2 in H24.
+  rewrite H24 in H9.
+  inversion H9; subst.
+  eauto.
+  rewrite Int.add_assoc; eauto.
+Qed.
+
+Theorem wf_seq_ret_rule :
+  forall p p' q i Spec f,
+    ins_sound ((p ↓) ↓) p' i ->
+    p' ==> q -> fretStoreSta ((p ↓) ↓) p' ->
+    insSeq_sound Spec p f (ret ;; i) q.
+Proof.
+  intros.
+  unfolds insSeq_sound.
+  intros.
+  inversion H2; subst.
+  eapply ret_seq; eauto.
+
+  (** progress *)
+  destruct_state S.
+  assert (exists R' D', exe_delay r d = (R', D')).
+  {
+    eapply exe_delay_no_abort; eauto.
+  }
+  simpljoin1.
+  renames x to R', x0 to D'.
+  symmetry in H4.
+  lets Hexe_delay1 : H4.
+  eapply dly_reduce_asrt_stable in Hexe_delay1; eauto.
+  assert (exists R'' D'', exe_delay R' D' = (R'', D'')).
+  {
+    eapply exe_delay_no_abort; eauto.
+  } 
+  simpljoin1.
+  renames x to R'', x0 to D''.
+  symmetry in H6.
+  lets Hexe_delay2 : H6. 
+  eapply dly_reduce_asrt_stable in Hexe_delay2; eauto.
+  lets Hp' : Hexe_delay2.
+  eapply H in Hp'; eauto.
+  simpljoin1.
+  lets Hret_f : H9.
+  eapply H1 in Hret_f; eauto.
+  simpljoin1. 
+  exists (m, (R', f0), D') x (f +ᵢ ($ 4)) (x0 +ᵢ ($ 8)) (x0 +ᵢ ($ 8)) ((x0 +ᵢ ($ 8)) +ᵢ ($ 4)).
+  split; eauto. 
+  econstructor; eauto.
+  eapply Ret; eauto.
+  simpls. 
+  clear - H6 H10.
+  unfolds get_R.
+  eapply exe_delay_general_reg_stable in H10; eauto.
+  rewrite H10; eauto.
+  destruct_state x.
+  econstructor; eauto.
+  eapply NTrans; eauto.
+
+  (** preservation *)
+  intros.
+  inversion H4; subst.
+  inversion H16; get_ins_diff_false.
+  clear H12.
+  inversion H6; subst.
+  inversion H21; get_ins_diff_false.
+  lets Hexe_delay1 : H11.
+  lets Hexe_delay2 : H12.
+  eapply dly_reduce_asrt_stable in H11; eauto.
+  eapply dly_reduce_asrt_stable in H12; eauto.
+  lets Hp' : H12.
+  eapply H in Hp'; eauto.
+  simpljoin1. 
+  eapply ins_exec_deterministic in H19; eauto.
+  subst. 
+  split; eauto.
+  exists f0.
+  simpl.
+  repeat (split; eauto).
+  eapply H1 in H9; eauto.
+  simpljoin1.
+  simpls.
+  symmetry in Hexe_delay2.
+  rewrite get_R_rn_neq_r0; eauto.
+  2 : intro; tryfalse.
+  rewrite get_R_rn_neq_r0 in H24; eauto.
+  2 : intro; tryfalse.
+  eapply exe_delay_general_reg_stable with (r := r31) in Hexe_delay2; eauto.
   eapply Hexe_delay2 in H24.
   rewrite H24 in H9.
   inversion H9; subst.
@@ -1388,67 +1569,59 @@ Proof.
   sep_star_split_tac.
   simpls. 
   unfolds regSt.
-  simpls. 
+  simpls.  
   simpljoin1.
   rewrite get_R_rn_neq_r0; eauto.
   2 : intro; tryfalse.
   eapply get_vl_merge_still; eauto.
   unfold RegMap.set.
   destruct_rneq.
-  lets Hz : H29.
-  unfold merge in Hz.
-  unfold RegMap.set in Hz.
-  destruct_rneq_H.
-  inversion Hz; subst.
-  eapply regz_exe_delay_stable2; eauto.
   simpl.
-  eapply H0 in H11.
-  clear - Hexe_delay1 H11 H29.
+  lets Hz : H5.
+  eapply H0 in Hz.
   sep_star_split_tac.
-  simpls.
+  simpl in H18.
+  simpljoin1.
+  simpl in H10.
   unfolds regSt.
-  simpls.
+  simpl in H10.
   simpljoin1.
   rewrite get_R_rn_neq_r0; eauto.
-  2 : intro; tryfalse.
-  rewrite get_R_rn_neq_r0 in H29; eauto.
-  2 : intro; tryfalse.
-  lets Hz : H29.
-  unfold RegMap.set in Hz.
-  unfold merge in Hz.
-  destruct_rneq_H.
-  inversion Hz; subst.
-  eapply regz_exe_delay_stable2; eauto.
+  eapply get_vl_merge_still; eauto.
+  unfold RegMap.set.
+  destruct_rneq.
+  intro; tryfalse.
+  
   split.
   { 
     intros.
-    eapply dly_reduce_asrt_stable in H11; eauto.
-    lets Hz : H11.
+    lets Hz : H5.
     eapply H0 in Hz.
     inversion H19; get_ins_diff_false.
     inversion H24; get_ins_diff_false.
     exists fp fq L r.
-    lets Hp : H11.
+    lets Hp : H14. 
+    eapply dly_reduce_asrt_stable with (p := p) in Hp; eauto.
     eapply dly_reduce_asrt_stable in Hp; eauto.
     eapply H1 in Hp; eauto.
     simpljoin1. 
     eapply ins_exec_deterministic in H25; eauto.
     subst.
     assert (bv = v).
-    { 
+    {
+      rewrite get_R_rn_neq_r0 in H30; eauto.
+      2 : intro; tryfalse.
+      eapply regz_exe_delay_stable2 in H30; eauto.
       clear - Hz H30.
       sep_star_split_tac.
       simpls.
       unfolds regSt.
       simpls.
       simpljoin1.
-      rewrite get_R_rn_neq_r0 in H30; eauto.
-      2 : intro; tryfalse.
       unfold merge in *.
       unfolds RegMap.set.
       destruct_rneq_H.
-      inversion H30; subst.
-      eauto.
+      inversion H30; eauto.
     }
     subst.
     assert (v =ᵢ ($ 0) = false).
@@ -1462,19 +1635,20 @@ Proof.
       subst.
       tryfalse.
     }
-    eapply H2 in H14; eauto.
+    eapply H2 in H16; eauto.
     simpljoin1.
     repeat (split; eauto).
     assert (bv = $ 0).
     {
+      rewrite get_R_rn_neq_r0 in H30; eauto.
+      2 : intro; tryfalse.
+      eapply regz_exe_delay_stable2 in H30; eauto.
       clear - Hz H30.
       sep_star_split_tac.
       simpls.
       unfolds regSt.
       simpls.
       simpljoin1.
-      rewrite get_R_rn_neq_r0 in H30; eauto.
-      2 : intro; tryfalse.
       unfold merge in *.
       unfolds RegMap.set.
       destruct_rneq_H.
@@ -1484,43 +1658,55 @@ Proof.
     tryfalse.
   }
   {
-    intros. 
-    eapply dly_reduce_asrt_stable in H11; eauto.
+    intros.
+    assert (Heq : bv =ᵢ ($ 0) = true).
+    {
+      subst.
+      rewrite Int.eq_true; eauto.
+    } 
     inversion H19; get_ins_diff_false.
-    eapply H0 in H11. 
-    clear - H11 H30 H31.
-    sep_star_split_tac.
-    simpls.
-    unfolds regSt.
-    simpls. 
-    simpljoin1. 
-    rewrite get_R_rn_neq_r0 in H30; eauto.
-    unfold merge in *. 
-    unfolds RegMap.set.
-    destruct_rneq_H.
-    intro; tryfalse.
-    inversion H30; subst.
-    eapply dly_reduce_asrt_stable in H13; eauto.
-    eapply H1 in H13.
-    simpljoin1.
-    inversion H24; get_ins_diff_false.
-    eapply ins_exec_deterministic in H8; eauto.
-    subst.  
-    clear - H3 H16 H9 H10.
-    unfolds insSeq_sound.
-    eapply H3; eauto. 
-    rewrite Int.add_assoc; eauto.
+    {
+      rewrite get_R_rn_neq_r0 in H30; eauto.
+      2 : intro; tryfalse.
+      eapply regz_exe_delay_stable2 in H30; eauto.
+      clear - H0 H5 H30 H31.
+      eapply H0 in H5.
+      sep_star_split_tac.
+      simpl in H4.
+      simpljoin1.
+      simpl in H2.
+      unfolds regSt.
+      simpls.
+      simpljoin1.
+      unfold merge in *.
+      unfolds RegMap.set.
+      destruct_rneq_H.
+    }
+    {
+      eapply H3 in Heq.
+      eapply dly_reduce_asrt_stable in H14; eauto.
+      eapply dly_reduce_asrt_stable in H14; eauto.
+      eapply H1 in H14; eauto.
+      simpljoin1.
+      inversion H24; get_ins_diff_false.
+      eapply ins_exec_deterministic in H8; eauto.
+      subst. 
+      clear - Heq H9 H13.
+      unfolds insSeq_sound.
+      eapply Heq in H13; eauto.
+      rewrite Int.add_assoc; eauto.
+    }
   }
 Qed.
 
 Lemma wf_seq_bne_rule :
-  forall p p' q r f1 f2 f i fp fq L I bv Spec,
-    Spec (f, f +ᵢ ($ 4)) = Some (fp, fq) -> DlyFrameFree r ->
-    (p ↓) ==> z |=> bv ** Atrue ->
+  forall p p' q r f f' i fp fq L I bv Spec,
+    Spec f' = Some (fp, fq) -> DlyFrameFree r ->
+    p ==> z |=> bv ** Atrue ->
     ins_sound ((p ↓) ↓) p' i ->
     (bv =ᵢ ($ 0) = true -> p' ==> fp L ** r /\ fq L ** r ==> q) ->
-    (bv =ᵢ ($ 0) = false -> insSeq_sound Spec p' I q) ->
-    insSeq_sound Spec p (f1 n> bne f;; f2 n> i;;I) q.
+    (bv =ᵢ ($ 0) = false -> insSeq_sound Spec p' (f +ᵢ ($ 8)) I q) ->
+    insSeq_sound Spec p f (bne f'# i#I) q.
 Proof.
   introv H Hr.
   intros.
@@ -1551,22 +1737,23 @@ Proof.
   eapply dly_reduce_asrt_stable in Hp'; eauto.
   eapply H1 in Hp'.
   simpljoin1.
-  lets Hz : Hp.
+  lets Hz : H5.
   eapply H0 in Hz.
   destruct (Int.eq bv ($ 0)) eqn:Heqe.
   {
-    exists (m, (R', f0), D') x f2 f f (f +ᵢ ($ 4)).
+    exists (m, (R', f0), D') x (f +ᵢ ($ 4)) f' f' (f' +ᵢ ($ 4)).
     split; eauto. 
     econstructor; eauto.
     eapply Bne_true; eauto.
+    rewrite get_R_rn_neq_r0; eauto.
+    2 : intro; tryfalse.
+    eapply regz_exe_delay_stable; eauto.
     clear - Hz Heqe.
     sep_star_split_tac.
     simpls.
     unfolds regSt.
     simpls.
     simpljoin1.
-    rewrite get_R_rn_neq_r0; eauto.
-    2 : intro; tryfalse.
     unfold merge.
     unfold RegMap.set.
     destruct_rneq.
@@ -1577,23 +1764,24 @@ Proof.
     eapply NTrans; eauto.
   }
   {  
-    exists (m, (R', f0), D') x f2 (f2 +ᵢ ($ 4)) (f2 +ᵢ ($ 4)) ((f2 +ᵢ ($ 4)) +ᵢ ($ 4)).
+    exists (m, (R', f0), D') x (f +ᵢ ($ 4)) (f +ᵢ ($ 4) +ᵢ ($ 4))
+      (f +ᵢ ($ 4) +ᵢ ($ 4)) ((f +ᵢ ($ 4) +ᵢ ($ 4)) +ᵢ ($ 4)).
     split; eauto.
     econstructor; eauto. 
-    eapply Bne_false with (v := bv) (f := f); eauto.
-    clear - Heqe Hz.
+    eapply Bne_false with (v := bv) (f := f'); eauto.
+    rewrite get_R_rn_neq_r0; eauto.
+    2 : intro; tryfalse.
+    eapply regz_exe_delay_stable; eauto.
     sep_star_split_tac.
-    simpls.
+    simpl in H17.
     simpljoin1.
+    simpl in H15.
     unfolds regSt.
     simpls.
     simpljoin1.
-    rewrite get_R_rn_neq_r0; eauto.
-    2 : intro; tryfalse.
-    unfold merge.
+    eapply get_vl_merge_still; eauto.
     unfold RegMap.set.
     destruct_rneq.
-    clear - Heqe. 
     eapply int_eq_false_neq in Heqe; eauto.
     destruct_state x.
     econstructor; eauto.
@@ -1605,111 +1793,90 @@ Proof.
   inversion H6; subst.
   inversion H7; subst. 
   exists bv.
-  split; eauto. 
-  lets Hexe_delay1 : H11. 
-  eapply dly_reduce_asrt_stable in H11; eauto.
-  inversion H19; get_ins_diff_false.
-  eapply dly_reduce_asrt_stable in H13; eauto. 
-  eapply H0 in H11.   
-  clear - Hexe_delay1 H11 H29.
+  split; eauto.
+  lets Hz : H5.
+  eapply H0 in Hz.
+  clear - Hz.
   sep_star_split_tac.
-  simpls. 
-  unfolds regSt.
-  simpls. 
+  simpl in H3.
   simpljoin1.
-  lets Hz : H29.
-  rewrite get_R_rn_neq_r0; eauto.
-  2 : intro; tryfalse.
-  rewrite get_R_rn_neq_r0 in H29; eauto.
-  2 : intro; tryfalse.
-  rewrite get_R_rn_neq_r0 in Hz; eauto.
-  2 : intro; tryfalse.
-  unfold merge in Hz.
-  unfold RegMap.set in Hz.
-  destruct_rneq_H.
-  inversion Hz; subst.
-  eapply regz_exe_delay_stable2; eauto.
-  simpl.
-  rewrite get_R_rn_neq_r0; eauto.
-  2 : intro; tryfalse.
-  rewrite get_R_rn_neq_r0 in H29; eauto.
-  2 : intro; tryfalse.
-  eapply H0 in H11. 
-  clear - Hexe_delay1 H11 H29.
-  sep_star_split_tac.
   simpls.
   unfolds regSt.
   simpls.
-  simpljoin1. 
-  lets Hz : H29.
-  unfold RegMap.set in Hz.
-  unfold merge in Hz.
-  destruct_rneq_H.
-  inversion Hz; subst. 
-  eapply regz_exe_delay_stable2; eauto.
+  simpljoin1.
+  rewrite get_R_rn_neq_r0; eauto.
+  2 : intro; tryfalse.
+  unfold merge, RegMap.set.
+  destruct_rneq.
   split.
   {
-    intros.  
-    eapply dly_reduce_asrt_stable in H11; eauto.
-    lets Hp : H11.
+    intros.
+    subst.
+    lets Hp : H5.
+    eapply H0 in Hp.
+    lets Hexe_delay1 : H14.
+    eapply dly_reduce_asrt_stable with (p := p) in H14; eauto.
     inversion H19; get_ins_diff_false.
-    eapply H0 in H11. 
-    exists fp fq L r.
-    inversion H24; get_ins_diff_false.
-    split; eauto.
-    lets Hp' : Hp.
-    eapply dly_reduce_asrt_stable in Hp'; eauto.
-    eapply H1 in Hp'; eauto.
+    eapply dly_reduce_asrt_stable in H14; eauto.
+    eapply H1 in H14; eauto.
     simpljoin1.
-    eapply ins_exec_deterministic in H23; eauto.
+    exists fp fq L r.
+    inversion H24; get_ins_diff_false. 
+    eapply ins_exec_deterministic in H8; eauto.
     subst.
     assert (($ 0) =ᵢ ($ 0) = true).
     eauto.
-    eapply H2 in H10.
+    eapply H2 in H8.
     simpljoin1.
+    eapply H8 in H9.
     repeat (split; eauto).
-    eapply H0 in Hp.
-    clear - Hp H30 H31.
+    rewrite get_R_rn_neq_r0 in H29; eauto.
+    2 : intro; tryfalse.
+    eapply regz_exe_delay_stable2 in H29; eauto.
+    clear - H30 Hp H29.
     sep_star_split_tac.
     simpls.
+    simpljoin1.
     unfolds regSt.
     simpls.
     simpljoin1.
-    rewrite get_R_rn_neq_r0 in H30; eauto.
-    2 : intro; tryfalse.
     unfold merge in *.
     unfolds RegMap.set.
     destruct_rneq_H.
   }
-  {
+  { 
     intros.
-    lets Hz : H11. 
-    eapply dly_reduce_asrt_stable in Hz; eauto.
-    lets Hp : Hz.
-    inversion H19; get_ins_diff_false.  
+    lets Hz : H5.
     eapply H0 in Hz.
-    clear - Hz H8 H30.
+    inversion H19; get_ins_diff_false.
+    rewrite get_R_rn_neq_r0 in H30; eauto.
+    eapply regz_exe_delay_stable2 in H30; eauto.
+    clear - H8 Hz H30.
     sep_star_split_tac.
-    simpls.
+    simpl in H3.
+    simpljoin1.
+    simpl in H1.
     unfolds regSt.
     simpls.
     simpljoin1.
-    rewrite get_R_rn_neq_r0 in H30; eauto.
-    2 : intro; tryfalse.
+    clear - H8 H30.
     unfold merge in *.
     unfolds RegMap.set.
     destruct_rneq_H.
-    eapply H0 in Hz.
+    intro; tryfalse.
     assert (bv = v).
-    { 
-      clear - Hz H30.
+    {
+      rewrite get_R_rn_neq_r0 in H30; eauto.
+      2 : intro; tryfalse.
+      eapply regz_exe_delay_stable2 in H30; eauto.
       sep_star_split_tac.
-      simpls. 
+      simpl in H20.
+      simpljoin1.
+      clear - H16 H30.
+      simpl in H16.
       unfolds regSt.
       simpls.
       simpljoin1.
-      rewrite get_R_rn_neq_r0 in H30; eauto.
-      2 : intro; tryfalse.
       unfold merge in *.
       unfolds RegMap.set.
       destruct_rneq_H.
@@ -1717,28 +1884,33 @@ Proof.
       eauto.
     }
     subst.
-    inversion H24; get_ins_diff_false.
-    eapply dly_reduce_asrt_stable in H13; eauto.
-    eapply H1 in H13; eauto.
+    inversion H24; get_ins_diff_false. 
+    eapply dly_reduce_asrt_stable with (p := p) in H14; eauto.
+    eapply dly_reduce_asrt_stable in H14; eauto.
+    eapply H1 in H14; eauto.
     simpljoin1.
     eapply ins_exec_deterministic in H25; eauto.
-    subst. 
-    unfold insSeq_sound in H3.
-    eapply H3; eauto.
-    clear - H10 Hz H30 H31.
-    unfold Int.eq.
-    destruct (zeq (Int.unsigned v) (Int.unsigned $ 0)); eauto.
-    eapply z_eq_to_int_eq in e; eauto. 
-    do 2 rewrite Int.repr_unsigned in e; tryfalse.
-    clear - H16.
+    subst.
+    assert (v =ᵢ ($ 0) = false).
+    {
+      clear - H8.
+      unfold Int.eq.
+      destruct (zeq (Int.unsigned v) (Int.unsigned $ 0)); eauto.
+      eapply z_eq_to_int_eq in e; eauto.
+      do 2 rewrite Int.repr_unsigned in e; tryfalse.
+    }
+    eapply H3 in H14.
+    unfold insSeq_sound in H14.
+    eapply H14 in H10; eauto.
+    clear - H10.
     rewrite Int.add_assoc; eauto.
   }
 Qed.
   
 Theorem wf_seq_frame_rule :
-  forall p q r I Spec,
-    insSeq_sound Spec p I q -> DlyFrameFree r ->
-    insSeq_sound Spec (p ** r) I (q ** r).
+  forall p q r f I Spec,
+    insSeq_sound Spec p f I q -> DlyFrameFree r ->
+    insSeq_sound Spec (p ** r) f I (q ** r).
 Proof.
   intros.
   unfolds insSeq_sound.
@@ -1752,9 +1924,9 @@ Proof.
 Qed.
 
 Theorem wf_seq_conseq_rule :
-  forall I p p1 q1 q Spec,
-    p ==> p1 -> q1 ==> q -> insSeq_sound Spec p1 I q1 ->
-    insSeq_sound Spec p I q.
+  forall I p p1 q1 q f Spec,
+    p ==> p1 -> q1 ==> q -> insSeq_sound Spec p1 f I q1 ->
+    insSeq_sound Spec p f I q.
 Proof.
   intros.
   unfolds insSeq_sound.
@@ -1765,9 +1937,9 @@ Proof.
 Qed.
 
 Theorem wf_seq_ex_intro_rule :
-  forall tp (p : tp -> asrt) I q Spec,
-    (forall x' : tp, insSeq_sound Spec (p x') I q) ->
-    insSeq_sound Spec (EX x : tp, p x) I q.
+  forall tp (p : tp -> asrt) I q f Spec,
+    (forall x' : tp, insSeq_sound Spec (p x') f I q) ->
+    insSeq_sound Spec (EX x : tp, p x) f I q.
 Proof.
   intros.
   unfold insSeq_sound.
@@ -1780,9 +1952,9 @@ Proof.
 Qed.
 
 Theorem wf_seq_disj_rule :
-  forall p1 p2 q1 q2 I Spec,
-    insSeq_sound Spec p1 I q1 -> insSeq_sound Spec p2 I q2 ->
-    insSeq_sound Spec (p1 \\// p2) I (q1 \\// q2).
+  forall p1 p2 q1 q2 f I Spec,
+    insSeq_sound Spec p1 f I q1 -> insSeq_sound Spec p2 f I q2 ->
+    insSeq_sound Spec (p1 \\// p2) f I (q1 \\// q2).
 Proof.
   intros.
   unfolds insSeq_sound.
@@ -1795,9 +1967,9 @@ Proof.
 Qed.
 
 Lemma wf_seq_pure_intro_rule :
-  forall p q (pu : Prop) I Spec,
-    (pu -> insSeq_sound Spec p I q) ->
-    insSeq_sound Spec ([| pu |] ** p) I q.
+  forall p q (pu : Prop) f I Spec,
+    (pu -> insSeq_sound Spec p f I q) ->
+    insSeq_sound Spec ([| pu |] ** p) f I q.
 Proof.
   intros.
   unfolds insSeq_sound.
@@ -1811,9 +1983,9 @@ Proof.
 Qed.
   
 Theorem wf_seq_sound :
-  forall Spec p q I,
-    wf_seq Spec p I q ->
-    insSeq_sound Spec p I q.
+  forall Spec p q f I,
+    wf_seq Spec p f I q ->
+    insSeq_sound Spec p f I q.
 Proof.
   intros.
   induction H; intros.
@@ -1828,21 +2000,22 @@ Proof.
 
   -
     eapply ins_rule_sound in H.
-    eapply wf_seq_ret_rule; eauto.
+    eapply wf_seq_retl_rule; eauto.
 
   -
+    eapply ins_rule_sound in H.
+    eapply wf_seq_ret_rule; eauto.
+
+  - 
     eapply ins_rule_sound in H2.
     eapply wf_seq_j1_rule; eauto.
 
-  -
-    eapply wf_seq_J2_rule; eauto.
-
   -   
-    eapply ins_rule_sound in H0.
+    eapply ins_rule_sound in H1.
     eapply wf_seq_be_rule; eauto.
 
   -
-    eapply ins_rule_sound in H0.
+    eapply ins_rule_sound in H1.
     eapply wf_seq_bne_rule; eauto.
 
   -
